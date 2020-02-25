@@ -1,5 +1,5 @@
 import { SORT } from "../abc/lazy/SORT";
-import { release } from "@awayjs/swf-viewer";
+import { release } from "@awayfl/swf-loader";
 import { assert } from "@awayjs/graphics";
 
 export function axCompareFields(objA: any, objB: any, names: string[], optionsList: SORT[]) {

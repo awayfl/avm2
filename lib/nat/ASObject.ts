@@ -6,7 +6,7 @@ import { AXSecurityDomain } from '../run/AXSecurityDomain';
 import { Scope } from '../run/Scope';
 import { AXFunction } from '../run/AXFunction';
 import { Bytecode } from '../abc/ops';
-import { release, isNumeric, defineNonEnumerableProperty } from '@awayjs/swf-viewer';
+import { release, isNumeric, defineNonEnumerableProperty } from '@awayfl/swf-loader';
 import { addPrototypeFunctionAlias } from './addPrototypeFunctionAlias';
 import { checkValue } from '../run/checkValue';
 import { makeMultiname } from './makeMultiname';

@@ -2,7 +2,7 @@ import { ASObject } from "../nat/ASObject";
 import { axImplementsInterface } from "./axImplementsInterface";
 import { RuntimeTraits } from "../abc/lazy/RuntimeTraits";
 import { AXBasePrototype_$BgtoString } from "./AXBasePrototype_";
-import { defineNonEnumerableProperty } from "@awayjs/swf-viewer";
+import { defineNonEnumerableProperty } from "@awayfl/swf-loader";
 import { isPrimitiveJSValue } from './isPrimitiveJSValue';
 
 function AXBasePrototype_toString() {

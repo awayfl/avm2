@@ -1,6 +1,6 @@
 import { TraitInfo } from "../abc/lazy/TraitInfo";
 import { getNativesForTrait } from "./getNativesForTrait";
-import { hasOwnProperty, release, warning, assertUnreachable } from "@awayjs/swf-viewer";
+import { hasOwnProperty, release, warning, assertUnreachable } from "@awayfl/swf-loader";
 import { assert } from "@awayjs/graphics";
 
 /**

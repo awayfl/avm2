@@ -1,7 +1,7 @@
 import { RuntimeTraitInfo } from "./RuntimeTraitInfo";
-import { MapObject } from "@awayjs/swf-viewer";
+import { MapObject } from "@awayfl/swf-loader";
 import { Namespace } from "./Namespace";
-import { release } from "@awayjs/swf-viewer";
+import { release } from "@awayfl/swf-loader";
 import { assert } from "@awayjs/graphics";
 import { NamespaceType } from "./NamespaceType";
 import { Multiname } from "./Multiname";

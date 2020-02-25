@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-import { StringUtilities } from "@awayjs/swf-viewer";
+import { StringUtilities } from "@awayfl/swf-loader";
 
 declare var TextDecoder;
 

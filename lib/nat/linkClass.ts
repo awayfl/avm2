@@ -1,7 +1,7 @@
 import { AXClass } from '../run/AXClass';
 import { linkSymbols } from './linkSymbols';
 import { filter } from './filter';
-import { release, copyOwnPropertyDescriptors, copyPropertiesByList } from '@awayjs/swf-viewer';
+import { release, copyOwnPropertyDescriptors, copyPropertiesByList } from '@awayfl/swf-loader';
 import { runtimeWriter } from '../run/writers';
 import { traceASClass } from './traceASClass';
 import { axTrapNames } from './axTrapNames';

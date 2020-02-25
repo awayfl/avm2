@@ -1,6 +1,6 @@
 import { AXSecurityDomain } from "./AXSecurityDomain";
 import { checkValue } from "./checkValue";
-import { release } from "@awayjs/swf-viewer";
+import { release } from "@awayfl/swf-loader";
 import { scopeStacks } from "./scopeStacks";
 
 

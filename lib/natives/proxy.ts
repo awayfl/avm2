@@ -18,7 +18,7 @@ import { Multiname } from "../abc/lazy/Multiname";
 import { CONSTANT } from "../abc/lazy/CONSTANT";
 import { internNamespace } from "../abc/lazy/internNamespace";
 import { NamespaceType } from "../abc/lazy/NamespaceType";
-import { defineNonEnumerableProperty } from "@awayjs/swf-viewer";
+import { defineNonEnumerableProperty } from "@awayfl/swf-loader";
 import { ASObject } from "../nat/ASObject";
 import { Errors } from "../errors";
 import { Bytecode } from "../abc/ops";

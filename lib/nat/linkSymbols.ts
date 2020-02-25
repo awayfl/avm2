@@ -1,7 +1,7 @@
 import { Traits } from '../abc/lazy/Traits';
 import { NamespaceType } from '../abc/lazy/NamespaceType';
 import { assert } from '@awayjs/graphics';
-import { release, notImplemented, hasOwnGetter } from '@awayjs/swf-viewer';
+import { release, notImplemented, hasOwnGetter } from '@awayfl/swf-loader';
 import { containsSymbol } from './containsSymbol';
 
 export function linkSymbols(symbols: string [], traits: Traits, object) {

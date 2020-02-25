@@ -6,7 +6,7 @@ import { InstanceInfo } from "./InstanceInfo";
 import { MethodInfo } from "./MethodInfo";
 import { Traits } from "./Traits";
 import { MetadataInfo } from "./MetadataInfo";
-import { IndentingWriter } from "@awayjs/swf-viewer";
+import { IndentingWriter } from "@awayfl/swf-loader";
 
 export class ClassInfo extends Info {
     public trait: ClassTraitInfo = null;

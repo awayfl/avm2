@@ -1,4 +1,4 @@
-import { defineNonEnumerableProperty, isNumeric, isNumber, isString, release, Debug } from "@awayjs/swf-viewer";
+import { defineNonEnumerableProperty, isNumeric, isNumber, isString, release, Debug } from "@awayfl/swf-loader";
 import {ASObject} from "./ASObject";
 import {addPrototypeFunctionAlias} from "./addPrototypeFunctionAlias";
 import { makeMultiname } from "./makeMultiname";

@@ -1,6 +1,6 @@
 import { assert} from "@awayjs/graphics";
 
-import { release, notImplemented, defineNonEnumerableProperty, isIndex, isNullOrUndefined, isObject } from "@awayjs/swf-viewer";
+import { release, notImplemented, defineNonEnumerableProperty, isIndex, isNullOrUndefined, isObject } from "@awayfl/swf-loader";
 import { Namespace } from "../abc/lazy/Namespace";
 import { Multiname } from "../abc/lazy/Multiname";
 import { CONSTANT } from "../abc/lazy/CONSTANT";

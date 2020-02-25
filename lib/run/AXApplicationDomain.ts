@@ -7,7 +7,7 @@ import { ScriptInfoState } from "./ScriptInfoState";
 import { runtimeWriter } from "./writers";
 import { interpret } from "../int";
 import { AXGlobal } from "./AXGlobal";
-import { release } from "@awayjs/swf-viewer";
+import { release } from "@awayfl/swf-loader";
 import { AXClass } from "./AXClass";
 import { AXObject } from "./AXObject";
 

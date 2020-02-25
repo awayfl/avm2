@@ -1,4 +1,4 @@
-import { Debug } from "@awayjs/swf-viewer";
+import { Debug } from "@awayfl/swf-loader";
 import { debuggerMode } from "./settings";
 
 /*

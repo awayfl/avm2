@@ -1,5 +1,5 @@
 import { SORT } from "../abc/lazy/SORT";
-import { assertNotImplemented, release } from "@awayjs/swf-viewer";
+import { assertNotImplemented, release } from "@awayfl/swf-loader";
 
 export function axCompare(a: any, b: any, options: SORT, sortOrder: number,
     compareFunction: (a, b) => number) {

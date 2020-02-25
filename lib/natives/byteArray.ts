@@ -20,7 +20,7 @@ import { Multiname } from "../abc/lazy/Multiname";
 import { checkValue  } from "../run/checkValue";
 import { axCoerceName } from "../run/axCoerceName";
 import { ASObject } from "../nat/ASObject";
-import { release, notImplemented, unexpected, isNumeric, ObjectUtilities } from "@awayjs/swf-viewer";
+import { release, notImplemented, unexpected, isNumeric, ObjectUtilities } from "@awayfl/swf-loader";
 import { AMF0, AMF3 } from "../amf";
 import { Bytecode } from "../abc/ops";
 import { AXClass } from '../run/AXClass';

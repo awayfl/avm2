@@ -3,7 +3,7 @@ import { Scope } from "../../run/Scope";
 import { ScriptInfo } from "./ScriptInfo";
 import { METHOD } from "./METHOD";
 import { createGlobalNative } from "./createGlobalNative";
-import { flashlog, release } from "@awayjs/swf-viewer";
+import { flashlog, release } from "@awayfl/swf-loader";
 import { interpret } from "../../int";
 import { getNative } from "../../nat/getNative";
 import { getMethodOrAccessorNative } from "../../nat/getMethodOrAccessorNative";

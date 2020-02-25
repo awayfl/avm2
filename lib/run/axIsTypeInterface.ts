@@ -1,4 +1,4 @@
-import { release } from "@awayjs/swf-viewer";
+import { release } from "@awayfl/swf-loader";
 import { checkValue } from "./checkValue";
 import { AXClass } from "./AXClass";
 

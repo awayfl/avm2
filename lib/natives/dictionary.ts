@@ -2,7 +2,7 @@ import { Multiname } from "../abc/lazy/Multiname";
 import { ASObject } from "../nat/ASObject";
 import { addPrototypeFunctionAlias } from "../nat/addPrototypeFunctionAlias";
 import { assert } from "@awayjs/graphics";
-import { release } from "@awayjs/swf-viewer";
+import { release } from "@awayfl/swf-loader";
 import { Bytecode } from "../abc/ops";
 
 /*

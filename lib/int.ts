@@ -19,7 +19,7 @@ import { axCheckFilter } from "./run/axCheckFilter";
 import { axConvertString } from "./run/axConvertString";
 import { axAdd } from "./run/axAdd";
 import { axTypeOf } from "./run/axTypeOf";
-import { release, notImplemented, popManyInto, getPropertyDescriptor, isNumeric } from "@awayjs/swf-viewer";
+import { release, notImplemented, popManyInto, getPropertyDescriptor, isNumeric } from "@awayfl/swf-loader";
 import { Multiname } from "./abc/lazy/Multiname";
 import {  CONSTANT } from "./abc/lazy/CONSTANT";
 import {  MethodInfo } from "./abc/lazy/MethodInfo";

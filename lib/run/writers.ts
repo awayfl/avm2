@@ -1,4 +1,4 @@
-import { IndentingWriter, dumpLine } from "@awayjs/swf-viewer";
+import { IndentingWriter, dumpLine } from "@awayfl/swf-loader";
 import { WriterFlags } from "./WriterFlags";
 
 var writer = new IndentingWriter(false, function (x) { dumpLine(x); } );

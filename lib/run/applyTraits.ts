@@ -3,7 +3,7 @@ import { RuntimeTraits} from "../abc/lazy/RuntimeTraits";
 import { Namespace} from "../abc/lazy/Namespace";
 import { TRAIT} from "../abc/lazy/TRAIT";
 import { assert } from "@awayjs/graphics";
-import { release, defineReadOnlyProperty } from "@awayjs/swf-viewer";
+import { release, defineReadOnlyProperty } from "@awayfl/swf-loader";
 import { ASNamespace } from "../natives/xml";
 import { checkValue } from "./checkValue";
 

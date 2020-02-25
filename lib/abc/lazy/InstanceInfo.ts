@@ -6,7 +6,7 @@ import { ABCFile } from "./ABCFile";
 import { Multiname } from "./Multiname";
 import { MethodInfo } from "./MethodInfo";
 import { Traits } from "./Traits";
-import { IndentingWriter } from "@awayjs/swf-viewer";
+import { IndentingWriter } from "@awayfl/swf-loader";
 import { CONSTANT } from "./CONSTANT";
 
 

@@ -1,4 +1,4 @@
-import { release } from "@awayjs/swf-viewer";
+import { release } from "@awayfl/swf-loader";
 
 export const enum CONSTANT {
     Undefined          = 0x00,

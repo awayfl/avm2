@@ -1,5 +1,5 @@
 import { AXSecurityDomain } from "../run/AXSecurityDomain";
-import { release } from "@awayjs/swf-viewer";
+import { release } from "@awayfl/swf-loader";
 import { assert, isNullOrUndefined } from "@awayjs/graphics";
 
 /**

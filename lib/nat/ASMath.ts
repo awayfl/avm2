@@ -1,5 +1,5 @@
 import { ASObject } from "./ASObject";
-import { defineNonEnumerableProperty } from "@awayjs/swf-viewer";
+import { defineNonEnumerableProperty } from "@awayfl/swf-loader";
 
 export class ASMath extends ASObject {
     public static classNatives: any [] = [Math];

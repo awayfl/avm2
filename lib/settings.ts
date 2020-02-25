@@ -1,4 +1,4 @@
-import { shumwayOptions, OptionSet, Option } from "@awayjs/swf-viewer";
+import { shumwayOptions, OptionSet, Option } from "@awayfl/swf-loader";
 
 var avm2Options = shumwayOptions.register(new OptionSet("AVM2"));
 

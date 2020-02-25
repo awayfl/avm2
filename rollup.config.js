@@ -10,19 +10,19 @@ module.exports = {
 		format: 'umd',
 		file: './bundle/awayfl-avm2.umd.js',
 		globals: {
+			'@awayfl/swf-loader': 'AwayflSwfLoader',
 			'@awayjs/core': 'AwayjsCore',
 			'@awayjs/graphics': 'AwayjsGraphics',
 			'@awayjs/scene': 'AwayjsScene',
 			'@awayjs/stage': 'AwayjsStage',
-			'@awayjs/swf-viewer': 'AwayjsSwfViewer',
 		},
 	},
 	external: [
+		'@awayfl/swf-loader',
 		'@awayjs/core',
 		'@awayjs/graphics',
 		'@awayjs/scene',
 		'@awayjs/stage',
-		'@awayjs/swf-viewer',
 	],
 	plugins: [
 		nodeResolve({

@@ -18,7 +18,7 @@ import { ASMath } from "./ASMath";
 import { ASRegExp } from "./ASRegExp";
 import { ASJSON } from "./ASJSON";
 import { assert } from "@awayjs/graphics";
-import { release } from "@awayjs/swf-viewer";
+import { release } from "@awayfl/swf-loader";
 import { FlashUtilScript_getDefinitionByName } from "./FlashUtilScript_getDefinitionByName";
 import { FlashUtilScript_getTimer } from "./FlashUtilScript_getTimer";
 import { FlashNetScript_navigateToURL } from "./FlashNetScript_navigateToURL";
@@ -33,7 +33,7 @@ import { XMLParser } from '../natives/xml';
 import { XMLNode } from '../natives/xml';
 import { XMLNodeType } from '../../customAway/xml/XMLNodeType';*/
 import { nativeFunctions } from './nativeFunctions';
-import { jsGlobal } from '@awayjs/swf-viewer';
+import { jsGlobal } from '@awayfl/swf-loader';
 
 
 import { ASDate } from "../natives/Date";

@@ -1,4 +1,4 @@
-import { MapObject } from "@awayjs/swf-viewer";
+import { MapObject } from "@awayfl/swf-loader";
 import { Namespace } from "./Namespace";
 
 

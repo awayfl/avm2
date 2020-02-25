@@ -1,5 +1,5 @@
 import { BaseVector, GenericVector } from "./GenericVector";
-import { defineNonEnumerableProperty, unexpected, assertNotImplemented, release, isNumeric, isIndex } from "@awayjs/swf-viewer";
+import { defineNonEnumerableProperty, unexpected, assertNotImplemented, release, isNumeric, isIndex } from "@awayfl/swf-loader";
 import { ASObject } from "../nat/ASObject";
 import { assert } from "@awayjs/graphics";
 import { Errors } from "../errors";

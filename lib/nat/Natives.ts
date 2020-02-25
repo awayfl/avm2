@@ -1,9 +1,9 @@
 import { AXSecurityDomain } from "../run/AXSecurityDomain";
-import { jsGlobal } from "@awayjs/swf-viewer";
+import { jsGlobal } from "@awayfl/swf-loader";
 import { Errors } from "../errors";
 import { wrapJSGlobalFunction } from './wrapJSGlobalFunction';
 import { checkValue } from '../run/checkValue';
-import { release, assertUnreachable, notImplemented } from '@awayjs/swf-viewer';
+import { release, assertUnreachable, notImplemented } from '@awayfl/swf-loader';
 import { isNullOrUndefined } from '@awayjs/graphics';
 import { AXClass } from '../run/AXClass';
 import { axCoerceString } from '../run/axCoerceString';

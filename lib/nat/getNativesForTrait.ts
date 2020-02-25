@@ -1,7 +1,7 @@
 import { TraitInfo } from '../abc/lazy/TraitInfo';
 import { InstanceInfo } from '../abc/lazy/InstanceInfo';
 import { assert } from '@awayjs/graphics';
-import { release, assertUnreachable, pushMany } from '@awayjs/swf-viewer';
+import { release, assertUnreachable, pushMany } from '@awayfl/swf-loader';
 import { ClassInfo } from '../abc/lazy/ClassInfo';
 import { builtinNativeClasses, nativeClasses} from "./builtinNativeClasses";
 export function getNativesForTrait(trait: TraitInfo): Object [] {

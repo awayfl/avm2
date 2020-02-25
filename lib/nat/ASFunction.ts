@@ -8,7 +8,7 @@ import { MethodInfo } from "../abc/lazy/MethodInfo";
 import { Scope } from "../run/Scope";
 import { ASObject } from "./ASObject";
 import { addPrototypeFunctionAlias } from "./addPrototypeFunctionAlias";
-import { release, defineNonEnumerableProperty } from "@awayjs/swf-viewer";
+import { release, defineNonEnumerableProperty } from "@awayfl/swf-loader";
 import { sliceArguments } from "../run/writers";
 import { ASArray } from "./ASArray";
 

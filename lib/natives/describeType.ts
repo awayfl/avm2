@@ -14,12 +14,12 @@
  * limitations under the License.
  */
 
-import { release } from "@awayjs/swf-viewer";
+import { release } from "@awayfl/swf-loader";
 import { ASXML, escapeAttributeValue } from "./xml";
 import { assert } from "@awayjs/graphics";
 import { ASArray } from "../nat/ASArray";
 import { AXSecurityDomain } from "../run/AXSecurityDomain";
-import { isNullOrUndefined } from "@awayjs/swf-viewer";
+import { isNullOrUndefined } from "@awayfl/swf-loader";
 import { AXClass } from "../run/AXClass";
 import { AXXMLClass } from "../run/AXXMLClass";
 import { ClassInfo } from '../abc/lazy/ClassInfo';

@@ -1,8 +1,8 @@
 import { NamespaceType, getNamespaceTypeName } from './NamespaceType';
 import { assert } from '@awayjs/graphics';
-import { release } from '@awayjs/swf-viewer';
-import { StringUtilities } from '@awayjs/swf-viewer';
-import { HashUtilities } from '@awayjs/swf-viewer';
+import { release } from '@awayfl/swf-loader';
+import { StringUtilities } from '@awayfl/swf-loader';
+import { HashUtilities } from '@awayfl/swf-loader';
 import { namespaceHashingBuffer } from './namespaceHashingBuffer';
 
 export class Namespace {

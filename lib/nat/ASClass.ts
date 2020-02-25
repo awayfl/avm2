@@ -3,7 +3,7 @@ import { ClassInfo } from "../abc/lazy/ClassInfo";
 import { assert } from "@awayjs/graphics";
 import { AXSecurityDomain } from "../run/AXSecurityDomain";
 import { Errors } from "../errors";
-import { release } from '@awayjs/swf-viewer';
+import { release } from '@awayfl/swf-loader';
 
 export class ASClass extends ASObject {
     dPrototype: ASObject;

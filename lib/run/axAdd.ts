@@ -1,5 +1,5 @@
 import { AXSecurityDomain } from "./AXSecurityDomain";
-import { release } from "@awayjs/swf-viewer";
+import { release } from "@awayfl/swf-loader";
 import { assert } from "@awayjs/graphics";
 import { isXMLCollection, ASXMLList } from "../natives/xml";
 

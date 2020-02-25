@@ -1,6 +1,6 @@
 import { ASNumber } from "./ASNumber";
 import { addPrototypeFunctionAlias } from "./addPrototypeFunctionAlias";
-import { defineNonEnumerableProperty } from "@awayjs/swf-viewer";
+import { defineNonEnumerableProperty } from "@awayfl/swf-loader";
 import { Errors } from "../errors";
 
 export class ASInt extends ASNumber {

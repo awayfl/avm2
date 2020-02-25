@@ -1,8 +1,8 @@
 import { TraitInfo } from "./TraitInfo";
 import { Info } from "./Info";
-import { release } from "@awayjs/swf-viewer";
+import { release } from "@awayfl/swf-loader";
 import { assert } from "@awayjs/graphics";
-import { IndentingWriter } from "@awayjs/swf-viewer";
+import { IndentingWriter } from "@awayfl/swf-loader";
 import { Multiname } from "./Multiname";
 import { RuntimeTraits } from "./RuntimeTraits";
 import { Namespace } from "./Namespace";

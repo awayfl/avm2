@@ -1,4 +1,4 @@
-import { release } from "@awayjs/swf-viewer";
+import { release } from "@awayfl/swf-loader";
 
 /**
  * Returns |true| if the symbol is available in debug or release modes. Only symbols

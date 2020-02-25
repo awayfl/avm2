@@ -1,4 +1,4 @@
-import { StringUtilities } from "@awayjs/swf-viewer";
+import { StringUtilities } from "@awayfl/swf-loader";
 
 export function AXBasePrototype_$BgtoString() {
     // Dynamic prototypes just return [object Object], so we have to special-case them.

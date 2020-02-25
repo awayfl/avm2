@@ -1,5 +1,5 @@
 import { safeGetPrototypeOf } from "./safeGetPrototypeOf";
-import { isNullOrUndefined } from "@awayjs/swf-viewer";
+import { isNullOrUndefined } from "@awayfl/swf-loader";
 import { AXObject } from "./AXObject";
 
 

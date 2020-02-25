@@ -17,7 +17,7 @@
 import { XMLParserErrorCode, XMLParserBase } from "./xml";
 import { ASObject  } from "../nat/ASObject";
 import { AXSecurityDomain } from "../run/AXSecurityDomain";
-import { warning } from "@awayjs/swf-viewer";
+import { warning } from "@awayfl/swf-loader";
 import { axCoerceString } from '../run/axCoerceString';
 
 enum XMLSpecialChars {

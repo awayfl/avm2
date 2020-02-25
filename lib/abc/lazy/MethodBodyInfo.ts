@@ -1,7 +1,7 @@
 import { Info } from "./Info";
 import { ExceptionInfo } from "./ExceptionInfo";
 import { Traits } from "./Traits";
-import { IndentingWriter } from "@awayjs/swf-viewer";
+import { IndentingWriter } from "@awayfl/swf-loader";
 import { BytecodeStream, Bytecode, getBytecodeName } from "../ops";
 
 export class MethodBodyInfo extends Info {

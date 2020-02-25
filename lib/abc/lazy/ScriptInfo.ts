@@ -4,7 +4,7 @@ import { ScriptInfoState } from "../../run/ScriptInfoState";
 import { ABCFile } from "./ABCFile";
 import { Traits } from "./Traits";
 import { MethodInfo } from "./MethodInfo";
-import { IndentingWriter } from "@awayjs/swf-viewer";
+import { IndentingWriter } from "@awayfl/swf-loader";
 
 export class ScriptInfo extends Info {
     public global: AXGlobal = null;

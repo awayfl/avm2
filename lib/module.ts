@@ -15,7 +15,7 @@
  */
 "use strict";
 
-import { release } from "@awayjs/swf-viewer";
+import { release } from "@awayfl/swf-loader";
 
 export var timelineBuffer = null;
 //export var timelineBuffer = Shumway.Tools ? new TimelineBuffer("AVX") : null;

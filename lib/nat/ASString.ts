@@ -1,7 +1,7 @@
 import { ASObject } from "./ASObject";
 import { addPrototypeFunctionAlias } from "./addPrototypeFunctionAlias";
 import { assert } from "@awayjs/graphics";
-import { release } from "@awayjs/swf-viewer";
+import { release } from "@awayfl/swf-loader";
 import { Errors } from "../errors";
 import { axCoerceString } from "../run/axCoerceString";
 import { transformJStoASRegExpMatchArray } from "./transformJStoASRegExpMatchArray";

@@ -1,4 +1,4 @@
-import { MapObject, ObjectUtilities } from "@awayjs/swf-viewer";
+import { MapObject, ObjectUtilities } from "@awayfl/swf-loader";
 
 import { ASClass } from "./ASClass";
 import { NamespaceType } from "../abc/lazy/NamespaceType";

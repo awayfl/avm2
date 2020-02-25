@@ -1,4 +1,4 @@
-import { MapObject, ObjectUtilities, assert, release } from "@awayjs/swf-viewer";
+import { MapObject, ObjectUtilities, assert, release } from "@awayfl/swf-loader";
 import { AXApplicationDomain } from "../../run/AXApplicationDomain";
 import { ABCFile } from "./ABCFile";
 import { Multiname } from "./Multiname";

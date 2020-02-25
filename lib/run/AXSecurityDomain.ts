@@ -28,7 +28,7 @@ import { tryLinkNativeClass } from "../nat/tryLinkNativeClass";
 import { getNativeInitializer } from "../nat/getNativeInitializer";
 import { installClassLoaders } from "../nat/installClassLoaders";
 import { installNativeFunctions } from "../nat/installNativeFunctions";
-import { release, isIndex, IndentingWriter, defineNonEnumerableProperty, defineReadOnlyProperty, flashlog } from "@awayjs/swf-viewer";
+import { release, isIndex, IndentingWriter, defineNonEnumerableProperty, defineReadOnlyProperty, flashlog } from "@awayfl/swf-loader";
 import { assert } from "@awayjs/graphics";
 import { checkValue } from "./checkValue";
 import { Scope } from "./Scope";

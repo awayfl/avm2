@@ -1,4 +1,4 @@
-import { isNullOrUndefined } from "@awayjs/swf-viewer";
+import { isNullOrUndefined } from "@awayfl/swf-loader";
 import { Errors } from "../errors";
 
 export function axCoerce(x: any) {

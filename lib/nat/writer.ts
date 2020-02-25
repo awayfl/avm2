@@ -1,4 +1,4 @@
-import { IndentingWriter } from "@awayjs/swf-viewer";
+import { IndentingWriter } from "@awayfl/swf-loader";
 
 
 export var writer = new IndentingWriter();

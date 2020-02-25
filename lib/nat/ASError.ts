@@ -1,6 +1,6 @@
 import { ASObject } from "./ASObject";
 import { getErrorInfo, formatErrorMessage, getErrorMessage } from "../errors";
-import { defineNonEnumerableProperty } from "@awayjs/swf-viewer";
+import { defineNonEnumerableProperty } from "@awayfl/swf-loader";
 import { AXClass } from '../run/AXClass';
 import { ASClass } from './ASClass';
 

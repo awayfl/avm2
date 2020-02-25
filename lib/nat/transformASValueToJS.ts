@@ -1,6 +1,6 @@
-import { isNumeric } from "@awayjs/swf-viewer";
+import { isNumeric } from "@awayfl/swf-loader";
 import { assert, isNullOrUndefined } from "@awayjs/graphics";
-import { release } from "@awayjs/swf-viewer";
+import { release } from "@awayfl/swf-loader";
 import { AXSecurityDomain } from "../run/AXSecurityDomain";
 
 /**

@@ -1,4 +1,4 @@
-import { isIndex } from "@awayjs/swf-viewer";
+import { isIndex } from "@awayfl/swf-loader";
 
 
 export function qualifyPublicName(v: any) {

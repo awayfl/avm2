@@ -1,6 +1,6 @@
 import { AXApplicationDomain } from "../../run/AXApplicationDomain";
 import { assert } from "@awayjs/graphics";
-import { release, unexpected, warning } from "@awayjs/swf-viewer";
+import { release, unexpected, warning } from "@awayfl/swf-loader";
 import { Namespace } from "./Namespace";
 import { Multiname } from "./Multiname";
 import { MetadataInfo } from "./MetadataInfo";
@@ -23,7 +23,7 @@ import { MethodTraitInfo } from "./MethodTraitInfo";
 import { ClassTraitInfo } from "./ClassTraitInfo";
 import { ATTR } from "./ATTR";
 import { ExceptionInfo } from "./ExceptionInfo";
-import { IndentingWriter } from "@awayjs/swf-viewer";
+import { IndentingWriter } from "@awayfl/swf-loader";
 import { AbcStream } from "../stream";
 
 export class ABCFile {

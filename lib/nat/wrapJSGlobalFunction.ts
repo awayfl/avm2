@@ -1,4 +1,4 @@
-import { jsGlobal } from "@awayjs/swf-viewer";
+import { jsGlobal } from "@awayfl/swf-loader";
 
 export function wrapJSGlobalFunction(fun) {
     return function(sec, ...args) {

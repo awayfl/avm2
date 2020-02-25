@@ -3,11 +3,11 @@ import { CONSTANT, getCONSTANTName } from "./CONSTANT";
 import { Namespace } from "./Namespace";
 import { NamespaceType } from "./NamespaceType";
 import { internNamespace } from "./internNamespace";
-import { release } from "@awayjs/swf-viewer";
+import { release } from "@awayfl/swf-loader";
 import { assert } from "@awayjs/graphics";
 import { internPrefixedNamespace } from "./internPrefixedNamespace";
 import { axCoerceString } from "../../run/axCoerceString";
-import { isNumeric } from "@awayjs/swf-viewer";
+import { isNumeric } from "@awayfl/swf-loader";
 import { ScriptInfo } from "./ScriptInfo";
 import { AXObject } from "../../run/AXObject"
 

@@ -1,6 +1,6 @@
 import { AXObject } from "../run/AXObject";
 import { assert } from "@awayjs/graphics";
-import { defineNonEnumerableProperty, release } from "@awayjs/swf-viewer";
+import { defineNonEnumerableProperty, release } from "@awayfl/swf-loader";
 
 
 export function addPrototypeFunctionAlias(object: AXObject, name: string, fun: Function) {

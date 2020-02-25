@@ -1,6 +1,6 @@
 import { AXFunction } from "./AXFunction";
 import { assert } from "@awayjs/graphics";
-import { release } from "@awayjs/swf-viewer";
+import { release } from "@awayfl/swf-loader";
 
 
 /**

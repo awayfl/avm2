@@ -1,7 +1,7 @@
 import { AXApplicationDomain } from "../run/AXApplicationDomain";
 import { Multiname } from "../abc/lazy/Multiname";
 import { runtimeWriter } from "../run/writers";
-import { release } from "@awayjs/swf-viewer";
+import { release } from "@awayfl/swf-loader";
 import { assert } from "@awayjs/graphics";
 
 /**

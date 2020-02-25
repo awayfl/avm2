@@ -1,6 +1,6 @@
 import { BaseVector, GenericVector } from "./GenericVector";
 import { ASObject } from "../nat/ASObject";
-import { defineNonEnumerableProperty, unexpected, release, assertNotImplemented, isNumeric, isIndex } from "@awayjs/swf-viewer";
+import { defineNonEnumerableProperty, unexpected, release, assertNotImplemented, isNumeric, isIndex } from "@awayfl/swf-loader";
 import { AXObject } from "../run/AXObject";
 import { axCoerceName } from "../run/axCoerceName";
 import { assert } from "@awayjs/graphics";

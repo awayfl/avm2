@@ -1,6 +1,6 @@
 import { AXObject } from "../run/AXObject";
 import { ASFunction } from "./ASFunction";
-import { defineNonEnumerableProperty } from "@awayjs/swf-viewer";
+import { defineNonEnumerableProperty } from "@awayfl/swf-loader";
 import { AXCallable } from "../run/AXCallable";
 import { Errors } from "../errors";
 import { sliceArguments } from "../run/writers";
