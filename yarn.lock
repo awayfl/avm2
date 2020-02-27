@@ -19,6 +19,16 @@
   dependencies:
     tess2 "^1.0.0"
 
+"@awayjs/materials@^0.5.0":
+  version "0.5.8"
+  resolved "https://registry.yarnpkg.com/@awayjs/materials/-/materials-0.5.8.tgz#a24a6c64717d86aa6707a4e54301616ee364f849"
+  integrity sha512-eWdnkEkLhV5VJXewxM0rDSsI0Wk94l6YRiWcKQjWpODHRFpkn3i05wqLTOIhM0xtOE3sbASP1tCFPf6nQnlDLQ==
+
+"@awayjs/renderer@^0.10.0":
+  version "0.10.11"
+  resolved "https://registry.yarnpkg.com/@awayjs/renderer/-/renderer-0.10.11.tgz#85a661ee00610592274fd1c6d71eb91e6d2c71b3"
+  integrity sha512-/sXbGPKUuivedlfC8myKKGtdt51t9x0HnRqrO1+m7qKUaAwVdhFD37u9FBRw1y/aznpjcPLiEMt2r0KQx+FyWw==
+
 "@awayjs/scene@^0.12.0":
   version "0.12.61"
   resolved "https://registry.yarnpkg.com/@awayjs/scene/-/scene-0.12.61.tgz#0e24b099680cbbab674cfa3265faeb4c8e0a897b"
@@ -26,6 +36,11 @@
 "@awayjs/stage@^0.10.0":
   version "0.10.20"
   resolved "https://registry.yarnpkg.com/@awayjs/stage/-/stage-0.10.20.tgz#c5c3fd9387c70bc9c4efdbccc46f26f2537b4f12"
+
+"@awayjs/view@^0.5.0":
+  version "0.5.13"
+  resolved "https://registry.yarnpkg.com/@awayjs/view/-/view-0.5.13.tgz#3546cedfa0f7e2be9b6967510b411587334bc74b"
+  integrity sha512-9n9iFxLDjyi1r7l/HnGpxWVlAOb82T593uqZnC98Ip7RIFRtH27UoxaXQsTiwp+m/mBW3WP/A+0KXdndscgrvg==
 
 "@types/acorn@^4.0.3":
   version "4.0.5"
