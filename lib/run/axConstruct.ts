@@ -71,9 +71,7 @@ export function axConstruct(argArray?: any[]) {
         var newMC = new MovieClip(timeline);
         //console.log("create mc via axConstruct");
         object.adaptee=newMC;
-        newMC.timelineMC = true;
         newMC.reset();
-        object.noReset=true;
 		FrameScriptManager.execute_as3_constructors();
         //FrameScriptManager.execute_queue();
         //(<any>object).dispatchStaticEvent(Event.FRAME_CONSTRUCTED)
@@ -113,7 +111,6 @@ export function axConstruct(argArray?: any[]) {
             console.log("error: ActiveLoaderContext.loaderContext not set. can not rerieve Sound");
         }
     }
-    object.noReset=true;
    
     if((<any>object).getQueuedEvents){
         var events=(<any>object).getQueuedEvents();
