@@ -135,7 +135,7 @@ function popNameInto(stack: any [], mn: Multiname, rn: Multiname) {
 
 
 export function interpret(methodInfo: MethodInfo, savedScope: Scope, callee: AXFunction) {
-    if (methodInfo.compiled == null && methodInfo.error == null) {
+    if (methodInfo.compiled == null && methodInfo.error == null && methodInfo.getBody() != null) {
         let r = compile(methodInfo)
         if (typeof r === "string") {
             methodInfo.error = r
