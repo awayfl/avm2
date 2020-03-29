@@ -16,6 +16,7 @@ import {axCoerceName} from "./run/axCoerceName"
 import {isNumeric, jsGlobal} from "@awayfl/swf-loader"
 import {ABCFile} from "./abc/lazy/ABCFile"
 import {ScriptInfo} from "./abc/lazy/ScriptInfo"
+import {b2Class} from "./btd"
 import {AXGlobal} from "./run/AXGlobal"
 
 export enum Bytecode {
@@ -1250,17 +1251,23 @@ export function compile(methodInfo: MethodInfo) {
                 }
                     break
                 case Bytecode.CALLPROPERTY:
+                    var mn = abc.getMultiname(param(1));
                     let pp = []
 
                     for (let j: number = 0; j <= param(0); j++)
                         pp.push(stackF(param(0) - j))
 
+                    let obj = pp.shift();
                     if (abc.getMultiname(param(1)).name == "getDefinitionByName") {
-                        js.push("                " + stackF(param(0)) + " = context.getdefinitionbyname(" + scope + ", " + pp.shift() + ", [" + pp.join(", ") + "]);")
+                        js.push("                " + stackF(param(0)) + " = context.getdefinitionbyname(" + scope + ", " + obj + ", [" + pp.join(", ") + "]);")
                     }
                     else {
-                        js.push("                // " + abc.getMultiname(param(0)))
-                        js.push("                " + stackF(param(0)) + " = sec.box(" + pp.shift() + ").axCallProperty(" + getname(param(1)) + ", [" + pp.join(", ") + "], false);")
+                        js.push("                if (" + obj + ".__fast__) {")
+                        js.push("                    " + stackF(param(0)) + " = " + obj + "." + mn.name + ".apply(" + obj + ", [" + pp.join(", ") + "]);")
+                        js.push("                } else {")    
+                        js.push("                // " + mn)
+                        js.push("                " + stackF(param(0)) + " = sec.box(" + obj + ").axCallProperty(" + getname(param(1)) + ", [" + pp.join(", ") + "], false);")
+                        js.push("                }")
                     }
                     break
                 case Bytecode.CALLPROPLEX: {
@@ -1273,12 +1280,18 @@ export function compile(methodInfo: MethodInfo) {
                 }
                     break
                 case Bytecode.CALLPROPVOID: {
-                    let pp = []
+                    var mn = abc.getMultiname(param(1));
+                    let pp = [];
 
                     for (let j: number = 0; j <= param(0); j++)
                         pp.push(stackF(param(0) - j))
 
-                    js.push("                sec.box(" + pp.shift() + ").axCallProperty(" + getname(param(1)) + ", [" + pp.join(", ") + "], false);")
+                    let obj = pp.shift();
+                    js.push("                if (" + obj + ".__fast__) {")
+                    js.push("                    " + obj + "." + mn.name + ".apply(" + obj + ", [" + pp.join(", ") + "]);")
+                    js.push("                } else {")
+                    js.push("                sec.box(" + obj + ").axCallProperty(" + getname(param(1)) + ", [" + pp.join(", ") + "], false);")
+                    js.push("                }")
                 }
                     break
                 case Bytecode.APPLYTYPE: {
@@ -1380,11 +1393,14 @@ export function compile(methodInfo: MethodInfo) {
                 }
                     break
                 case Bytecode.GETPROPERTY:
-                    var mn = abc.getMultiname(param(0))
+                    var mn = abc.getMultiname(param(0));
                     js.push("                // " + mn)
+                    js.push("                if (" + stack0 + ".__fast__) {")
+                    js.push("                    " + stack0 + " = " + stack0 + "." + mn.name + ";")
+                    js.push("                } else {")
                     js.push("                tr = " + getname(param(0)) + ".resolved[" + stack0 + ".axClassName];")
                     js.push("                if (tr) {")
-                    js.push("                    temp = "+stack0)
+                    js.push("                    temp = " +stack0 + ";")
                     js.push("                    " + stack0 + " = " + stack0 + "[tr];")
                     js.push("                    if (typeof " + stack0 + " === 'function') {")
                     js.push("                        " + stack0 + " = sec.box(temp).axGetMethod(tr);")
@@ -1392,14 +1408,20 @@ export function compile(methodInfo: MethodInfo) {
                     js.push("                } else {")
                     js.push("                    " + stack0 + " = sec.box(" + stack0 + ").axGetProperty(" + getname(param(0)) + ")")
                     js.push("                }")
+                    js.push("                }")
                     break
                 case Bytecode.GETPROPERTY_DYN:
+                    var mn = abc.getMultiname(param(0));
                     js.push("                " + stack1 + " = context.getpropertydyn(context.runtimename(" + stack0 + ", " + param(0) + "), " + stack1 + ");")
                     break
                 case Bytecode.SETPROPERTY:
                     var mn = abc.getMultiname(param(0))
                     js.push("                // " + mn)
+                    js.push("                if (" + stack1 + ".__fast__) {")
+                    js.push("                    " + stack1 + "." + mn.name + " = " + stack0 + ";")
+                    js.push("                } else {")
                     js.push("                context.setproperty(" + getname(param(0)) + ", " + stack0 + ", " + stack1 + ");")
+                    js.push("                }")
                     break
                 case Bytecode.SETPROPERTY_DYN:
                     js.push("                context.setproperty(context.runtimename(" + stack1 + ", " + param(0) + "), " + stack0 + ", " + stack2 + ");")
@@ -1542,6 +1564,11 @@ export class Context {
     construct(obj, pp) {
         let mn = obj.classInfo.instanceInfo.getName()
 
+        let r = b2Class(mn.name, pp)
+
+        if (r != null)
+            return r
+
         // if (mn.name.indexOf("b2") >= 0)
         //     console.log("*B2: " + mn.name)
 
@@ -1551,6 +1578,11 @@ export class Context {
 
 
     constructprop(mn, obj, pp) {
+        let r = b2Class(mn.name, pp)
+
+        if (r != null)
+            return r
+
         // if (mn.name.indexOf("b2") >= 0)
         //     console.log("B2: " + mn.name)
         
