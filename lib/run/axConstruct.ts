@@ -114,7 +114,11 @@ export function axConstruct(argArray?: any[]) {
    
     if((<any>object).getQueuedEvents){
         var events=(<any>object).getQueuedEvents();
-        object.axInitializer.apply(object, argArray);
+		object.axInitializer.apply(object, argArray);
+		if(object.initAdapter){
+			object.executeConstructor=()=>{};
+			object.initAdapter();
+		}
         if(events){
             for(var i=0; i<events.length; i++){
                 (<any>object).dispatchEvent(events[i]);
@@ -123,6 +127,10 @@ export function axConstruct(argArray?: any[]) {
     }
     else{            
         object.axInitializer.apply(object, argArray);
+		if(object.initAdapter){
+			object.executeConstructor=()=>{};
+			object.initAdapter();
+		}
     }
     return object;
 }
