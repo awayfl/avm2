@@ -17,7 +17,10 @@ export {Float64Vector} from "./lib/natives/float64Vector";
 export {GenericVector} from "./lib/natives/GenericVector";
 export { ASXML } from "./lib/natives/xml";
 
+export { getCurrentABC } from "./lib/run/getCurrentABC";
 export { axCoerceString } from "./lib/run/axCoerceString";
+export { axIsCallable } from "./lib/run/axIsCallable";
+export { axIsTypeString } from "./lib/run/axIsTypeString";
 export {AXClass} from "./lib/run/AXClass";
 export { AXFunction } from "./lib/run/AXFunction";
 export { AXXMLClass } from "./lib/run/AXXMLClass";
