@@ -6,6 +6,7 @@ console.debug("AwayFL - 0.2.6");
 export {ASObject} from "./lib/nat/ASObject";
 export {ASClass} from "./lib/nat/ASClass";
 export { ASArray } from './lib/nat/ASArray';
+export { ASError } from "./lib/nat/ASError";
 
 export {registerNativeClass, registerNativeFunction} from "./lib/nat/initializeBuiltins";
 
