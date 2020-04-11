@@ -1,12 +1,15 @@
 import { MovieClip, SceneImage2D, FrameScriptManager } from '@awayjs/scene';
 import { AssetBase, WaveAudio } from '@awayjs/core';
 import { BitmapImage2D } from '@awayjs/stage';
+import { AXClass } from './AXClass';
+import { Multiname } from '../abc/lazy/Multiname';
+import { AXApplicationDomain } from './AXApplicationDomain';
 
 
 export class ActiveLoaderContext {
-    public static loaderContext: any;
-    public static waveAudioForSoundConstructor: WaveAudio;
-    public static sceneImage2DForBitmapConstructor: SceneImage2D;
+	public static loaderContext: any;
+	public static waveAudioForSoundConstructor: WaveAudio;
+	public static sceneImage2DForBitmapConstructor: SceneImage2D;
 }
 
 export class OrphanManager {
@@ -56,81 +59,84 @@ export class OrphanManager {
  * make object construction faster.
  */
 export function axConstruct(argArray?: any[]) {
-    var object = Object.create(this.tPrototype);
-    var symbol=null;
-    var timeline=null;
-    var classToCheck=this;
-    //  find the AwayJS-timline that should be used for this MC. might be on superclass...
-    while(classToCheck && !timeline){
-        symbol=classToCheck._symbol;
-        if(symbol && symbol.timeline)
-            timeline=symbol.timeline;
-        classToCheck=classToCheck.superClass;
-    }
-    if (timeline) {
-        var newMC = new MovieClip(timeline);
-        //console.log("create mc via axConstruct");
-        object.adaptee=newMC;
-        newMC.reset();
+	const _this = this as AXClass;
+
+	var object = Object.create(_this.tPrototype);
+	var symbol=null;
+	var timeline=null;
+	var classToCheck = _this;
+	//  find the AwayJS-timline that should be used for this MC. might be on superclass...
+	while(classToCheck && !timeline){
+		symbol = (<any>classToCheck)._symbol;
+		if(symbol && symbol.timeline)
+			timeline = symbol.timeline;
+		classToCheck = classToCheck.superClass;
+	}
+
+	if (timeline) {
+		var newMC = new MovieClip(timeline);
+		//console.log("create mc via axConstruct");
+		object.adaptee = newMC;
+		newMC.reset();
 		FrameScriptManager.execute_as3_constructors();
-        //FrameScriptManager.execute_queue();
-        //(<any>object).dispatchStaticEvent(Event.FRAME_CONSTRUCTED)
-        OrphanManager.addOrphan(object);
-    }
-    if (this.superClass && this.superClass.classInfo && this.superClass.classInfo.instanceInfo && this.superClass.classInfo.instanceInfo.name.name == "Sound") {
-        //console.log("find sound for name", this.classInfo.instanceInfo.name.name)
-        if (ActiveLoaderContext.loaderContext) {
+		//FrameScriptManager.execute_queue();
+		//(<any>object).dispatchStaticEvent(Event.FRAME_CONSTRUCTED)
+		OrphanManager.addOrphan(object);
+	}
 
-            var asset = ActiveLoaderContext.loaderContext.applicationDomain.getAwayJSAudio(this.classInfo.instanceInfo.name.name);
-            if (asset && (<AssetBase>asset).isAsset(WaveAudio)) {
-                //ActiveLoaderContext.waveAudioForSoundConstructor = <WaveAudio>asset;
-                object.adaptee=asset;
-            }
-            else {
-                console.log("error: could not find audio for class", this.classInfo.instanceInfo.name.name, asset)
-            }
-        }
-        else {
-            console.log("error: ActiveLoaderContext.loaderContext not set. can not rerieve Sound");
-        }
-    }
-    else if (this.superClass && this.superClass.classInfo && this.superClass.classInfo.instanceInfo && this.superClass.classInfo.instanceInfo.name.name == "BitmapData") {
-        //console.log("find sound for name", this.classInfo.instanceInfo.name.name)
-        if (ActiveLoaderContext.loaderContext) {
+	if (ActiveLoaderContext.loaderContext) {
+		const name = (<Multiname>_this.superClass?.classInfo?.instanceInfo?.name).name;
+		const appDom = ActiveLoaderContext.loaderContext.applicationDomain;
 
-            var asset = ActiveLoaderContext.loaderContext.applicationDomain.getDefinition(this.classInfo.instanceInfo.name.name);
-            if (asset && (<AssetBase>asset).isAsset(SceneImage2D) || (<AssetBase>asset).isAsset(BitmapImage2D)) {
-                //ActiveLoaderContext.sceneImage2DForBitmapConstructor = <SceneImage2D>asset;
-                object.adaptee=asset;
-            }
-            else {
-                console.log("error: could not find audio for class", this.classInfo.instanceInfo.name.name, asset)
-            }
-        }
-        else {
-            console.log("error: ActiveLoaderContext.loaderContext not set. can not rerieve Sound");
-        }
-    }
+		if (name === "Sound") {
+			const instName = (<Multiname>_this.classInfo.instanceInfo.name).name;
+			const asset = appDom.getAwayJSAudio(instName);
+						
+			if (asset && (<AssetBase>asset).isAsset(WaveAudio)) {
+				//ActiveLoaderContext.waveAudioForSoundConstructor = <WaveAudio>asset;
+				object.adaptee=asset;
+			}
+			else {
+				console.log("error: could not find audio for class", instName, asset)
+			}
+		}
+		else if (name === "BitmapData") 
+		{
+			const instName = (<Multiname>_this.classInfo.instanceInfo.name).name;
+			const asset = appDom.getDefinition(instName);
+
+			if (asset && (<AssetBase>asset).isAsset(SceneImage2D) || asset && (<AssetBase>asset).isAsset(BitmapImage2D)) {
+				//ActiveLoaderContext.sceneImage2DForBitmapConstructor = <SceneImage2D>asset;
+				object.adaptee = asset;
+			}
+			else {
+				console.log("error: could not find bitmap for class", instName, asset)
+			}	
+		}
+
+	} else {
+		console.log("error: ActiveLoaderContext.loaderContext not set. can not rerieve Sound");
+	}
    
-    if((<any>object).getQueuedEvents){
-        var events=(<any>object).getQueuedEvents();
+	if((<any>object).getQueuedEvents){
+		var events=(<any>object).getQueuedEvents();
 		object.axInitializer.apply(object, argArray);
 		if(object.initAdapter){
 			object.executeConstructor=()=>{};
 			object.initAdapter();
 		}
-        if(events){
-            for(var i=0; i<events.length; i++){
-                (<any>object).dispatchEvent(events[i]);
-            }
-        }
-    }
-    else{            
-        object.axInitializer.apply(object, argArray);
+		if(events){
+			for(var i=0; i<events.length; i++){
+				(<any>object).dispatchEvent(events[i]);
+			}
+		}
+	}
+	else{            
+		object.axInitializer.apply(object, argArray);
 		if(object.initAdapter){
 			object.executeConstructor=()=>{};
 			object.initAdapter();
 		}
-    }
-    return object;
+	}
+	return object;
 }
