@@ -1,6 +1,6 @@
 
 
-console.debug("AwayFL - 0.2.4");
+console.debug("AwayFL - AVM2 - 0.2.4");
 
 // export {AVMAwayStage} from "./lib/AVMAwayStage";
 export {ASObject} from "./lib/nat/ASObject";
@@ -42,3 +42,7 @@ export { initializeAXBasePrototype } from './lib/run/initializeAXBasePrototype';
 
 export { ActiveLoaderContext, OrphanManager } from './lib/run/axConstruct';
 export { ABCCatalog } from "./lib/abc/lazy/ABCCatalog";
+
+export {IPlayerGlobal} from "./lib/IPlayerGlobal";
+export {AVM2Handler} from "./lib/AVM2Handler";
+export {AVM2LoadLibrariesFlags} from "./lib/AVM2LoadLibrariesFlags";
