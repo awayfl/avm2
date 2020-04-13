@@ -6,12 +6,14 @@ import { Multiname } from '../abc/lazy/Multiname';
 import { AXApplicationDomain } from './AXApplicationDomain';
 
 
-export class ActiveLoaderContext {
+export class ActiveLoaderContext {	
+	//	ActiveLoaderContext.loaderContext is a hack !
+	//	in future the appDom should be provided by the symbol
 	public static loaderContext: any;
-	public static waveAudioForSoundConstructor: WaveAudio;
-	public static sceneImage2DForBitmapConstructor: SceneImage2D;
 }
 
+// todo: move OrphanManager elsewhere and add strong type
+// maybe eve solve the orphan-issue in otherway alltogether
 export class OrphanManager {
 
 	static orphans: any[] = [];
@@ -84,52 +86,58 @@ export function axConstruct(argArray?: any[]) {
 		OrphanManager.addOrphan(object);
 	}
 
-	if (ActiveLoaderContext.loaderContext) {
-		const name = (<Multiname>_this.superClass?.classInfo?.instanceInfo?.name).name;
-		const appDom = ActiveLoaderContext.loaderContext.applicationDomain;
 
-		if (name === "Sound") {
-			let instName = (<Multiname>_this.classInfo.instanceInfo.name).name;
-			let asset = appDom.getAwayJSAudio(instName);
-			
-			// todo looks like we have a issue with multname and names that contain a "."
-			// normally you would not expect classnames to contain a "." in the name
-			// but sounds might have classnames like "sound.wav"
-			// multiname splits the name and stores the first part as "uri"
-			if(!asset){
-				instName=(<Multiname>_this.classInfo.instanceInfo.name).uri+"."+instName;
-				asset = appDom.getAwayJSAudio(instName);
-			}
-			
-			if (asset && (<AssetBase>asset).isAsset(WaveAudio)) {
-				//ActiveLoaderContext.waveAudioForSoundConstructor = <WaveAudio>asset;
-				object.adaptee=asset;
-			}
-			else {
-				console.log("error: could not find audio for class", instName, asset)
-			}
+	//	ActiveLoaderContext.loaderContext is a hack !
+	//	in future the appDom should be provided by the symbol
+
+	const name = (<Multiname>_this.superClass?.classInfo?.instanceInfo?.name).name;
+	const appDom = ActiveLoaderContext.loaderContext?.applicationDomain;
+
+	if (name === "Sound") {
+		let instName = (<Multiname>_this.classInfo.instanceInfo.name).name;
+		let asset = appDom?.getAwayJSAudio(instName);
+		
+		// todo looks like we have a issue with multname and names that contain a "."
+		// normally you would not expect classnames to contain a "." in the name
+		// but sounds might have classnames like "sound.wav"
+		// multiname splits the name and stores the first part as "uri"
+		if(!asset){
+			instName=(<Multiname>_this.classInfo.instanceInfo.name).uri+"."+instName;
+			asset = appDom?.getAwayJSAudio(instName);
 		}
-		else if (name === "BitmapData") 
-		{
-			let instName = (<Multiname>_this.classInfo.instanceInfo.name).name;
-			let asset = appDom.getDefinition(instName);
-
-			if(!asset){
-				instName=(<Multiname>_this.classInfo.instanceInfo.name).uri+name;
-				asset = appDom.getDefinition(instName);
-			}
-			if (asset && (<AssetBase>asset).isAsset(SceneImage2D) || asset && (<AssetBase>asset).isAsset(BitmapImage2D)) {
-				//ActiveLoaderContext.sceneImage2DForBitmapConstructor = <SceneImage2D>asset;
-				object.adaptee = asset;
-			}
-			else {
-				console.log("error: could not find bitmap for class", instName, asset)
-			}	
+		
+		if (asset && (<AssetBase>asset).isAsset(WaveAudio)) {
+			object.adaptee=asset;
 		}
-
-	} else {
-		console.log("error: ActiveLoaderContext.loaderContext not set. can not rerieve Sound");
+		if(appDom){
+			console.log("error: could not find audio for class", instName, asset);
+		}
+		else{
+			console.log("error: could not get audio for class", instName, "no ActiveLoaderContext.loaderContext");
+		}
 	}
+	else if (name === "BitmapData") 
+	{
+		let instName = (<Multiname>_this.classInfo.instanceInfo.name).name;
+		let asset = appDom?.getDefinition(instName);
+
+		if(!asset){
+			instName=(<Multiname>_this.classInfo.instanceInfo.name).uri+name;
+			asset = appDom?.getDefinition(instName);
+		}
+		if (asset && (<AssetBase>asset).isAsset(SceneImage2D) || asset && (<AssetBase>asset).isAsset(BitmapImage2D)) {
+			object.adaptee = asset;
+		}
+		else {
+			if(appDom){
+				console.log("error: could not find bitmap for class", instName, asset);
+			}
+			else{
+				console.log("error: could not get bitmap for class", instName, "no ActiveLoaderContext.loaderContext");
+			}
+		}	
+	}
+
    
 	if((<any>object).getQueuedEvents){
 		var events=(<any>object).getQueuedEvents();
