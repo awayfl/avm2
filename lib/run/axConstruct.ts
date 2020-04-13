@@ -122,7 +122,7 @@ export function axConstruct(argArray?: any[]) {
 		let asset = appDom?.getDefinition(instName);
 
 		if(!asset){
-			instName=(<Multiname>_this.classInfo.instanceInfo.name).uri+name;
+			instName=(<Multiname>_this.classInfo.instanceInfo.name).uri+"."+instName;
 			asset = appDom?.getDefinition(instName);
 		}
 		if (asset && (<AssetBase>asset).isAsset(SceneImage2D) || asset && (<AssetBase>asset).isAsset(BitmapImage2D)) {
