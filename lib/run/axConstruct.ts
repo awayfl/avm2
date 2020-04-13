@@ -89,9 +89,18 @@ export function axConstruct(argArray?: any[]) {
 		const appDom = ActiveLoaderContext.loaderContext.applicationDomain;
 
 		if (name === "Sound") {
-			const instName = (<Multiname>_this.classInfo.instanceInfo.name).name;
-			const asset = appDom.getAwayJSAudio(instName);
-						
+			let instName = (<Multiname>_this.classInfo.instanceInfo.name).name;
+			let asset = appDom.getAwayJSAudio(instName);
+			
+			// todo looks like we have a issue with multname and names that contain a "."
+			// normally you would not expect classnames to contain a "." in the name
+			// but sounds might have classnames like "sound.wav"
+			// multiname splits the name and stores the first part as "uri"
+			if(!asset){
+				instName=(<Multiname>_this.classInfo.instanceInfo.name).uri+"."+instName;
+				asset = appDom.getAwayJSAudio(instName);
+			}
+			
 			if (asset && (<AssetBase>asset).isAsset(WaveAudio)) {
 				//ActiveLoaderContext.waveAudioForSoundConstructor = <WaveAudio>asset;
 				object.adaptee=asset;
@@ -102,9 +111,13 @@ export function axConstruct(argArray?: any[]) {
 		}
 		else if (name === "BitmapData") 
 		{
-			const instName = (<Multiname>_this.classInfo.instanceInfo.name).name;
-			const asset = appDom.getDefinition(instName);
+			let instName = (<Multiname>_this.classInfo.instanceInfo.name).name;
+			let asset = appDom.getDefinition(instName);
 
+			if(!asset){
+				instName=(<Multiname>_this.classInfo.instanceInfo.name).uri+name;
+				asset = appDom.getDefinition(instName);
+			}
 			if (asset && (<AssetBase>asset).isAsset(SceneImage2D) || asset && (<AssetBase>asset).isAsset(BitmapImage2D)) {
 				//ActiveLoaderContext.sceneImage2DForBitmapConstructor = <SceneImage2D>asset;
 				object.adaptee = asset;
