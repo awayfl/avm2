@@ -109,11 +109,13 @@ export function axConstruct(argArray?: any[]) {
 		if (asset && (<AssetBase>asset).isAsset(WaveAudio)) {
 			object.adaptee=asset;
 		}
-		if(appDom){
-			console.log("error: could not find audio for class", instName, asset);
-		}
 		else{
-			console.log("error: could not get audio for class", instName, "no ActiveLoaderContext.loaderContext");
+			if(appDom){
+				console.log("error: could not find audio for class", instName, asset);
+			}
+			else{
+				console.log("error: could not get audio for class", instName, "no ActiveLoaderContext.loaderContext");
+			}
 		}
 	}
 	else if (name === "BitmapData") 
