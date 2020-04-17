@@ -263,10 +263,28 @@ function readU29(ba: ByteArray): number {
     return ((b1 & 0x7F) << 14) | ((b2 & 0x7F) << 7) | b3;
   }
   var b4 = ba.readByte();
-  return ((b1 & 0x7F) << 22) | ((b2 & 0x7F) << 15) | ((b3 & 0x7F) << 8) | b4;
+  var val = ((b1 & 0x7f) << 22) | ((b2 & 0x7f) << 15) | ((b3 & 0x7f) << 8) | b4;
+
+  // handle negative
+  // https://github.com/Ventero/amf-cpp/blob/master/src/types/amfinteger.cpp#L92
+  // https://github.com/yzh44yzh/scala-amf/blob/master/scala-amf-lib/src/com/yzh44yzh/scalaAmf/AmfInt.scala#L35
+
+  if((val & 0x10000000) !== 0)
+  {
+      val |= 0xe0000000;
+  }
+
+  return val;
 }
 
 function writeU29(ba: ByteArray, value: number) {
+  // C++ version
+  // https://github.com/Ventero/amf-cpp/blob/master/src/types/amfinteger.cpp#L13
+
+  if(value < -0x10000000 || value >= 0x10000000) {
+    throw "AMF3 U29 range";
+  }
+
   if ((value & 0xFFFFFF80) === 0) {
     ba.writeByte(value & 0x7F);
   } else if ((value & 0xFFFFC000) === 0) {
@@ -276,13 +294,11 @@ function writeU29(ba: ByteArray, value: number) {
     ba.writeByte(0x80 | ((value >> 14) & 0x7F));
     ba.writeByte(0x80 | ((value >> 7) & 0x7F));
     ba.writeByte(value & 0x7F);
-  } else if ((value & 0xC0000000) === 0) {
+  }else /*if ((value & 0xC0000000) === 0)*/{ // handle negative
     ba.writeByte(0x80 | ((value >> 22) & 0x7F));
     ba.writeByte(0x80 | ((value >> 15) & 0x7F));
     ba.writeByte(0x80 | ((value >> 8) & 0x7F));
     ba.writeByte(value & 0xFF);
-  } else {
-    throw "AMF3 U29 range";
   }
 }
 
