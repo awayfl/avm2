@@ -985,10 +985,10 @@ export function compile(methodInfo: MethodInfo) {
                     js0.push("    if (argnum <= " + i + ") local" + (i + 1) + " = " + p.getOptionalValue() + ";")
                     break
             }
-    }
+	}
+	for (let i: number = params.length + 1; i <= maxlocal; i++)
+		js0.push("    let local" + i + " = "+((i==params.length + 1)?"context.sec.createArrayUnsafe(Array.from(arguments))":"undefined")+";");
 
-    for (let i: number = params.length + 1; i <= maxlocal; i++)
-        js0.push("    let local" + i + " = undefined;")
 
     for (let i: number = 0; i <= maxstack; i++)
         js0.push("    let stack" + i + " = undefined;")
