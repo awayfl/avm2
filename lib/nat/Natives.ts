@@ -91,7 +91,7 @@ export var Natives = {
           if (value === null) {
             return 'null';
           }
-          return value.classInfo.instanceInfo.name.toFQNString(true);
+          return value.classInfo.instanceInfo.name.toFQNString(false);
         case 'number':
           return (value | 0) === value ? 'int' : 'Number';
         case 'string':
