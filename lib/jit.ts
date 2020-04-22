@@ -7,10 +7,12 @@ import {AXSecurityDomain} from "./run/AXSecurityDomain"
 import {validateCall} from "./run/validateCall"
 import {validateConstruct} from "./run/validateConstruct"
 import {axCoerceString} from "./run/axCoerceString"
+import {axCheckFilter} from "./run/axCheckFilter"
 import {release} from "@awayfl/swf-loader"
 import {Multiname} from "./abc/lazy/Multiname"
 import {CONSTANT} from "./abc/lazy/CONSTANT"
 import {MethodInfo} from "./abc/lazy/MethodInfo"
+import {internNamespace} from "./abc/lazy/internNamespace";
 import {AXClass} from "./run/AXClass"
 import {axCoerceName} from "./run/axCoerceName"
 import {isNumeric, jsGlobal} from "@awayfl/swf-loader"
@@ -355,7 +357,9 @@ export function compile(methodInfo: MethodInfo) {
             case Bytecode.LABEL:
                 q.push(new Instruction(oldi, z))
                 break
-
+            case Bytecode.DXNSLATE:
+                q.push(new Instruction(oldi, z, [0], -1))
+                break
             case Bytecode.DEBUGFILE:
                 q.push(new Instruction(oldi, z, [u30()]))
                 break
@@ -409,6 +413,10 @@ export function compile(methodInfo: MethodInfo) {
                 break
 
             case Bytecode.NEXTVALUE:
+                q.push(new Instruction(oldi, z, [], -1))
+                break
+
+            case Bytecode.HASNEXT:
                 q.push(new Instruction(oldi, z, [], -1))
                 break
 
@@ -575,6 +583,14 @@ export function compile(methodInfo: MethodInfo) {
                 q.push(new Instruction(oldi, z, [], 0))
                 break
 
+            case Bytecode.INCLOCAL:
+                q.push(new Instruction(oldi, z, [u30()], 0))
+                break
+
+            case Bytecode.DECLOCAL:
+                q.push(new Instruction(oldi, z, [u30()], 0))
+                break
+
             case Bytecode.INCREMENT_I:
                 q.push(new Instruction(oldi, z, [], 0))
                 break
@@ -591,6 +607,21 @@ export function compile(methodInfo: MethodInfo) {
                 q.push(new Instruction(oldi, z, [u30()], 0))
                 break
 
+            case Bytecode.NEGATE_I:
+                q.push(new Instruction(oldi, z, [], 0))
+                break
+
+            case Bytecode.ADD_I:
+                q.push(new Instruction(oldi, z, [], -1))
+                break
+
+            case Bytecode.SUBTRACT_I:
+                q.push(new Instruction(oldi, z, [], -1))
+                break
+
+            case Bytecode.MULTIPLY_I:
+                q.push(new Instruction(oldi, z, [], -1))
+                break
 
             case Bytecode.ADD:
                 q.push(new Instruction(oldi, z, [], -1))
@@ -650,6 +681,13 @@ export function compile(methodInfo: MethodInfo) {
                 q.push(new Instruction(oldi, z, [], -1))
                 break
 
+            case Bytecode.TYPEOF:
+                q.push(new Instruction(oldi, z, [], 0))
+                break
+
+            case Bytecode.INSTANCEOF:
+                q.push(new Instruction(oldi, z, [], -1))
+                break
 
             case Bytecode.ISTYPELATE:
                 q.push(new Instruction(oldi, z, [], -1))
@@ -790,7 +828,15 @@ export function compile(methodInfo: MethodInfo) {
             case Bytecode.CONVERT_U:
                 q.push(new Instruction(oldi, z, [], 0))
                 break
-
+            case Bytecode.CONVERT_S:
+                q.push(new Instruction(oldi, z, [], 0))
+                break
+            case Bytecode.CONVERT_O:
+                q.push(new Instruction(oldi, z, [], 0))
+                break
+            case Bytecode.CHECKFILTER:
+                q.push(new Instruction(oldi, z, [], 0))
+                break                
             case Bytecode.GETLOCAL:
                 q.push(new Instruction(oldi, Bytecode.GETLOCAL, [u30()], 1))
                 break
@@ -1005,6 +1051,9 @@ export function compile(methodInfo: MethodInfo) {
             switch (z.name) {
                 case Bytecode.LABEL:
                     break
+                case Bytecode.DXNSLATE:
+                    js.push("                " + scope + ".defaultNamespace = context.internNamespace(0, " + stack0 + ");")
+                    break
                 case Bytecode.DEBUGFILE:
                     break
                 case Bytecode.DEBUGLINE:
@@ -1048,6 +1097,9 @@ export function compile(methodInfo: MethodInfo) {
                     break
                 case Bytecode.NEXTVALUE:
                     js.push("                " + stack1 + " = sec.box(" + stack1 + ").axNextValue(" + stack0 + ");")
+                    break
+                case Bytecode.HASNEXT:
+                    js.push("                " + stack1 + " = sec.box(" + stack1 + ").axNextNameIndex(" + stack0 + ");")
                     break
                 case Bytecode.HASNEXT2:
                     js.push("                temp = context.hasnext2(" + local(param(0)) + ", " + local(param(1)) + ");")
@@ -1145,6 +1197,12 @@ export function compile(methodInfo: MethodInfo) {
                 case Bytecode.DECREMENT:
                     js.push("                " + stack0 + "--;")
                     break
+                case Bytecode.INCLOCAL:
+                    js.push("                " + local(param(0)) + "++;")
+                    break
+                case Bytecode.DECLOCAL:
+                    js.push("                " + local(param(0)) + "--;")
+                    break
                 case Bytecode.INCREMENT_I:
                     js.push("                " + stack0 + " |= 0;")
                     js.push("                " + stack0 + "++;")
@@ -1160,41 +1218,52 @@ export function compile(methodInfo: MethodInfo) {
                 case Bytecode.DECLOCAL_I:
                     js.push("                " + local(param(0)) + " |= 0;")
                     js.push("                " + local(param(0)) + "++;")
+                case Bytecode.NEGATE_I:
+                    js.push("                " + stack0 + " = -(" + stack0 + " | 0);")
+                    break
+                case Bytecode.ADD_I:
+                    js.push("                " + stack1 + " = (" + stack1 + " | 0) + (" + stack0 + " | 0);")
+                    break
+                case Bytecode.SUBTRACT_I:
+                    js.push("                " + stack1 + " = (" + stack1 + " | 0) - (" + stack0 + " | 0);")
+                    break
+                case Bytecode.MULTIPLY_I:
+                    js.push("                " + stack1 + " = (" + stack1 + " | 0) * (" + stack0 + " | 0);")
                     break
                 case Bytecode.ADD:
-                    js.push("                " + stack1 + " = " + stack1 + " + " + stack0 + ";")
+                    js.push("                " + stack1 + " += " + stack0 + ";")
                     break
                 case Bytecode.SUBTRACT:
-                    js.push("                " + stack1 + " = " + stack1 + " - " + stack0 + ";")
+                    js.push("                " + stack1 + " -= " + stack0 + ";")
                     break
                 case Bytecode.MULTIPLY:
-                    js.push("                " + stack1 + " = " + stack1 + " * " + stack0 + ";")
+                    js.push("                " + stack1 + " *= " + stack0 + ";")
                     break
                 case Bytecode.DIVIDE:
-                    js.push("                " + stack1 + " = " + stack1 + " / " + stack0 + ";")
+                    js.push("                " + stack1 + " /= " + stack0 + ";")
                     break
                 case Bytecode.MODULO:
-                    js.push("                " + stack1 + " = " + stack1 + " % " + stack0 + ";")
+                    js.push("                " + stack1 + " %= " + stack0 + ";")
                     break
 
                 case Bytecode.LSHIFT:
-                    js.push("                " + stack1 + " = " + stack1 + " << " + stack0 + ";")
+                    js.push("                " + stack1 + " <<= " + stack0 + ";")
                     break
                 case Bytecode.RSHIFT:
-                    js.push("                " + stack1 + " = " + stack1 + " >> " + stack0 + ";")
+                    js.push("                " + stack1 + " >>= " + stack0 + ";")
                     break
                 case Bytecode.URSHIFT:
-                    js.push("                " + stack1 + " = " + stack1 + " >>> " + stack0 + ";")
+                    js.push("                " + stack1 + " >>>= " + stack0 + ";")
                     break
 
                 case Bytecode.BITAND:
-                    js.push("                " + stack1 + " = " + stack1 + " & " + stack0 + ";")
+                    js.push("                " + stack1 + " &= " + stack0 + ";")
                     break
                 case Bytecode.BITOR:
-                    js.push("                " + stack1 + " = " + stack1 + " | " + stack0 + ";")
+                    js.push("                " + stack1 + " |= " + stack0 + ";")
                     break
                 case Bytecode.BITXOR:
-                    js.push("                " + stack1 + " = " + stack1 + " ^ " + stack0 + ";")
+                    js.push("                " + stack1 + " ^= " + stack0 + ";")
                     break
 
                 case Bytecode.EQUALS:
@@ -1224,7 +1293,20 @@ export function compile(methodInfo: MethodInfo) {
                 case Bytecode.NEGATE:
                     js.push("                " + stack0 + " = -" + stack0 + ";")
                     break
-
+                case Bytecode.TYPEOF:
+                    js.push("                if (" + stack0 + ") {")
+                    js.push("                    if (" + stack0 + ".value) {")
+                    js.push("                        return typeof " + stack0 + ".value;")
+                    js.push("                    }")
+                    js.push("                    if (sec.AXXML.dPrototype.isPrototypeOf(" + stack0 + ") || sec.AXXMLList.dPrototype.isPrototypeOf(" + stack0 + ")) {")
+                    js.push("                        return 'xml';")
+                    js.push("                    }")
+                    js.push("                }")
+                    js.push("                return typeof " + stack0 + ";")
+                    break;
+                case Bytecode.INSTANCEOF:
+                    js.push("                " + stack1 + " = " + stack0 + ".axIsInstanceOf(" + stack1 + ");")
+                    break
                 case Bytecode.ISTYPELATE:
                     js.push("                " + stack1 + " = " + stack0 + ".axIsType(" + stack1 + ");")
                     break
@@ -1263,7 +1345,7 @@ export function compile(methodInfo: MethodInfo) {
                     }
                     else {
                         js.push("                if (" + obj + ".__fast__) {")
-                        js.push("                    " + stackF(param(0)) + " = " + obj + "." + mn.name + ".apply(" + obj + ", [" + pp.join(", ") + "]);")
+                        js.push("                    " + stackF(param(0)) + " = " + obj + "['" + mn.name + "'].apply(" + obj + ", [" + pp.join(", ") + "]);")
                         js.push("                } else {")    
                         js.push("                // " + mn)
                         js.push("                " + stackF(param(0)) + " = sec.box(" + obj + ").axCallProperty(" + getname(param(1)) + ", [" + pp.join(", ") + "], false);")
@@ -1288,7 +1370,7 @@ export function compile(methodInfo: MethodInfo) {
 
                     let obj = pp.shift();
                     js.push("                if (" + obj + ".__fast__) {")
-                    js.push("                    " + obj + "." + mn.name + ".apply(" + obj + ", [" + pp.join(", ") + "]);")
+                    js.push("                    " + obj + "['" + mn.name + "'].apply(" + obj + ", [" + pp.join(", ") + "]);")
                     js.push("                } else {")
                     js.push("                sec.box(" + obj + ").axCallProperty(" + getname(param(1)) + ", [" + pp.join(", ") + "], false);")
                     js.push("                }")
@@ -1396,7 +1478,7 @@ export function compile(methodInfo: MethodInfo) {
                     var mn = abc.getMultiname(param(0));
                     js.push("                // " + mn)
                     js.push("                if (" + stack0 + ".__fast__) {")
-                    js.push("                    " + stack0 + " = " + stack0 + "." + mn.name + ";")
+                    js.push("                    " + stack0 + " = " + stack0 + "['" + mn.name + "'];")
                     js.push("                } else {")
                     js.push("                tr = " + getname(param(0)) + ".resolved[" + stack0 + ".axClassName];")
                     js.push("                if (tr) {")
@@ -1418,7 +1500,7 @@ export function compile(methodInfo: MethodInfo) {
                     var mn = abc.getMultiname(param(0))
                     js.push("                // " + mn)
                     js.push("                if (" + stack1 + ".__fast__) {")
-                    js.push("                    " + stack1 + "." + mn.name + " = " + stack0 + ";")
+                    js.push("                    " + stack1 + "['" + mn.name + "'] = " + stack0 + ";")
                     js.push("                } else {")
                     js.push("                context.setproperty(" + getname(param(0)) + ", " + stack0 + ", " + stack1 + ");")
                     js.push("                }")
@@ -1486,6 +1568,15 @@ export function compile(methodInfo: MethodInfo) {
                 case Bytecode.CONVERT_U:
                     js.push("                " + stack0 + " >>>= 0;")
                     break
+                case Bytecode.CONVERT_S:
+                    js.push("                if (typeof " + stack0 + " !== 'string') " + stack0 + " = " + stack0 + " + '';")
+                    break
+                case Bytecode.CONVERT_O:
+                    js.push("                ;")
+                    break
+                case Bytecode.CHECKFILTER:
+                    js.push("                " + stack0 + " = context.axCheckFilter(sec, " + stack0 + ");")
+                    break
                 case Bytecode.KILL:
                     js.push("                " + local(param(0)) + " = undefined;")
                     break
@@ -1516,6 +1607,8 @@ export class Context {
     private readonly names: Multiname[]
     private readonly jsGlobal: Object = jsGlobal;
     private readonly axCoerceString: Function = axCoerceString;
+    private readonly axCheckFilter: Function = axCheckFilter;
+    private readonly internNamespace: Function = internNamespace;
 
     constructor(mi: MethodInfo, savedScope: Scope, names:Multiname[]) {
         this.mi = mi;
