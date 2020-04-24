@@ -302,7 +302,13 @@ class Instruction {
     }
 }
 
-export function compile(methodInfo: MethodInfo) {
+export interface ICompilerProcess {
+    compiling?: Promise<Function> | undefined;
+    compiled: Function;
+    names: Multiname[]; 
+}
+
+export function compile(methodInfo: MethodInfo, sync = false): ICompilerProcess  {
     let abc = methodInfo.abc
     let code = methodInfo.getBody().code
 
@@ -878,7 +884,7 @@ export function compile(methodInfo: MethodInfo) {
 
             default:
                 console.log("UNKNOWN #" + code[i - 1].toString(16) + " " + BytecodeName[code[i - 1]] + " (method N" + methodInfo.index() + ")")
-                return "UNKNOWN BYTECODE $" + code[i - 1].toString(16) + " (" + BytecodeName[code[i - 1]] + ") at " + oldi
+                throw "UNKNOWN BYTECODE $" + code[i - 1].toString(16) + " (" + BytecodeName[code[i - 1]] + ") at " + oldi
         }
 
     }
@@ -958,11 +964,12 @@ export function compile(methodInfo: MethodInfo) {
 
     let params = methodInfo.parameters
 
+    const funcName = "compiled_" + (methodInfo.getName()).replace(/([^a-z0-9]+)/gi, "_");
     const underrun = "[stack underrun]"
     
     let js0 = ["// (#" + methodInfo.index() + ") --- " + methodInfo]
 
-    js0.push("(function (context) { return function compiled_" + (methodInfo.getName()).replace(/([^a-z0-9]+)/gi, "_") + "() {")
+    js0.push("(function (context) { return function "+ funcName + "() {")
 
     for (let i: number = 0; i < params.length; i++)
         if (params[i].hasOptionalValue()) {
@@ -1583,13 +1590,17 @@ export function compile(methodInfo: MethodInfo) {
                 default:
                     js.push("                //" + "unknown instruction " + q[i])
                     console.log("unknown instruction " + q[i] + " (method N" + methodInfo.index() + ")")
-                    return "unhandled instruction " + z
+                    throw "unhandled instruction " + z
             }
     }
 
     js.push("        }")
     js.push("    }")
     js.push("}})")
+
+    // Debugging magic 
+    // https://developer.mozilla.org/en-US/docs/Tools/Debugger/How_to/Debug_eval_sources
+    js.push(`//# sourceURL=${funcName}.js`)
     
     let w = js0.join("\n") + "\n" + js.join("\n")
     
@@ -1597,7 +1608,9 @@ export function compile(methodInfo: MethodInfo) {
         throw "STACK UNDERRUN"
     }
     
-    return { names: names, compiled: eval(w) };
+    return {
+        names: names, compiled: eval(w)
+    };
 }
 
 export class Context {
