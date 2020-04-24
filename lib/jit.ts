@@ -302,7 +302,7 @@ class Instruction {
     }
 }
 
-const USE_EVAL = true;
+const USE_EVAL = false;
 
 let SCRIPT_ID = 0;
 let COMPILLING_TIME = 0;
