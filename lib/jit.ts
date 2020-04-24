@@ -1593,10 +1593,11 @@ export function compile(methodInfo: MethodInfo) {
     
     let w = js0.join("\n") + "\n" + js.join("\n")
     
-    if (w.indexOf(underrun) >= 0)
-        return "STACK UNDERRUN"
+    if (w.indexOf(underrun) >= 0) {
+        throw "STACK UNDERRUN"
+    }
     
-    return {names: names, compiled: eval(w)};
+    return { names: names, compiled: eval(w) };
 }
 
 export class Context {
