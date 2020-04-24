@@ -305,10 +305,6 @@ class Instruction {
 const USE_EVAL = false;
 
 let SCRIPT_ID = 0;
-let COMPILLING_TIME = 0;
-
-//@ts-ignore
-window.GET_COMPILLING_TIME = () => COMPILLING_TIME;
 
 export interface ICompilerProcess {
     compiling?: Promise<Function> | undefined;
@@ -317,7 +313,6 @@ export interface ICompilerProcess {
 }
 
 export function compile(methodInfo: MethodInfo, sync = false): ICompilerProcess | string  {    
-    const start = performance.now();
 
     let abc = methodInfo.abc
     let code = methodInfo.getBody().code
@@ -1632,10 +1627,6 @@ export function compile(methodInfo: MethodInfo, sync = false): ICompilerProcess 
         w = scriptPrefix + w;
         compiled = new Function("context", w);
     }
-
-    const time = performance.now() - start;
-
-    COMPILLING_TIME += time;
 
     return {
         names: names,
