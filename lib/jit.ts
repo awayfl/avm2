@@ -302,13 +302,23 @@ class Instruction {
     }
 }
 
+const USE_EVAL = true;
+
+let SCRIPT_ID = 0;
+let COMPILLING_TIME = 0;
+
+//@ts-ignore
+window.GET_COMPILLING_TIME = () => COMPILLING_TIME;
+
 export interface ICompilerProcess {
     compiling?: Promise<Function> | undefined;
     compiled: Function;
     names: Multiname[]; 
 }
 
-export function compile(methodInfo: MethodInfo, sync = false): ICompilerProcess  {
+export function compile(methodInfo: MethodInfo, sync = false): ICompilerProcess | string  {    
+    const start = performance.now();
+
     let abc = methodInfo.abc
     let code = methodInfo.getBody().code
 
@@ -884,7 +894,7 @@ export function compile(methodInfo: MethodInfo, sync = false): ICompilerProcess 
 
             default:
                 console.log("UNKNOWN #" + code[i - 1].toString(16) + " " + BytecodeName[code[i - 1]] + " (method N" + methodInfo.index() + ")")
-                throw "UNKNOWN BYTECODE $" + code[i - 1].toString(16) + " (" + BytecodeName[code[i - 1]] + ") at " + oldi
+                return "UNKNOWN BYTECODE $" + code[i - 1].toString(16) + " (" + BytecodeName[code[i - 1]] + ") at " + oldi
         }
 
     }
@@ -964,12 +974,12 @@ export function compile(methodInfo: MethodInfo, sync = false): ICompilerProcess 
 
     let params = methodInfo.parameters
 
-    const funcName = "compiled_" + (methodInfo.getName()).replace(/([^a-z0-9]+)/gi, "_");
+    const funcName = (methodInfo.getName()).replace(/([^a-z0-9]+)/gi, "_");
     const underrun = "[stack underrun]"
     
-    let js0 = ["// (#" + methodInfo.index() + ") --- " + methodInfo]
+    let js0 = [];
 
-    js0.push("(function (context) { return function "+ funcName + "() {")
+    js0.push("return function compiled_"+ funcName + "() {")
 
     for (let i: number = 0; i < params.length; i++)
         if (params[i].hasOptionalValue()) {
@@ -1590,26 +1600,46 @@ export function compile(methodInfo: MethodInfo, sync = false): ICompilerProcess 
                 default:
                     js.push("                //" + "unknown instruction " + q[i])
                     console.log("unknown instruction " + q[i] + " (method N" + methodInfo.index() + ")")
-                    throw "unhandled instruction " + z
+                    return "unhandled instruction " + z
             }
     }
 
     js.push("        }")
     js.push("    }")
-    js.push("}})")
+    js.push("}")
 
     // Debugging magic 
     // https://developer.mozilla.org/en-US/docs/Tools/Debugger/How_to/Debug_eval_sources
-    js.push(`//# sourceURL=${funcName}.js`)
+
+    const prefix = ("" + (SCRIPT_ID ++)).padLeft("0", 4);
     
-    let w = js0.join("\n") + "\n" + js.join("\n")
-    
+    js.push(`//# sourceURL=http://jit/${prefix}_${funcName || 'unknown'}.js`)
+
+    let w = js0.join("\n") + "\n" + js.join("\n");
+
     if (w.indexOf(underrun) >= 0) {
-        throw "STACK UNDERRUN"
+        return "STACK UNDERRUN"
     }
-    
+
+    const scriptPrefix = "// (#" + methodInfo.index() + ") --- " + methodInfo + "\n";
+
+    let compiled;
+    if(USE_EVAL) {
+        w = scriptPrefix + "(function(context) {\n" + w + "\n})";
+        compiled = eval(w);
+
+    } else {
+        w = scriptPrefix + w;
+        compiled = new Function("context", w);
+    }
+
+    const time = performance.now() - start;
+
+    COMPILLING_TIME += time;
+
     return {
-        names: names, compiled: eval(w)
+        names: names,
+        compiled
     };
 }
 
