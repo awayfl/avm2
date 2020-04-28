@@ -203,7 +203,7 @@ export class Multiname {
   
     private _mangleName() {
       release || assert(!this._mangledName);
-      var mangledName = "$" + this.namespaces[0].mangledName + axCoerceString(this.name);
+      var mangledName = "$Bg" + axCoerceString(this.name);
       if (!this.isRuntime()) {
         this._mangledName = mangledName;
       }
