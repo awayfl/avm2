@@ -1360,7 +1360,8 @@ export function compile(methodInfo: MethodInfo, sync = false): ICompilerProcess 
                         js.push("                    " + stackF(param(0)) + " = " + obj + "['" + mn.name + "'].apply(" + obj + ", [" + pp.join(", ") + "]);")
                         js.push("                } else {")    
                         js.push("                // " + mn)
-                        js.push("                " + stackF(param(0)) + " = sec.box(" + obj + ").axCallProperty(" + getname(param(1)) + ", [" + pp.join(", ") + "], false);")
+                        js.push("                    temp = sec.box(" + obj + ");")
+                        js.push("                    " + stackF(param(0)) + " = (typeof temp.$Bg" + mn.name + " === 'function')? temp.$Bg" + mn.name + "(" + pp.join(", ") + ") : temp.axCallProperty(" + getname(param(1)) + ", [" + pp.join(", ") + "], false);")
                         js.push("                }")
                     }
                     break
@@ -1370,7 +1371,8 @@ export function compile(methodInfo: MethodInfo, sync = false): ICompilerProcess 
                     for (let j: number = 0; j <= param(0); j++)
                         pp.push(stackF(param(0) - j))
 
-                    js.push("                " + stackF(param(0)) + " = sec.box(" + pp.shift() + ").axCallProperty(" + getname(param(1)) + ", [" + pp.join(", ") + "], true);")
+                    js.push("                    temp = sec.box(" + pp.shift() + ");")
+                    js.push("                " + stackF(param(0)) + " = (typeof temp.$Bg" + mn.name + " === 'function')? temp.$Bg" + mn.name + "(" + pp.join(", ") + ") : temp.axCallProperty(" + getname(param(1)) + ", [" + pp.join(", ") + "], true);")
                 }
                     break
                 case Bytecode.CALLPROPVOID: {
@@ -1384,7 +1386,8 @@ export function compile(methodInfo: MethodInfo, sync = false): ICompilerProcess 
                     js.push("                if (" + obj + ".__fast__) {")
                     js.push("                    " + obj + "['" + mn.name + "'].apply(" + obj + ", [" + pp.join(", ") + "]);")
                     js.push("                } else {")
-                    js.push("                sec.box(" + obj + ").axCallProperty(" + getname(param(1)) + ", [" + pp.join(", ") + "], false);")
+                    js.push("                    temp = sec.box(" + obj + ");")
+                    js.push("                    (typeof temp.$Bg" + mn.name + " === 'function')? temp.$Bg" + mn.name + "(" + pp.join(", ") + ") : temp.axCallProperty(" + getname(param(1)) + ", [" + pp.join(", ") + "], false);")
                     js.push("                }")
                 }
                     break
@@ -1492,16 +1495,14 @@ export function compile(methodInfo: MethodInfo, sync = false): ICompilerProcess 
                     js.push("                if (" + stack0 + ".__fast__) {")
                     js.push("                    " + stack0 + " = " + stack0 + "['" + mn.name + "'];")
                     js.push("                } else {")
-                    js.push("                tr = " + getname(param(0)) + ".resolved[" + stack0 + ".axClassName];")
-                    js.push("                if (tr) {")
-                    js.push("                    temp = " +stack0 + ";")
-                    js.push("                    " + stack0 + " = " + stack0 + "[tr];")
-                    js.push("                    if (typeof " + stack0 + " === 'function') {")
-                    js.push("                        " + stack0 + " = sec.box(temp).axGetMethod(tr);")
+                    js.push("                    temp = sec.box(" + stack0 + ");")
+                    js.push("                    " + stack0 + " = temp.$Bg" + mn.name + ";")
+                    js.push("                    if (" + stack0 + " === undefined) {")
+                    js.push("                        " + stack0 + " = temp.axGetProperty(" + getname(param(0)) + ");")
                     js.push("                    }")
-                    js.push("                } else {")
-                    js.push("                    " + stack0 + " = sec.box(" + stack0 + ").axGetProperty(" + getname(param(0)) + ")")
-                    js.push("                }")
+                    js.push("                    if (typeof " + stack0 + " === 'function') {")
+                    js.push("                        " + stack0 + " = temp.axGetMethod('$Bg" + mn.name + "');")
+                    js.push("                    }")
                     js.push("                }")
                     break
                 case Bytecode.GETPROPERTY_DYN:
@@ -1543,14 +1544,12 @@ export function compile(methodInfo: MethodInfo, sync = false): ICompilerProcess 
                     var mn = abc.getMultiname(param(0))
                     js.push("                // " + mn)
                     js.push("                temp = " + scope + ".findScopeProperty(" + getname(param(0)) + ", true, false);")
-                    js.push("                tr = " + getname(param(0)) + ".resolved[temp.axClassName];")
-                    js.push("                if (tr) {")
-                    js.push("                    " + stackN + " = temp[tr];")
-                    js.push("                    if (typeof " + stackN + " === 'function') {")
-                    js.push("                        " + stackN + " = temp.axGetMethod(tr);")
-                    js.push("                    }")
-                    js.push("                } else {")
+                    js.push("                " + stackN + " = temp.$Bg" + mn.name + ";")
+                    js.push("                if (" + stackN + " === undefined) {")
                     js.push("                    " + stackN + " = temp.axGetProperty(" + getname(param(0)) + ");")
+                    js.push("                }")
+                    js.push("                if (typeof " + stackN + " === 'function') {")
+                    js.push("                    " + stackN + " = temp.axGetMethod('$Bg" + mn.name + "');")
                     js.push("                }")
                     break
                 case Bytecode.RETURNVALUE:
@@ -1662,17 +1661,13 @@ export class Context {
         return (<ScriptInfo>(<any>scope.global.object).scriptInfo).abc.env.app.getClass(Multiname.FromSimpleName(pp[0]))
     }
 
-    getproperty(mn, obj) {
-        return obj.axGetProperty(mn)
-    }
-
     getpropertydyn(mn, obj) {
         let b = this.sec.box(obj)
         
         if (typeof mn === "number")
             return b.axGetNumericProperty(mn)
 
-        return b.axGetProperty(mn)
+        return b['$Bg' + mn.name] || b.axGetProperty(mn)
     }
 
     setproperty(mn, value, obj) {
