@@ -6,13 +6,15 @@ import { assert } from "@awayjs/graphics";
 import { release, defineReadOnlyProperty } from "@awayfl/swf-loader";
 import { ASNamespace } from "../natives/xml";
 import { checkValue } from "./checkValue";
+import { RuntimeTraitInfo } from '../abc/lazy/RuntimeTraitInfo';
 
-export function applyTraits(object: ITraits, traits: RuntimeTraits) {
+export function applyTraits(object: ITraits, traits: RuntimeTraits):void
+{
     release || assert(!object.hasOwnProperty("traits"));
     defineReadOnlyProperty(object, "traits", traits);
-    var T = traits.getTraitsList();
+    var T:RuntimeTraitInfo[] = traits.getTraitsList();
     for (var i = 0; i < T.length; i++) {
-      var t = T[i];
+      var t:RuntimeTraitInfo = T[i];
       var p: PropertyDescriptor = t;
       if (p.value instanceof Namespace) {
         // We can't call |object.sec.AXNamespace.FromNamespace(...)| because the

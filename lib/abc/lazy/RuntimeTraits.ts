@@ -96,11 +96,12 @@ export class RuntimeTraits {
       return null;
     }
   
-    getTraitsList() {
-      var list = [];
-      var names = this._traits;
+    public getTraitsList():RuntimeTraitInfo[]
+    {
+      var list:RuntimeTraitInfo[] = [];
+      var names:MapObject<MapObject<RuntimeTraitInfo>> = this._traits;
       for (var name in names) {
-        var mappings = names[name];
+        var mappings:MapObject<RuntimeTraitInfo> = names[name];
         for (var nsName in mappings) {
           list.push(mappings[nsName]);
         }
