@@ -1361,7 +1361,7 @@ export function compile(methodInfo: MethodInfo, sync = false): ICompilerProcess 
                         js.push("                } else {")    
                         js.push("                // " + mn)
                         js.push("                    temp = sec.box(" + obj + ");")
-                        js.push("                    " + stackF(param(0)) + " = (typeof temp.$Bg" + mn.name + " === 'function')? temp.$Bg" + mn.name + "(" + pp.join(", ") + ") : temp.axCallProperty(" + getname(param(1)) + ", [" + pp.join(", ") + "], false);")
+                        js.push("                    " + stackF(param(0)) + " = (typeof temp['$Bg" + mn.name + "'] === 'function')? temp['$Bg" + mn.name + "'](" + pp.join(", ") + ") : temp.axCallProperty(" + getname(param(1)) + ", [" + pp.join(", ") + "], false);")
                         js.push("                }")
                     }
                     break
@@ -1372,7 +1372,7 @@ export function compile(methodInfo: MethodInfo, sync = false): ICompilerProcess 
                         pp.push(stackF(param(0) - j))
 
                     js.push("                    temp = sec.box(" + pp.shift() + ");")
-                    js.push("                " + stackF(param(0)) + " = (typeof temp.$Bg" + mn.name + " === 'function')? temp.$Bg" + mn.name + "(" + pp.join(", ") + ") : temp.axCallProperty(" + getname(param(1)) + ", [" + pp.join(", ") + "], true);")
+                    js.push("                " + stackF(param(0)) + " = (typeof temp['$Bg" + mn.name + "'] === 'function')? temp['$Bg" + mn.name + "'](" + pp.join(", ") + ") : temp.axCallProperty(" + getname(param(1)) + ", [" + pp.join(", ") + "], true);")
                 }
                     break
                 case Bytecode.CALLPROPVOID: {
@@ -1387,7 +1387,7 @@ export function compile(methodInfo: MethodInfo, sync = false): ICompilerProcess 
                     js.push("                    " + obj + "['" + mn.name + "'].apply(" + obj + ", [" + pp.join(", ") + "]);")
                     js.push("                } else {")
                     js.push("                    temp = sec.box(" + obj + ");")
-                    js.push("                    (typeof temp.$Bg" + mn.name + " === 'function')? temp.$Bg" + mn.name + "(" + pp.join(", ") + ") : temp.axCallProperty(" + getname(param(1)) + ", [" + pp.join(", ") + "], false);")
+                    js.push("                    (typeof temp['$Bg" + mn.name + "'] === 'function')? temp['$Bg" + mn.name + "'](" + pp.join(", ") + ") : temp.axCallProperty(" + getname(param(1)) + ", [" + pp.join(", ") + "], false);")
                     js.push("                }")
                 }
                     break
@@ -1496,7 +1496,7 @@ export function compile(methodInfo: MethodInfo, sync = false): ICompilerProcess 
                     js.push("                    " + stack0 + " = " + stack0 + "['" + mn.name + "'];")
                     js.push("                } else {")
                     js.push("                    temp = sec.box(" + stack0 + ");")
-                    js.push("                    " + stack0 + " = temp.$Bg" + mn.name + ";")
+                    js.push("                    " + stack0 + " = temp['$Bg" + mn.name + "'];")
                     js.push("                    if (" + stack0 + " === undefined) {")
                     js.push("                        " + stack0 + " = temp.axGetProperty(" + getname(param(0)) + ");")
                     js.push("                    }")
@@ -1544,7 +1544,7 @@ export function compile(methodInfo: MethodInfo, sync = false): ICompilerProcess 
                     var mn = abc.getMultiname(param(0))
                     js.push("                // " + mn)
                     js.push("                temp = " + scope + ".findScopeProperty(" + getname(param(0)) + ", true, false);")
-                    js.push("                " + stackN + " = temp.$Bg" + mn.name + ";")
+                    js.push("                " + stackN + " = temp['$Bg" + mn.name + "'];")
                     js.push("                if (" + stackN + " === undefined) {")
                     js.push("                    " + stackN + " = temp.axGetProperty(" + getname(param(0)) + ");")
                     js.push("                }")
