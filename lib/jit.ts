@@ -1,309 +1,309 @@
-import {assert} from "@awayjs/graphics"
+import { assert } from "@awayjs/graphics"
 
 
-import {Scope} from "./run/Scope"
-import {HasNext2Info} from "./run/HasNext2Info"
-import {AXSecurityDomain} from "./run/AXSecurityDomain"
-import {validateCall} from "./run/validateCall"
-import {validateConstruct} from "./run/validateConstruct"
-import {axCoerceString} from "./run/axCoerceString"
-import {axCheckFilter} from "./run/axCheckFilter"
-import {release} from "@awayfl/swf-loader"
-import {Multiname} from "./abc/lazy/Multiname"
-import {CONSTANT} from "./abc/lazy/CONSTANT"
-import {MethodInfo} from "./abc/lazy/MethodInfo"
-import {internNamespace} from "./abc/lazy/internNamespace";
-import {AXClass} from "./run/AXClass"
-import {axCoerceName} from "./run/axCoerceName"
-import {isNumeric, jsGlobal} from "@awayfl/swf-loader"
-import {ABCFile} from "./abc/lazy/ABCFile"
-import {ScriptInfo} from "./abc/lazy/ScriptInfo"
-import {b2Class} from "./btd"
-import {AXGlobal} from "./run/AXGlobal"
+import { Scope } from "./run/Scope"
+import { HasNext2Info } from "./run/HasNext2Info"
+import { AXSecurityDomain } from "./run/AXSecurityDomain"
+import { validateCall } from "./run/validateCall"
+import { validateConstruct } from "./run/validateConstruct"
+import { axCoerceString } from "./run/axCoerceString"
+import { axCheckFilter } from "./run/axCheckFilter"
+import { release } from "@awayfl/swf-loader"
+import { Multiname } from "./abc/lazy/Multiname"
+import { CONSTANT } from "./abc/lazy/CONSTANT"
+import { MethodInfo } from "./abc/lazy/MethodInfo"
+import { internNamespace } from "./abc/lazy/internNamespace";
+import { AXClass } from "./run/AXClass"
+import { axCoerceName } from "./run/axCoerceName"
+import { isNumeric, jsGlobal } from "@awayfl/swf-loader"
+import { ABCFile } from "./abc/lazy/ABCFile"
+import { ScriptInfo } from "./abc/lazy/ScriptInfo"
+import { b2Class } from "./btd"
+import { AXGlobal } from "./run/AXGlobal"
 import { ExceptionInfo } from './abc/lazy/ExceptionInfo'
 
 export enum Bytecode {
-    BKPT = 0x01,
-    NOP = 0x02,
-    THROW = 0x03,
-    GETSUPER = 0x04,
-    GETSUPER_DYN = 0x0104,
-    SETSUPER = 0x05,
-    SETSUPER_DYN = 0x0105,
-    DXNS = 0x06,
-    DXNSLATE = 0x07,
-    KILL = 0x08,
-    LABEL = 0x09,
-    LF32X4 = 0x0A,
-    SF32X4 = 0x0B,
-    IFNLT = 0x0C,
-    IFNLE = 0x0D,
-    IFNGT = 0x0E,
-    IFNGE = 0x0F,
-    JUMP = 0x10,
-    IFTRUE = 0x11,
-    IFFALSE = 0x12,
-    IFEQ = 0x13,
-    IFNE = 0x14,
-    IFLT = 0x15,
-    IFLE = 0x16,
-    IFGT = 0x17,
-    IFGE = 0x18,
-    IFSTRICTEQ = 0x19,
-    IFSTRICTNE = 0x1A,
-    LOOKUPSWITCH = 0x1B,
-    PUSHWITH = 0x1C,
-    POPSCOPE = 0x1D,
-    NEXTNAME = 0x1E,
-    HASNEXT = 0x1F,
-    PUSHNULL = 0x20,
-    PUSHUNDEFINED = 0x21,
-    PUSHFLOAT = 0x22,
-    NEXTVALUE = 0x23,
-    PUSHBYTE = 0x24,
-    PUSHSHORT = 0x25,
-    PUSHTRUE = 0x26,
-    PUSHFALSE = 0x27,
-    PUSHNAN = 0x28,
-    POP = 0x29,
-    DUP = 0x2A,
-    SWAP = 0x2B,
-    PUSHSTRING = 0x2C,
-    PUSHINT = 0x2D,
-    PUSHUINT = 0x2E,
-    PUSHDOUBLE = 0x2F,
-    PUSHSCOPE = 0x30,
-    PUSHNAMESPACE = 0x31,
-    HASNEXT2 = 0x32,
-    LI8 = 0x35,
-    LI16 = 0x36,
-    LI32 = 0x37,
-    LF32 = 0x38,
-    LF64 = 0x39,
-    SI8 = 0x3A,
-    SI16 = 0x3B,
-    SI32 = 0x3C,
-    SF32 = 0x3D,
-    SF64 = 0x3E,
-    NEWFUNCTION = 0x40,
-    CALL = 0x41,
-    CONSTRUCT = 0x42,
-    CALLMETHOD = 0x43,
-    CALLSTATIC = 0x44,
-    CALLSUPER = 0x45,
-    CALLSUPER_DYN = 0x0145,
-    CALLPROPERTY = 0x46,
-    CALLPROPERTY_DYN = 0x0146,
-    RETURNVOID = 0x47,
-    RETURNVALUE = 0x48,
-    CONSTRUCTSUPER = 0x49,
-    CONSTRUCTSUPER_DYN = 0x0149,
-    CONSTRUCTPROP = 0x4A,
-    CONSTRUCTPROP_DYN = 0x014A,
-    CALLSUPERID = 0x4B,
-    CALLPROPLEX = 0x4C,
-    CALLPROPLEX_DYN = 0x014C,
-    CALLINTERFACE = 0x4D,
-    CALLSUPERVOID = 0x4E,
-    CALLSUPERVOID_DYN = 0x014E,
-    CALLPROPVOID = 0x4F,
-    SXI1 = 0x50,
-    SXI8 = 0x51,
-    SXI16 = 0x52,
-    APPLYTYPE = 0x53,
-    PUSHFLOAT4 = 0x54,
-    NEWOBJECT = 0x55,
-    NEWARRAY = 0x56,
-    NEWACTIVATION = 0x57,
-    NEWCLASS = 0x58,
-    GETDESCENDANTS = 0x59,
-    NEWCATCH = 0x5A,
-    FINDPROPSTRICT = 0x5D,
-    FINDPROPSTRICT_DYN = 0x015D,
-    FINDPROPERTY = 0x5E,
-    FINDPROPERTY_DYN = 0x015E,
-    FINDDEF = 0x5F,
-    GETLEX = 0x60,
-    GETLEX_DYN = 0x0160,
-    SETPROPERTY = 0x61,
-    SETPROPERTY_DYN = 0x0161,
-    GETLOCAL = 0x62,
-    SETLOCAL = 0x63,
-    GETGLOBALSCOPE = 0x64,
-    GETSCOPEOBJECT = 0x65,
-    GETPROPERTY = 0x66,
-    GETPROPERTY_DYN = 0x0166,
-    GETOUTERSCOPE = 0x67,
-    INITPROPERTY = 0x68,
-    UNUSED_69 = 0x69,
-    DELETEPROPERTY = 0x6A,
-    DELETEPROPERTY_DYN = 0x016A,
-    UNUSED_6B = 0x6B,
-    GETSLOT = 0x6C,
-    SETSLOT = 0x6D,
-    GETGLOBALSLOT = 0x6E,
-    SETGLOBALSLOT = 0x6F,
-    CONVERT_S = 0x70,
-    ESC_XELEM = 0x71,
-    ESC_XATTR = 0x72,
-    CONVERT_I = 0x73,
-    CONVERT_U = 0x74,
-    CONVERT_D = 0x75,
-    CONVERT_B = 0x76,
-    CONVERT_O = 0x77,
-    CHECKFILTER = 0x78,
-    CONVERT_F = 0x79,
-    UNPLUS = 0x7a,
-    CONVERT_F4 = 0x7b,
-    BC_7C = 0x7c,
-    BC_7D = 0x7d,
-    BC_7E = 0x7e,
-    BC_7F = 0x7f,
-    COERCE = 0x80,
-    COERCE_DYN = 0x0180,
-    COERCE_B = 0x81,
-    COERCE_A = 0x82,
-    COERCE_I = 0x83,
-    COERCE_D = 0x84,
-    COERCE_S = 0x85,
-    ASTYPE = 0x86,
-    ASTYPELATE = 0x87,
-    COERCE_U = 0x88,
-    COERCE_O = 0x89,
-    NEGATE = 0x90,
-    INCREMENT = 0x91,
-    INCLOCAL = 0x92,
-    DECREMENT = 0x93,
-    DECLOCAL = 0x94,
-    TYPEOF = 0x95,
-    NOT = 0x96,
-    BITNOT = 0x97,
-    UNUSED_98 = 0x98,
-    UNUSED_99 = 0x99,
-    UNUSED_9A = 0x9A,
-    UNUSED_9B = 0x9B,
-    UNUSED_9C = 0x9C,
-    UNUSED_9D = 0x9D,
-    UNUSED_9E = 0x9E,
-    UNUSED_9F = 0x9F,
-    ADD = 0xA0,
-    SUBTRACT = 0xA1,
-    MULTIPLY = 0xA2,
-    DIVIDE = 0xA3,
-    MODULO = 0xA4,
-    LSHIFT = 0xA5,
-    RSHIFT = 0xA6,
-    URSHIFT = 0xA7,
-    BITAND = 0xA8,
-    BITOR = 0xA9,
-    BITXOR = 0xAA,
-    EQUALS = 0xAB,
-    STRICTEQUALS = 0xAC,
-    LESSTHAN = 0xAD,
-    LESSEQUALS = 0xAE,
-    GREATERTHAN = 0xAF,
-    GREATEREQUALS = 0xB0,
-    INSTANCEOF = 0xB1,
-    ISTYPE = 0xB2,
-    ISTYPELATE = 0xB3,
-    IN = 0xB4,
-    UNUSED_B5 = 0xB5,
-    UNUSED_B6 = 0xB6,
-    UNUSED_B7 = 0xB7,
-    UNUSED_B8 = 0xB8,
-    UNUSED_B9 = 0xB9,
-    UNUSED_BA = 0xBA,
-    UNUSED_BB = 0xBB,
-    UNUSED_BC = 0xBC,
-    UNUSED_BD = 0xBD,
-    UNUSED_BE = 0xBE,
-    UNUSED_BF = 0xBF,
-    INCREMENT_I = 0xC0,
-    DECREMENT_I = 0xC1,
-    INCLOCAL_I = 0xC2,
-    DECLOCAL_I = 0xC3,
-    NEGATE_I = 0xC4,
-    ADD_I = 0xC5,
-    SUBTRACT_I = 0xC6,
-    MULTIPLY_I = 0xC7,
-    UNUSED_C8 = 0xC8,
-    UNUSED_C9 = 0xC9,
-    UNUSED_CA = 0xCA,
-    UNUSED_CB = 0xCB,
-    UNUSED_CC = 0xCC,
-    UNUSED_CD = 0xCD,
-    UNUSED_CE = 0xCE,
-    UNUSED_CF = 0xCF,
-    GETLOCAL0 = 0xD0,
-    GETLOCAL1 = 0xD1,
-    GETLOCAL2 = 0xD2,
-    GETLOCAL3 = 0xD3,
-    SETLOCAL0 = 0xD4,
-    SETLOCAL1 = 0xD5,
-    SETLOCAL2 = 0xD6,
-    SETLOCAL3 = 0xD7,
-    UNUSED_D8 = 0xD8,
-    UNUSED_D9 = 0xD9,
-    UNUSED_DA = 0xDA,
-    UNUSED_DB = 0xDB,
-    UNUSED_DC = 0xDC,
-    UNUSED_DD = 0xDD,
-    UNUSED_DE = 0xDE,
-    UNUSED_DF = 0xDF,
-    UNUSED_E0 = 0xE0,
-    UNUSED_E1 = 0xE1,
-    UNUSED_E2 = 0xE2,
-    UNUSED_E3 = 0xE3,
-    UNUSED_E4 = 0xE4,
-    UNUSED_E5 = 0xE5,
-    UNUSED_E6 = 0xE6,
-    UNUSED_E7 = 0xE7,
-    UNUSED_E8 = 0xE8,
-    UNUSED_E9 = 0xE9,
-    UNUSED_EA = 0xEA,
-    UNUSED_EB = 0xEB,
-    UNUSED_EC = 0xEC,
-    UNUSED_ED = 0xED,
-    UNUSED_EE = 0xEE,
-    INVALID = 0xED,
-    DEBUG = 0xEF,
+	BKPT = 0x01,
+	NOP = 0x02,
+	THROW = 0x03,
+	GETSUPER = 0x04,
+	GETSUPER_DYN = 0x0104,
+	SETSUPER = 0x05,
+	SETSUPER_DYN = 0x0105,
+	DXNS = 0x06,
+	DXNSLATE = 0x07,
+	KILL = 0x08,
+	LABEL = 0x09,
+	LF32X4 = 0x0A,
+	SF32X4 = 0x0B,
+	IFNLT = 0x0C,
+	IFNLE = 0x0D,
+	IFNGT = 0x0E,
+	IFNGE = 0x0F,
+	JUMP = 0x10,
+	IFTRUE = 0x11,
+	IFFALSE = 0x12,
+	IFEQ = 0x13,
+	IFNE = 0x14,
+	IFLT = 0x15,
+	IFLE = 0x16,
+	IFGT = 0x17,
+	IFGE = 0x18,
+	IFSTRICTEQ = 0x19,
+	IFSTRICTNE = 0x1A,
+	LOOKUPSWITCH = 0x1B,
+	PUSHWITH = 0x1C,
+	POPSCOPE = 0x1D,
+	NEXTNAME = 0x1E,
+	HASNEXT = 0x1F,
+	PUSHNULL = 0x20,
+	PUSHUNDEFINED = 0x21,
+	PUSHFLOAT = 0x22,
+	NEXTVALUE = 0x23,
+	PUSHBYTE = 0x24,
+	PUSHSHORT = 0x25,
+	PUSHTRUE = 0x26,
+	PUSHFALSE = 0x27,
+	PUSHNAN = 0x28,
+	POP = 0x29,
+	DUP = 0x2A,
+	SWAP = 0x2B,
+	PUSHSTRING = 0x2C,
+	PUSHINT = 0x2D,
+	PUSHUINT = 0x2E,
+	PUSHDOUBLE = 0x2F,
+	PUSHSCOPE = 0x30,
+	PUSHNAMESPACE = 0x31,
+	HASNEXT2 = 0x32,
+	LI8 = 0x35,
+	LI16 = 0x36,
+	LI32 = 0x37,
+	LF32 = 0x38,
+	LF64 = 0x39,
+	SI8 = 0x3A,
+	SI16 = 0x3B,
+	SI32 = 0x3C,
+	SF32 = 0x3D,
+	SF64 = 0x3E,
+	NEWFUNCTION = 0x40,
+	CALL = 0x41,
+	CONSTRUCT = 0x42,
+	CALLMETHOD = 0x43,
+	CALLSTATIC = 0x44,
+	CALLSUPER = 0x45,
+	CALLSUPER_DYN = 0x0145,
+	CALLPROPERTY = 0x46,
+	CALLPROPERTY_DYN = 0x0146,
+	RETURNVOID = 0x47,
+	RETURNVALUE = 0x48,
+	CONSTRUCTSUPER = 0x49,
+	CONSTRUCTSUPER_DYN = 0x0149,
+	CONSTRUCTPROP = 0x4A,
+	CONSTRUCTPROP_DYN = 0x014A,
+	CALLSUPERID = 0x4B,
+	CALLPROPLEX = 0x4C,
+	CALLPROPLEX_DYN = 0x014C,
+	CALLINTERFACE = 0x4D,
+	CALLSUPERVOID = 0x4E,
+	CALLSUPERVOID_DYN = 0x014E,
+	CALLPROPVOID = 0x4F,
+	SXI1 = 0x50,
+	SXI8 = 0x51,
+	SXI16 = 0x52,
+	APPLYTYPE = 0x53,
+	PUSHFLOAT4 = 0x54,
+	NEWOBJECT = 0x55,
+	NEWARRAY = 0x56,
+	NEWACTIVATION = 0x57,
+	NEWCLASS = 0x58,
+	GETDESCENDANTS = 0x59,
+	NEWCATCH = 0x5A,
+	FINDPROPSTRICT = 0x5D,
+	FINDPROPSTRICT_DYN = 0x015D,
+	FINDPROPERTY = 0x5E,
+	FINDPROPERTY_DYN = 0x015E,
+	FINDDEF = 0x5F,
+	GETLEX = 0x60,
+	GETLEX_DYN = 0x0160,
+	SETPROPERTY = 0x61,
+	SETPROPERTY_DYN = 0x0161,
+	GETLOCAL = 0x62,
+	SETLOCAL = 0x63,
+	GETGLOBALSCOPE = 0x64,
+	GETSCOPEOBJECT = 0x65,
+	GETPROPERTY = 0x66,
+	GETPROPERTY_DYN = 0x0166,
+	GETOUTERSCOPE = 0x67,
+	INITPROPERTY = 0x68,
+	UNUSED_69 = 0x69,
+	DELETEPROPERTY = 0x6A,
+	DELETEPROPERTY_DYN = 0x016A,
+	UNUSED_6B = 0x6B,
+	GETSLOT = 0x6C,
+	SETSLOT = 0x6D,
+	GETGLOBALSLOT = 0x6E,
+	SETGLOBALSLOT = 0x6F,
+	CONVERT_S = 0x70,
+	ESC_XELEM = 0x71,
+	ESC_XATTR = 0x72,
+	CONVERT_I = 0x73,
+	CONVERT_U = 0x74,
+	CONVERT_D = 0x75,
+	CONVERT_B = 0x76,
+	CONVERT_O = 0x77,
+	CHECKFILTER = 0x78,
+	CONVERT_F = 0x79,
+	UNPLUS = 0x7a,
+	CONVERT_F4 = 0x7b,
+	BC_7C = 0x7c,
+	BC_7D = 0x7d,
+	BC_7E = 0x7e,
+	BC_7F = 0x7f,
+	COERCE = 0x80,
+	COERCE_DYN = 0x0180,
+	COERCE_B = 0x81,
+	COERCE_A = 0x82,
+	COERCE_I = 0x83,
+	COERCE_D = 0x84,
+	COERCE_S = 0x85,
+	ASTYPE = 0x86,
+	ASTYPELATE = 0x87,
+	COERCE_U = 0x88,
+	COERCE_O = 0x89,
+	NEGATE = 0x90,
+	INCREMENT = 0x91,
+	INCLOCAL = 0x92,
+	DECREMENT = 0x93,
+	DECLOCAL = 0x94,
+	TYPEOF = 0x95,
+	NOT = 0x96,
+	BITNOT = 0x97,
+	UNUSED_98 = 0x98,
+	UNUSED_99 = 0x99,
+	UNUSED_9A = 0x9A,
+	UNUSED_9B = 0x9B,
+	UNUSED_9C = 0x9C,
+	UNUSED_9D = 0x9D,
+	UNUSED_9E = 0x9E,
+	UNUSED_9F = 0x9F,
+	ADD = 0xA0,
+	SUBTRACT = 0xA1,
+	MULTIPLY = 0xA2,
+	DIVIDE = 0xA3,
+	MODULO = 0xA4,
+	LSHIFT = 0xA5,
+	RSHIFT = 0xA6,
+	URSHIFT = 0xA7,
+	BITAND = 0xA8,
+	BITOR = 0xA9,
+	BITXOR = 0xAA,
+	EQUALS = 0xAB,
+	STRICTEQUALS = 0xAC,
+	LESSTHAN = 0xAD,
+	LESSEQUALS = 0xAE,
+	GREATERTHAN = 0xAF,
+	GREATEREQUALS = 0xB0,
+	INSTANCEOF = 0xB1,
+	ISTYPE = 0xB2,
+	ISTYPELATE = 0xB3,
+	IN = 0xB4,
+	UNUSED_B5 = 0xB5,
+	UNUSED_B6 = 0xB6,
+	UNUSED_B7 = 0xB7,
+	UNUSED_B8 = 0xB8,
+	UNUSED_B9 = 0xB9,
+	UNUSED_BA = 0xBA,
+	UNUSED_BB = 0xBB,
+	UNUSED_BC = 0xBC,
+	UNUSED_BD = 0xBD,
+	UNUSED_BE = 0xBE,
+	UNUSED_BF = 0xBF,
+	INCREMENT_I = 0xC0,
+	DECREMENT_I = 0xC1,
+	INCLOCAL_I = 0xC2,
+	DECLOCAL_I = 0xC3,
+	NEGATE_I = 0xC4,
+	ADD_I = 0xC5,
+	SUBTRACT_I = 0xC6,
+	MULTIPLY_I = 0xC7,
+	UNUSED_C8 = 0xC8,
+	UNUSED_C9 = 0xC9,
+	UNUSED_CA = 0xCA,
+	UNUSED_CB = 0xCB,
+	UNUSED_CC = 0xCC,
+	UNUSED_CD = 0xCD,
+	UNUSED_CE = 0xCE,
+	UNUSED_CF = 0xCF,
+	GETLOCAL0 = 0xD0,
+	GETLOCAL1 = 0xD1,
+	GETLOCAL2 = 0xD2,
+	GETLOCAL3 = 0xD3,
+	SETLOCAL0 = 0xD4,
+	SETLOCAL1 = 0xD5,
+	SETLOCAL2 = 0xD6,
+	SETLOCAL3 = 0xD7,
+	UNUSED_D8 = 0xD8,
+	UNUSED_D9 = 0xD9,
+	UNUSED_DA = 0xDA,
+	UNUSED_DB = 0xDB,
+	UNUSED_DC = 0xDC,
+	UNUSED_DD = 0xDD,
+	UNUSED_DE = 0xDE,
+	UNUSED_DF = 0xDF,
+	UNUSED_E0 = 0xE0,
+	UNUSED_E1 = 0xE1,
+	UNUSED_E2 = 0xE2,
+	UNUSED_E3 = 0xE3,
+	UNUSED_E4 = 0xE4,
+	UNUSED_E5 = 0xE5,
+	UNUSED_E6 = 0xE6,
+	UNUSED_E7 = 0xE7,
+	UNUSED_E8 = 0xE8,
+	UNUSED_E9 = 0xE9,
+	UNUSED_EA = 0xEA,
+	UNUSED_EB = 0xEB,
+	UNUSED_EC = 0xEC,
+	UNUSED_ED = 0xED,
+	UNUSED_EE = 0xEE,
+	INVALID = 0xED,
+	DEBUG = 0xEF,
 
-    DEBUGLINE = 0xF0,
-    DEBUGFILE = 0xF1,
-    BKPTLINE = 0xF2,
-    TIMESTAMP = 0xF3,
+	DEBUGLINE = 0xF0,
+	DEBUGFILE = 0xF1,
+	BKPTLINE = 0xF2,
+	TIMESTAMP = 0xF3,
 
-    RESTARGC = 0xF4,
-    RESTARG = 0xF5,
+	RESTARGC = 0xF4,
+	RESTARG = 0xF5,
 
-    UNUSED_F6 = 0xF6,
-    UNUSED_F7 = 0xF7,
-    UNUSED_F8 = 0xF8,
-    UNUSED_F9 = 0xF9,
-    UNUSED_FA = 0xFA,
-    UNUSED_FB = 0xFB,
-    UNUSED_FC = 0xFC,
-    UNUSED_FD = 0xFD,
-    UNUSED_FE = 0xFE,
+	UNUSED_F6 = 0xF6,
+	UNUSED_F7 = 0xF7,
+	UNUSED_F8 = 0xF8,
+	UNUSED_F9 = 0xF9,
+	UNUSED_FA = 0xFA,
+	UNUSED_FB = 0xFB,
+	UNUSED_FC = 0xFC,
+	UNUSED_FD = 0xFD,
+	UNUSED_FE = 0xFE,
 
-    END = 0xFF
+	END = 0xFF
 }
 
 export let BytecodeName = Bytecode
 
 class Instruction {
-    public stack: number = -1024
+	public stack: number = -1024
 	public scope: number = -1024
-	public catchBlock:ExceptionInfo;
-	public catchStart:boolean=false;
-	public catchEnd:boolean=false;
+	public catchBlock: ExceptionInfo;
+	public catchStart: boolean = false;
+	public catchEnd: boolean = false;
 
-    constructor(readonly position: number, readonly name: Bytecode, readonly params: Array<any> = [], readonly delta: number = 0, readonly deltaScope: number = 0, readonly terminal: boolean = false, readonly refs: Array<number> = []) {
-    }
+	constructor(readonly position: number, readonly name: Bytecode, readonly params: Array<any> = [], readonly delta: number = 0, readonly deltaScope: number = 0, readonly terminal: boolean = false, readonly refs: Array<number> = []) {
+	}
 
-    toString() {
-        return `Instruction(${this.position}, ${BytecodeName[this.name]} (${this.name}), [${this.params}], ${this.stack} -> ${this.stack + this.delta}, ${this.scope} -> ${this.scope + this.deltaScope}, ${this.terminal}, [${this.refs}])`
-    }
+	toString() {
+		return `Instruction(${this.position}, ${BytecodeName[this.name]} (${this.name}), [${this.params}], ${this.stack} -> ${this.stack + this.delta}, ${this.scope} -> ${this.scope + this.deltaScope}, ${this.terminal}, [${this.refs}])`
+	}
 }
 
 const USE_EVAL = false;
@@ -311,595 +311,595 @@ const USE_EVAL = false;
 let SCRIPT_ID = 0;
 
 export interface ICompilerProcess {
-    compiling?: Promise<Function> | undefined;
-    compiled: Function;
-    names: Multiname[]; 
+	compiling?: Promise<Function> | undefined;
+	compiled: Function;
+	names: Multiname[];
 }
 
-export function compile(methodInfo: MethodInfo, sync = false): ICompilerProcess | string  {    
+export function compile(methodInfo: MethodInfo, sync = false): ICompilerProcess | string {
 
-    let abc = methodInfo.abc
-    let code = methodInfo.getBody().code
+	let abc = methodInfo.abc
+	let code = methodInfo.getBody().code
 
 	var body = methodInfo.getBody();
-	
-    let q: Instruction[] = []
-
-    for (let i: number = 0; i < code.length;) {
-        let u30 = function (): number {
-            let u = code[i++]
-            if (u & 0x80) {
-                u = u & 0x7f | code[i++] << 7
-                if (u & 0x4000) {
-                    u = u & 0x3fff | code[i++] << 14
-                    if (u & 0x200000) {
-                        u = u & 0x1fffff | code[i++] << 21
-                        if (u & 0x10000000) {
-                            u = u & 0x0fffffff | code[i++] << 28
-                            u = u & 0xffffffff
-                        }
-                    }
-                }
-            }
-            return u >>> 0
-        }
-
-        let mn = function () {
-            let index = u30()
-            let name = abc.getMultiname(index)
-
-            if (name.isRuntimeName())
-                return [index, 256, -1]
-
-            if (name.isRuntimeNamespace())
-                return [index, 512, -1]
-
-            return [index, 0, 0]
-        }
-
-        let s24 = function (): number {
-            let u = code[i++] | (code[i++] << 8) | (code[i++] << 16)
-            return (u << 8) >> 8
-        }
-
-        let s8 = function (): number {
-            let u = code[i++]
-            return (u << 24) >> 24
-        }
-
-        let oldi = i
-
-        const z = code[i++]
-        switch (z) {
-            case Bytecode.LABEL:
-                q.push(new Instruction(oldi, z))
-                break
-            case Bytecode.DXNSLATE:
-                q.push(new Instruction(oldi, z, [0], -1))
-                break
-            case Bytecode.DEBUGFILE:
-                q.push(new Instruction(oldi, z, [u30()]))
-                break
-
-            case Bytecode.DEBUGLINE:
-                q.push(new Instruction(oldi, z, [u30()]))
-                break
-
-            case Bytecode.DEBUG:
-                q.push(new Instruction(oldi, z, [s8(), u30(), s8(), u30()]))
-                break
-
-            case Bytecode.THROW:
-                q.push(new Instruction(oldi, z, [], -1, 0, true))
-                break
-
-            
-            case Bytecode.PUSHSCOPE:
-                q.push(new Instruction(oldi, z, [], -1, 1))
-                break
-
-            case Bytecode.PUSHWITH:
-                q.push(new Instruction(oldi, z, [], -1, 1))
-                break
-
-            case Bytecode.POPSCOPE:
-                q.push(new Instruction(oldi, z, [], 0, -1))
-                break
-
-            case Bytecode.GETSCOPEOBJECT:
-                q.push(new Instruction(oldi, z, [s8()], 1, 0))
-                break
-
-            case Bytecode.GETGLOBALSCOPE:
-                q.push(new Instruction(oldi, z, [], 1))
-                break
-
-
-                
-            case Bytecode.GETSLOT:
-                q.push(new Instruction(oldi, z, [u30()], 0))
-                break
-
-            case Bytecode.SETSLOT:
-                q.push(new Instruction(oldi, z, [u30()], -2))
-                break
-
-            
-            case Bytecode.NEXTNAME:
-                q.push(new Instruction(oldi, z, [], -1))
-                break
-
-            case Bytecode.NEXTVALUE:
-                q.push(new Instruction(oldi, z, [], -1))
-                break
-
-            case Bytecode.HASNEXT:
-                q.push(new Instruction(oldi, z, [], -1))
-                break
-
-            case Bytecode.HASNEXT2:
-                q.push(new Instruction(oldi, z, [u30(), u30()], 1))
-                break
-
-            case Bytecode.IN:
-                q.push(new Instruction(oldi, z, [], -1))
-                break
-
-            
-            case Bytecode.DUP:
-                q.push(new Instruction(oldi, z, [], 1))
-                break
-
-            case Bytecode.POP:
-                q.push(new Instruction(oldi, z, [], -1))
-                break
-
-            case Bytecode.SWAP:
-                q.push(new Instruction(oldi, z, [], 0))
-                break
-
-            case Bytecode.PUSHTRUE:
-                q.push(new Instruction(oldi, z, [], 1))
-                break
-
-            case Bytecode.PUSHFALSE:
-                q.push(new Instruction(oldi, z, [], 1))
-                break
-
-            case Bytecode.PUSHBYTE:
-                q.push(new Instruction(oldi, z, [s8()], 1))
-                break
-
-            case Bytecode.PUSHSHORT:
-                q.push(new Instruction(oldi, z, [u30() << 16 >> 16], 1))
-                break
-
-            case Bytecode.PUSHINT:
-                q.push(new Instruction(oldi, z, [u30()], 1))
-                break
-
-            case Bytecode.PUSHDOUBLE:
-                q.push(new Instruction(oldi, z, [u30()], 1))
-                break
-
-            case Bytecode.PUSHNAN:
-                q.push(new Instruction(oldi, z, [], 1))
-                break
-
-            case Bytecode.PUSHNULL:
-                q.push(new Instruction(oldi, z, [], 1))
-                break
-
-            case Bytecode.PUSHUNDEFINED:
-                q.push(new Instruction(oldi, z, [], 1))
-                break
-
-            case Bytecode.PUSHSTRING:
-                q.push(new Instruction(oldi, z, [u30()], 1))
-                break
-
-            case Bytecode.IFEQ:
-                var j = s24()
-                q.push(new Instruction(oldi, z, [i + j], -2, 0, false, [i + j]))
-                break
-
-            case Bytecode.IFNE:
-                var j = s24()
-                q.push(new Instruction(oldi, z, [i + j], -2, 0, false, [i + j]))
-                break
-
-            case Bytecode.IFSTRICTEQ:
-                var j = s24()
-                q.push(new Instruction(oldi, z, [i + j], -2, 0, false, [i + j]))
-                break
-            case Bytecode.IFSTRICTNE:
-                var j = s24()
-                q.push(new Instruction(oldi, z, [i + j], -2, 0, false, [i + j]))
-                break
-
-            case Bytecode.IFGT:
-            case Bytecode.IFNLE:
-                var j = s24()
-                q.push(new Instruction(oldi, Bytecode.IFGT, [i + j], -2, 0, false, [i + j]))
-                break
-
-            case Bytecode.IFGE:
-            case Bytecode.IFNLT:
-                var j = s24()
-                q.push(new Instruction(oldi, Bytecode.IFGE, [i + j], -2, 0, false, [i + j]))
-                break
-
-            case Bytecode.IFLT:
-            case Bytecode.IFNGE:
-                var j = s24()
-                q.push(new Instruction(oldi, Bytecode.IFLT, [i + j], -2, 0, false, [i + j]))
-                break
-
-            case Bytecode.IFLE:
-            case Bytecode.IFNGT:
-                var j = s24()
-                q.push(new Instruction(oldi, Bytecode.IFLE, [i + j], -2, 0, false, [i + j]))
-                break
-
-            case Bytecode.IFTRUE:
-                var j = s24()
-                q.push(new Instruction(oldi, z, [i + j], -1, 0, false, [i + j]))
-                break
-
-            case Bytecode.IFFALSE:
-                var j = s24()
-                q.push(new Instruction(oldi, z, [i + j], -1, 0, false, [i + j]))
-                break
-
-
-            case Bytecode.LOOKUPSWITCH:
-                var offset = oldi + s24()
-                var cases = u30()
-
-                var jumps = [offset]
-
-                for (let j = 0; j <= cases; j++)
-                    jumps.push(oldi + s24())
-
-                q.push(new Instruction(oldi, z, jumps, -1, 0, true, jumps))
-                break
-
-            case Bytecode.JUMP:
-                var j = s24()
-                q.push(new Instruction(oldi, z, [i + j], 0, 0, true, [i + j]))
-                break
-
-
-            case Bytecode.RETURNVALUE:
-                q.push(new Instruction(oldi, z, [], -1, 0, true))
-                break
-
-            case Bytecode.RETURNVOID:
-                q.push(new Instruction(oldi, z, [], 0, 0, true))
-                break
-
-
-            case Bytecode.NOT:
-                q.push(new Instruction(oldi, z, [], 0))
-                break
-
-            case Bytecode.BITNOT:
-                q.push(new Instruction(oldi, z, [], 0))
-                break
-
-            case Bytecode.NEGATE:
-                q.push(new Instruction(oldi, z, [], 0))
-                break
-
-
-            case Bytecode.INCREMENT:
-                q.push(new Instruction(oldi, z, [], 0))
-                break
-
-            case Bytecode.DECREMENT:
-                q.push(new Instruction(oldi, z, [], 0))
-                break
-
-            case Bytecode.INCLOCAL:
-                q.push(new Instruction(oldi, z, [u30()], 0))
-                break
-
-            case Bytecode.DECLOCAL:
-                q.push(new Instruction(oldi, z, [u30()], 0))
-                break
-
-            case Bytecode.INCREMENT_I:
-                q.push(new Instruction(oldi, z, [], 0))
-                break
-
-            case Bytecode.DECREMENT_I:
-                q.push(new Instruction(oldi, z, [], 0))
-                break
-
-            case Bytecode.INCLOCAL_I:
-                q.push(new Instruction(oldi, z, [u30()], 0))
-                break
-
-            case Bytecode.DECLOCAL_I:
-                q.push(new Instruction(oldi, z, [u30()], 0))
-                break
-
-            case Bytecode.NEGATE_I:
-                q.push(new Instruction(oldi, z, [], 0))
-                break
-
-            case Bytecode.ADD_I:
-                q.push(new Instruction(oldi, z, [], -1))
-                break
-
-            case Bytecode.SUBTRACT_I:
-                q.push(new Instruction(oldi, z, [], -1))
-                break
-
-            case Bytecode.MULTIPLY_I:
-                q.push(new Instruction(oldi, z, [], -1))
-                break
-
-            case Bytecode.ADD:
-                q.push(new Instruction(oldi, z, [], -1))
-                break
-            case Bytecode.SUBTRACT:
-                q.push(new Instruction(oldi, z, [], -1))
-                break
-            case Bytecode.MULTIPLY:
-                q.push(new Instruction(oldi, z, [], -1))
-                break
-            case Bytecode.DIVIDE:
-                q.push(new Instruction(oldi, z, [], -1))
-                break
-            case Bytecode.MODULO:
-                q.push(new Instruction(oldi, z, [], -1))
-                break
-
-
-            case Bytecode.LSHIFT:
-                q.push(new Instruction(oldi, z, [], -1))
-                break
-            case Bytecode.RSHIFT:
-                q.push(new Instruction(oldi, z, [], -1))
-                break
-            case Bytecode.URSHIFT:
-                q.push(new Instruction(oldi, z, [], -1))
-                break
-
-
-            case Bytecode.BITAND:
-                q.push(new Instruction(oldi, z, [], -1))
-                break
-            case Bytecode.BITOR:
-                q.push(new Instruction(oldi, z, [], -1))
-                break
-            case Bytecode.BITXOR:
-                q.push(new Instruction(oldi, z, [], -1))
-                break
-
-
-            case Bytecode.EQUALS:
-                q.push(new Instruction(oldi, z, [], -1))
-                break
-            case Bytecode.STRICTEQUALS:
-                q.push(new Instruction(oldi, z, [], -1))
-                break
-            case Bytecode.GREATERTHAN:
-                q.push(new Instruction(oldi, z, [], -1))
-                break
-            case Bytecode.GREATEREQUALS:
-                q.push(new Instruction(oldi, z, [], -1))
-                break
-            case Bytecode.LESSTHAN:
-                q.push(new Instruction(oldi, z, [], -1))
-                break
-            case Bytecode.LESSEQUALS:
-                q.push(new Instruction(oldi, z, [], -1))
-                break
-
-            case Bytecode.TYPEOF:
-                q.push(new Instruction(oldi, z, [], 0))
-                break
-
-            case Bytecode.INSTANCEOF:
-                q.push(new Instruction(oldi, z, [], -1))
-                break
-
-            case Bytecode.ISTYPELATE:
-                q.push(new Instruction(oldi, z, [], -1))
-                break
-            case Bytecode.ASTYPELATE:
-                q.push(new Instruction(oldi, z, [], -1))
-                break
-
-
-            case Bytecode.CALL:
-                var argnum = u30()
-                q.push(new Instruction(oldi, z, [argnum], -argnum - 1))
-                break
-            case Bytecode.CONSTRUCT:
-                var argnum = u30()
-                q.push(new Instruction(oldi, z, [argnum, index], -argnum))
-                break
-            case Bytecode.CALLPROPERTY:
-                var [index, dyn, d] = mn()
-                var argnum = u30()
-                q.push(new Instruction(oldi, z + dyn, [argnum, index], -argnum + d))
-                break
-            case Bytecode.CALLPROPLEX:
-                var [index, dyn, d] = mn()
-                var argnum = u30()
-                q.push(new Instruction(oldi, z + dyn, [argnum, index], -argnum + d))
-                break
-            case Bytecode.CALLPROPVOID:
-                var [index, dyn, d] = mn()
-                var argnum = u30()
-                q.push(new Instruction(oldi, z + dyn, [argnum, index], -(argnum + 1) + d))
-                break
-            case Bytecode.APPLYTYPE:
-                var argnum = u30()
-                q.push(new Instruction(oldi, z, [argnum], -argnum))
-                break
-
-
-            case Bytecode.FINDPROPSTRICT:
-                var [index, dyn, d] = mn()
-                q.push(new Instruction(oldi, z + dyn, [index], 1 + d))
-                break
-            case Bytecode.FINDPROPERTY:
-                var [index, dyn, d] = mn()
-                q.push(new Instruction(oldi, z + dyn, [index], 1 + d))
-                break
-            case Bytecode.NEWFUNCTION:
-                q.push(new Instruction(oldi, z, [u30()], 1))
-                break
-            case Bytecode.NEWCLASS:
-                q.push(new Instruction(oldi, z, [u30()], 0))
-                break
-            case Bytecode.NEWARRAY:
-                var argnum = u30()
-                q.push(new Instruction(oldi, z, [argnum], -argnum + 1))
-                break
-            case Bytecode.NEWOBJECT:
-                var argnum = u30()
-                q.push(new Instruction(oldi, z, [argnum], -2 * argnum + 1))
-                break
-            case Bytecode.NEWACTIVATION:
-                q.push(new Instruction(oldi, z, [], 1))
-                break
-            case Bytecode.NEWCATCH:
-                q.push(new Instruction(oldi, z, [u30()], 1))
-                break
-
-
-            case Bytecode.CONSTRUCTSUPER:
-                var argnum = u30()
-                q.push(new Instruction(oldi, z, [argnum], -(argnum + 1)))
-                break
-            case Bytecode.CALLSUPER:
-                var [index, dyn, d] = mn()
-                var argnum = u30()
-                q.push(new Instruction(oldi, z + dyn, [argnum, index], -argnum + d))
-                break
-            case Bytecode.CALLSUPERVOID:
-                var [index, dyn, d] = mn()
-                var argnum = u30()
-                q.push(new Instruction(oldi, z + dyn, [argnum, index], -(argnum + 1) + d))
-                break
-
-
-            case Bytecode.CONSTRUCTPROP:
-                var [index, dyn, d] = mn()
-                var argnum = u30()
-                q.push(new Instruction(oldi, z + dyn, [argnum, index], -argnum + d))
-                break
-
-
-            case Bytecode.GETPROPERTY:
-                var [index, dyn, d] = mn()
-                q.push(new Instruction(oldi, Bytecode.GETPROPERTY + dyn, [index], 0 + d))
-                break
-            case Bytecode.INITPROPERTY:
-            case Bytecode.SETPROPERTY:
-                var [index, dyn, d] = mn()
-                q.push(new Instruction(oldi, Bytecode.SETPROPERTY + dyn, [index], -2 + d))
-                break
-            case Bytecode.DELETEPROPERTY:
-                var [index, dyn, d] = mn()
-                q.push(new Instruction(oldi, z + dyn, [index], 0 + d))
-
-
-
-            case Bytecode.GETSUPER:
-                var [index, dyn, d] = mn()
-                q.push(new Instruction(oldi, z + dyn, [index], 0 + d))
-                break
-            case Bytecode.SETSUPER:
-                var [index, dyn, d] = mn()
-                q.push(new Instruction(oldi, z + dyn, [index], -2 + d))
-                break
-
-
-            case Bytecode.COERCE:
-                var [index, dyn, d] = mn()
-                q.push(new Instruction(oldi, z + dyn, [index], 0 + d))
-                break
-            case Bytecode.COERCE_A:
-                q.push(new Instruction(oldi, z, [], 0))
-                break
-            case Bytecode.COERCE_S:
-                q.push(new Instruction(oldi, z, [], 0))
-                break
-
-
-            case Bytecode.CONVERT_I:
-                q.push(new Instruction(oldi, z, [], 0))
-                break
-            case Bytecode.CONVERT_D:
-                q.push(new Instruction(oldi, z, [], 0))
-                break
-            case Bytecode.CONVERT_B:
-                q.push(new Instruction(oldi, z, [], 0))
-                break
-            case Bytecode.CONVERT_U:
-                q.push(new Instruction(oldi, z, [], 0))
-                break
-            case Bytecode.CONVERT_S:
-                q.push(new Instruction(oldi, z, [], 0))
-                break
-            case Bytecode.CONVERT_O:
-                q.push(new Instruction(oldi, z, [], 0))
-                break
-            case Bytecode.CHECKFILTER:
-                q.push(new Instruction(oldi, z, [], 0))
-                break                
-            case Bytecode.GETLOCAL:
-                q.push(new Instruction(oldi, Bytecode.GETLOCAL, [u30()], 1))
-                break
-            case Bytecode.GETLOCAL0:
-                q.push(new Instruction(oldi, Bytecode.GETLOCAL, [0], 1))
-                break
-            case Bytecode.GETLOCAL1:
-                q.push(new Instruction(oldi, Bytecode.GETLOCAL, [1], 1))
-                break
-            case Bytecode.GETLOCAL2:
-                q.push(new Instruction(oldi, Bytecode.GETLOCAL, [2], 1))
-                break
-            case Bytecode.GETLOCAL3:
-                q.push(new Instruction(oldi, Bytecode.GETLOCAL, [3], 1))
-                break
-            case Bytecode.SETLOCAL:
-                q.push(new Instruction(oldi, Bytecode.SETLOCAL, [u30()], -1))
-                break
-            case Bytecode.SETLOCAL0:
-                q.push(new Instruction(oldi, Bytecode.SETLOCAL, [0], -1))
-                break
-            case Bytecode.SETLOCAL1:
-                q.push(new Instruction(oldi, Bytecode.SETLOCAL, [1], -1))
-                break
-            case Bytecode.SETLOCAL2:
-                q.push(new Instruction(oldi, Bytecode.SETLOCAL, [2], -1))
-                break
-            case Bytecode.SETLOCAL3:
-                q.push(new Instruction(oldi, Bytecode.SETLOCAL, [3], -1))
-                break
-            case Bytecode.KILL:
-                q.push(new Instruction(oldi, z, [u30()], 0))
-                break
-
-            case Bytecode.GETLEX:
-                var [index, dyn, d] = mn()
-                q.push(new Instruction(oldi, z + dyn, [index], 1 + d))
-                break
-
-            default:
-                console.log("UNKNOWN #" + code[i - 1].toString(16) + " " + BytecodeName[code[i - 1]] + " (method N" + methodInfo.index() + ")")
-                return "UNKNOWN BYTECODE $" + code[i - 1].toString(16) + " (" + BytecodeName[code[i - 1]] + ") at " + oldi
-        }
-
-    }
-    let js0 = [];
+
+	let q: Instruction[] = []
+
+	for (let i: number = 0; i < code.length;) {
+		let u30 = function (): number {
+			let u = code[i++]
+			if (u & 0x80) {
+				u = u & 0x7f | code[i++] << 7
+				if (u & 0x4000) {
+					u = u & 0x3fff | code[i++] << 14
+					if (u & 0x200000) {
+						u = u & 0x1fffff | code[i++] << 21
+						if (u & 0x10000000) {
+							u = u & 0x0fffffff | code[i++] << 28
+							u = u & 0xffffffff
+						}
+					}
+				}
+			}
+			return u >>> 0
+		}
+
+		let mn = function () {
+			let index = u30()
+			let name = abc.getMultiname(index)
+
+			if (name.isRuntimeName())
+				return [index, 256, -1]
+
+			if (name.isRuntimeNamespace())
+				return [index, 512, -1]
+
+			return [index, 0, 0]
+		}
+
+		let s24 = function (): number {
+			let u = code[i++] | (code[i++] << 8) | (code[i++] << 16)
+			return (u << 8) >> 8
+		}
+
+		let s8 = function (): number {
+			let u = code[i++]
+			return (u << 24) >> 24
+		}
+
+		let oldi = i
+
+		const z = code[i++]
+		switch (z) {
+			case Bytecode.LABEL:
+				q.push(new Instruction(oldi, z))
+				break
+			case Bytecode.DXNSLATE:
+				q.push(new Instruction(oldi, z, [0], -1))
+				break
+			case Bytecode.DEBUGFILE:
+				q.push(new Instruction(oldi, z, [u30()]))
+				break
+
+			case Bytecode.DEBUGLINE:
+				q.push(new Instruction(oldi, z, [u30()]))
+				break
+
+			case Bytecode.DEBUG:
+				q.push(new Instruction(oldi, z, [s8(), u30(), s8(), u30()]))
+				break
+
+			case Bytecode.THROW:
+				q.push(new Instruction(oldi, z, [], -1, 0, true))
+				break
+
+
+			case Bytecode.PUSHSCOPE:
+				q.push(new Instruction(oldi, z, [], -1, 1))
+				break
+
+			case Bytecode.PUSHWITH:
+				q.push(new Instruction(oldi, z, [], -1, 1))
+				break
+
+			case Bytecode.POPSCOPE:
+				q.push(new Instruction(oldi, z, [], 0, -1))
+				break
+
+			case Bytecode.GETSCOPEOBJECT:
+				q.push(new Instruction(oldi, z, [s8()], 1, 0))
+				break
+
+			case Bytecode.GETGLOBALSCOPE:
+				q.push(new Instruction(oldi, z, [], 1))
+				break
+
+
+
+			case Bytecode.GETSLOT:
+				q.push(new Instruction(oldi, z, [u30()], 0))
+				break
+
+			case Bytecode.SETSLOT:
+				q.push(new Instruction(oldi, z, [u30()], -2))
+				break
+
+
+			case Bytecode.NEXTNAME:
+				q.push(new Instruction(oldi, z, [], -1))
+				break
+
+			case Bytecode.NEXTVALUE:
+				q.push(new Instruction(oldi, z, [], -1))
+				break
+
+			case Bytecode.HASNEXT:
+				q.push(new Instruction(oldi, z, [], -1))
+				break
+
+			case Bytecode.HASNEXT2:
+				q.push(new Instruction(oldi, z, [u30(), u30()], 1))
+				break
+
+			case Bytecode.IN:
+				q.push(new Instruction(oldi, z, [], -1))
+				break
+
+
+			case Bytecode.DUP:
+				q.push(new Instruction(oldi, z, [], 1))
+				break
+
+			case Bytecode.POP:
+				q.push(new Instruction(oldi, z, [], -1))
+				break
+
+			case Bytecode.SWAP:
+				q.push(new Instruction(oldi, z, [], 0))
+				break
+
+			case Bytecode.PUSHTRUE:
+				q.push(new Instruction(oldi, z, [], 1))
+				break
+
+			case Bytecode.PUSHFALSE:
+				q.push(new Instruction(oldi, z, [], 1))
+				break
+
+			case Bytecode.PUSHBYTE:
+				q.push(new Instruction(oldi, z, [s8()], 1))
+				break
+
+			case Bytecode.PUSHSHORT:
+				q.push(new Instruction(oldi, z, [u30() << 16 >> 16], 1))
+				break
+
+			case Bytecode.PUSHINT:
+				q.push(new Instruction(oldi, z, [u30()], 1))
+				break
+
+			case Bytecode.PUSHDOUBLE:
+				q.push(new Instruction(oldi, z, [u30()], 1))
+				break
+
+			case Bytecode.PUSHNAN:
+				q.push(new Instruction(oldi, z, [], 1))
+				break
+
+			case Bytecode.PUSHNULL:
+				q.push(new Instruction(oldi, z, [], 1))
+				break
+
+			case Bytecode.PUSHUNDEFINED:
+				q.push(new Instruction(oldi, z, [], 1))
+				break
+
+			case Bytecode.PUSHSTRING:
+				q.push(new Instruction(oldi, z, [u30()], 1))
+				break
+
+			case Bytecode.IFEQ:
+				var j = s24()
+				q.push(new Instruction(oldi, z, [i + j], -2, 0, false, [i + j]))
+				break
+
+			case Bytecode.IFNE:
+				var j = s24()
+				q.push(new Instruction(oldi, z, [i + j], -2, 0, false, [i + j]))
+				break
+
+			case Bytecode.IFSTRICTEQ:
+				var j = s24()
+				q.push(new Instruction(oldi, z, [i + j], -2, 0, false, [i + j]))
+				break
+			case Bytecode.IFSTRICTNE:
+				var j = s24()
+				q.push(new Instruction(oldi, z, [i + j], -2, 0, false, [i + j]))
+				break
+
+			case Bytecode.IFGT:
+			case Bytecode.IFNLE:
+				var j = s24()
+				q.push(new Instruction(oldi, Bytecode.IFGT, [i + j], -2, 0, false, [i + j]))
+				break
+
+			case Bytecode.IFGE:
+			case Bytecode.IFNLT:
+				var j = s24()
+				q.push(new Instruction(oldi, Bytecode.IFGE, [i + j], -2, 0, false, [i + j]))
+				break
+
+			case Bytecode.IFLT:
+			case Bytecode.IFNGE:
+				var j = s24()
+				q.push(new Instruction(oldi, Bytecode.IFLT, [i + j], -2, 0, false, [i + j]))
+				break
+
+			case Bytecode.IFLE:
+			case Bytecode.IFNGT:
+				var j = s24()
+				q.push(new Instruction(oldi, Bytecode.IFLE, [i + j], -2, 0, false, [i + j]))
+				break
+
+			case Bytecode.IFTRUE:
+				var j = s24()
+				q.push(new Instruction(oldi, z, [i + j], -1, 0, false, [i + j]))
+				break
+
+			case Bytecode.IFFALSE:
+				var j = s24()
+				q.push(new Instruction(oldi, z, [i + j], -1, 0, false, [i + j]))
+				break
+
+
+			case Bytecode.LOOKUPSWITCH:
+				var offset = oldi + s24()
+				var cases = u30()
+
+				var jumps = [offset]
+
+				for (let j = 0; j <= cases; j++)
+					jumps.push(oldi + s24())
+
+				q.push(new Instruction(oldi, z, jumps, -1, 0, true, jumps))
+				break
+
+			case Bytecode.JUMP:
+				var j = s24()
+				q.push(new Instruction(oldi, z, [i + j], 0, 0, true, [i + j]))
+				break
+
+
+			case Bytecode.RETURNVALUE:
+				q.push(new Instruction(oldi, z, [], -1, 0, true))
+				break
+
+			case Bytecode.RETURNVOID:
+				q.push(new Instruction(oldi, z, [], 0, 0, true))
+				break
+
+
+			case Bytecode.NOT:
+				q.push(new Instruction(oldi, z, [], 0))
+				break
+
+			case Bytecode.BITNOT:
+				q.push(new Instruction(oldi, z, [], 0))
+				break
+
+			case Bytecode.NEGATE:
+				q.push(new Instruction(oldi, z, [], 0))
+				break
+
+
+			case Bytecode.INCREMENT:
+				q.push(new Instruction(oldi, z, [], 0))
+				break
+
+			case Bytecode.DECREMENT:
+				q.push(new Instruction(oldi, z, [], 0))
+				break
+
+			case Bytecode.INCLOCAL:
+				q.push(new Instruction(oldi, z, [u30()], 0))
+				break
+
+			case Bytecode.DECLOCAL:
+				q.push(new Instruction(oldi, z, [u30()], 0))
+				break
+
+			case Bytecode.INCREMENT_I:
+				q.push(new Instruction(oldi, z, [], 0))
+				break
+
+			case Bytecode.DECREMENT_I:
+				q.push(new Instruction(oldi, z, [], 0))
+				break
+
+			case Bytecode.INCLOCAL_I:
+				q.push(new Instruction(oldi, z, [u30()], 0))
+				break
+
+			case Bytecode.DECLOCAL_I:
+				q.push(new Instruction(oldi, z, [u30()], 0))
+				break
+
+			case Bytecode.NEGATE_I:
+				q.push(new Instruction(oldi, z, [], 0))
+				break
+
+			case Bytecode.ADD_I:
+				q.push(new Instruction(oldi, z, [], -1))
+				break
+
+			case Bytecode.SUBTRACT_I:
+				q.push(new Instruction(oldi, z, [], -1))
+				break
+
+			case Bytecode.MULTIPLY_I:
+				q.push(new Instruction(oldi, z, [], -1))
+				break
+
+			case Bytecode.ADD:
+				q.push(new Instruction(oldi, z, [], -1))
+				break
+			case Bytecode.SUBTRACT:
+				q.push(new Instruction(oldi, z, [], -1))
+				break
+			case Bytecode.MULTIPLY:
+				q.push(new Instruction(oldi, z, [], -1))
+				break
+			case Bytecode.DIVIDE:
+				q.push(new Instruction(oldi, z, [], -1))
+				break
+			case Bytecode.MODULO:
+				q.push(new Instruction(oldi, z, [], -1))
+				break
+
+
+			case Bytecode.LSHIFT:
+				q.push(new Instruction(oldi, z, [], -1))
+				break
+			case Bytecode.RSHIFT:
+				q.push(new Instruction(oldi, z, [], -1))
+				break
+			case Bytecode.URSHIFT:
+				q.push(new Instruction(oldi, z, [], -1))
+				break
+
+
+			case Bytecode.BITAND:
+				q.push(new Instruction(oldi, z, [], -1))
+				break
+			case Bytecode.BITOR:
+				q.push(new Instruction(oldi, z, [], -1))
+				break
+			case Bytecode.BITXOR:
+				q.push(new Instruction(oldi, z, [], -1))
+				break
+
+
+			case Bytecode.EQUALS:
+				q.push(new Instruction(oldi, z, [], -1))
+				break
+			case Bytecode.STRICTEQUALS:
+				q.push(new Instruction(oldi, z, [], -1))
+				break
+			case Bytecode.GREATERTHAN:
+				q.push(new Instruction(oldi, z, [], -1))
+				break
+			case Bytecode.GREATEREQUALS:
+				q.push(new Instruction(oldi, z, [], -1))
+				break
+			case Bytecode.LESSTHAN:
+				q.push(new Instruction(oldi, z, [], -1))
+				break
+			case Bytecode.LESSEQUALS:
+				q.push(new Instruction(oldi, z, [], -1))
+				break
+
+			case Bytecode.TYPEOF:
+				q.push(new Instruction(oldi, z, [], 0))
+				break
+
+			case Bytecode.INSTANCEOF:
+				q.push(new Instruction(oldi, z, [], -1))
+				break
+
+			case Bytecode.ISTYPELATE:
+				q.push(new Instruction(oldi, z, [], -1))
+				break
+			case Bytecode.ASTYPELATE:
+				q.push(new Instruction(oldi, z, [], -1))
+				break
+
+
+			case Bytecode.CALL:
+				var argnum = u30()
+				q.push(new Instruction(oldi, z, [argnum], -argnum - 1))
+				break
+			case Bytecode.CONSTRUCT:
+				var argnum = u30()
+				q.push(new Instruction(oldi, z, [argnum, index], -argnum))
+				break
+			case Bytecode.CALLPROPERTY:
+				var [index, dyn, d] = mn()
+				var argnum = u30()
+				q.push(new Instruction(oldi, z + dyn, [argnum, index], -argnum + d))
+				break
+			case Bytecode.CALLPROPLEX:
+				var [index, dyn, d] = mn()
+				var argnum = u30()
+				q.push(new Instruction(oldi, z + dyn, [argnum, index], -argnum + d))
+				break
+			case Bytecode.CALLPROPVOID:
+				var [index, dyn, d] = mn()
+				var argnum = u30()
+				q.push(new Instruction(oldi, z + dyn, [argnum, index], -(argnum + 1) + d))
+				break
+			case Bytecode.APPLYTYPE:
+				var argnum = u30()
+				q.push(new Instruction(oldi, z, [argnum], -argnum))
+				break
+
+
+			case Bytecode.FINDPROPSTRICT:
+				var [index, dyn, d] = mn()
+				q.push(new Instruction(oldi, z + dyn, [index], 1 + d))
+				break
+			case Bytecode.FINDPROPERTY:
+				var [index, dyn, d] = mn()
+				q.push(new Instruction(oldi, z + dyn, [index], 1 + d))
+				break
+			case Bytecode.NEWFUNCTION:
+				q.push(new Instruction(oldi, z, [u30()], 1))
+				break
+			case Bytecode.NEWCLASS:
+				q.push(new Instruction(oldi, z, [u30()], 0))
+				break
+			case Bytecode.NEWARRAY:
+				var argnum = u30()
+				q.push(new Instruction(oldi, z, [argnum], -argnum + 1))
+				break
+			case Bytecode.NEWOBJECT:
+				var argnum = u30()
+				q.push(new Instruction(oldi, z, [argnum], -2 * argnum + 1))
+				break
+			case Bytecode.NEWACTIVATION:
+				q.push(new Instruction(oldi, z, [], 1))
+				break
+			case Bytecode.NEWCATCH:
+				q.push(new Instruction(oldi, z, [u30()], 1))
+				break
+
+
+			case Bytecode.CONSTRUCTSUPER:
+				var argnum = u30()
+				q.push(new Instruction(oldi, z, [argnum], -(argnum + 1)))
+				break
+			case Bytecode.CALLSUPER:
+				var [index, dyn, d] = mn()
+				var argnum = u30()
+				q.push(new Instruction(oldi, z + dyn, [argnum, index], -argnum + d))
+				break
+			case Bytecode.CALLSUPERVOID:
+				var [index, dyn, d] = mn()
+				var argnum = u30()
+				q.push(new Instruction(oldi, z + dyn, [argnum, index], -(argnum + 1) + d))
+				break
+
+
+			case Bytecode.CONSTRUCTPROP:
+				var [index, dyn, d] = mn()
+				var argnum = u30()
+				q.push(new Instruction(oldi, z + dyn, [argnum, index], -argnum + d))
+				break
+
+
+			case Bytecode.GETPROPERTY:
+				var [index, dyn, d] = mn()
+				q.push(new Instruction(oldi, Bytecode.GETPROPERTY + dyn, [index], 0 + d))
+				break
+			case Bytecode.INITPROPERTY:
+			case Bytecode.SETPROPERTY:
+				var [index, dyn, d] = mn()
+				q.push(new Instruction(oldi, Bytecode.SETPROPERTY + dyn, [index], -2 + d))
+				break
+			case Bytecode.DELETEPROPERTY:
+				var [index, dyn, d] = mn()
+				q.push(new Instruction(oldi, z + dyn, [index], 0 + d))
+
+
+
+			case Bytecode.GETSUPER:
+				var [index, dyn, d] = mn()
+				q.push(new Instruction(oldi, z + dyn, [index], 0 + d))
+				break
+			case Bytecode.SETSUPER:
+				var [index, dyn, d] = mn()
+				q.push(new Instruction(oldi, z + dyn, [index], -2 + d))
+				break
+
+
+			case Bytecode.COERCE:
+				var [index, dyn, d] = mn()
+				q.push(new Instruction(oldi, z + dyn, [index], 0 + d))
+				break
+			case Bytecode.COERCE_A:
+				q.push(new Instruction(oldi, z, [], 0))
+				break
+			case Bytecode.COERCE_S:
+				q.push(new Instruction(oldi, z, [], 0))
+				break
+
+
+			case Bytecode.CONVERT_I:
+				q.push(new Instruction(oldi, z, [], 0))
+				break
+			case Bytecode.CONVERT_D:
+				q.push(new Instruction(oldi, z, [], 0))
+				break
+			case Bytecode.CONVERT_B:
+				q.push(new Instruction(oldi, z, [], 0))
+				break
+			case Bytecode.CONVERT_U:
+				q.push(new Instruction(oldi, z, [], 0))
+				break
+			case Bytecode.CONVERT_S:
+				q.push(new Instruction(oldi, z, [], 0))
+				break
+			case Bytecode.CONVERT_O:
+				q.push(new Instruction(oldi, z, [], 0))
+				break
+			case Bytecode.CHECKFILTER:
+				q.push(new Instruction(oldi, z, [], 0))
+				break
+			case Bytecode.GETLOCAL:
+				q.push(new Instruction(oldi, Bytecode.GETLOCAL, [u30()], 1))
+				break
+			case Bytecode.GETLOCAL0:
+				q.push(new Instruction(oldi, Bytecode.GETLOCAL, [0], 1))
+				break
+			case Bytecode.GETLOCAL1:
+				q.push(new Instruction(oldi, Bytecode.GETLOCAL, [1], 1))
+				break
+			case Bytecode.GETLOCAL2:
+				q.push(new Instruction(oldi, Bytecode.GETLOCAL, [2], 1))
+				break
+			case Bytecode.GETLOCAL3:
+				q.push(new Instruction(oldi, Bytecode.GETLOCAL, [3], 1))
+				break
+			case Bytecode.SETLOCAL:
+				q.push(new Instruction(oldi, Bytecode.SETLOCAL, [u30()], -1))
+				break
+			case Bytecode.SETLOCAL0:
+				q.push(new Instruction(oldi, Bytecode.SETLOCAL, [0], -1))
+				break
+			case Bytecode.SETLOCAL1:
+				q.push(new Instruction(oldi, Bytecode.SETLOCAL, [1], -1))
+				break
+			case Bytecode.SETLOCAL2:
+				q.push(new Instruction(oldi, Bytecode.SETLOCAL, [2], -1))
+				break
+			case Bytecode.SETLOCAL3:
+				q.push(new Instruction(oldi, Bytecode.SETLOCAL, [3], -1))
+				break
+			case Bytecode.KILL:
+				q.push(new Instruction(oldi, z, [u30()], 0))
+				break
+
+			case Bytecode.GETLEX:
+				var [index, dyn, d] = mn()
+				q.push(new Instruction(oldi, z + dyn, [index], 1 + d))
+				break
+
+			default:
+				console.log("UNKNOWN #" + code[i - 1].toString(16) + " " + BytecodeName[code[i - 1]] + " (method N" + methodInfo.index() + ")")
+				return "UNKNOWN BYTECODE $" + code[i - 1].toString(16) + " (" + BytecodeName[code[i - 1]] + ") at " + oldi
+		}
+
+	}
+	let js0 = [];
 	let js = [];
 	/*
 	for (let i: number = 0; i < q.length; i++) {
@@ -911,80 +911,80 @@ export function compile(methodInfo: MethodInfo, sync = false): ICompilerProcess 
 			refs${z.refs}`);		
 	}*/
 
-    let propagate = function (position: number, stack: number) {
-        let v = stack
-        for (let i: number = 0; i < q.length; i++) {
-            if (q[i].position >= position) {
-                if (q[i].stack >= 0)
-                    return
+	let propagate = function (position: number, stack: number) {
+		let v = stack
+		for (let i: number = 0; i < q.length; i++) {
+			if (q[i].position >= position) {
+				if (q[i].stack >= 0)
+					return
 
-                q[i].stack = v
-                v += q[i].delta
+				q[i].stack = v
+				v += q[i].delta
 
-                for (let j: number = 0; j < q[i].refs.length; j++)
-                    propagate(q[i].refs[j], v)
+				for (let j: number = 0; j < q[i].refs.length; j++)
+					propagate(q[i].refs[j], v)
 
-                if (q[i].terminal)
-                    return
-            }
-        }
-    }
+				if (q[i].terminal)
+					return
+			}
+		}
+	}
 
-    propagate(0, 0)
+	propagate(0, 0)
 
-    let propagateScope = function (position: number, scope: number) {
-        let v = scope
+	let propagateScope = function (position: number, scope: number) {
+		let v = scope
 
-        for (let i: number = 0; i < q.length; i++) {
-            if (q[i].position >= position) {
-                if (q[i].scope >= 0)
-                    return
+		for (let i: number = 0; i < q.length; i++) {
+			if (q[i].position >= position) {
+				if (q[i].scope >= 0)
+					return
 
-                q[i].scope = v
-                v += q[i].deltaScope
+				q[i].scope = v
+				v += q[i].deltaScope
 
-                for (let j: number = 0; j < q[i].refs.length; j++)
-                    propagateScope(q[i].refs[j], v)
+				for (let j: number = 0; j < q[i].refs.length; j++)
+					propagateScope(q[i].refs[j], v)
 
-                if (q[i].terminal)
-                    return
-            }
-        }
-    }
+				if (q[i].terminal)
+					return
+			}
+		}
+	}
 
-    propagateScope(0, 0)
+	propagateScope(0, 0)
 
-    let targets: number[] = []
+	let targets: number[] = []
 
-    targets.push(0)
+	targets.push(0)
 
 
-	let openTryCatchBlockGroups:ExceptionInfo[][]=[];
-	let idnt:string="";
-	let mapTryCatchBlocksByStart:NumberMap<ExceptionInfo[]>;
-	let mapTryCatchBlocksByEnd:NumberMap<ExceptionInfo[]>;
+	let openTryCatchBlockGroups: ExceptionInfo[][] = [];
+	let idnt: string = "";
+	let mapTryCatchBlocksByStart: NumberMap<ExceptionInfo[]>;
+	let mapTryCatchBlocksByEnd: NumberMap<ExceptionInfo[]>;
 
-	if(body.catchBlocks.length){
+	if (body.catchBlocks.length) {
 		// collect try-catch blocks sorted by their start-position		
-		mapTryCatchBlocksByStart={};
+		mapTryCatchBlocksByStart = {};
 		// collect try-catch blocks sorted by their end-position	
-		mapTryCatchBlocksByEnd={};
-		for (let i: number = 0; i < body.catchBlocks.length; i++){
-			if(!mapTryCatchBlocksByStart[body.catchBlocks[i].start])
-				mapTryCatchBlocksByStart[body.catchBlocks[i].start]=[];
+		mapTryCatchBlocksByEnd = {};
+		for (let i: number = 0; i < body.catchBlocks.length; i++) {
+			if (!mapTryCatchBlocksByStart[body.catchBlocks[i].start])
+				mapTryCatchBlocksByStart[body.catchBlocks[i].start] = [];
 			mapTryCatchBlocksByStart[body.catchBlocks[i].start].push(body.catchBlocks[i]);
 
-			if(!mapTryCatchBlocksByEnd[body.catchBlocks[i].end])
-				mapTryCatchBlocksByEnd[body.catchBlocks[i].end]=[];
+			if (!mapTryCatchBlocksByEnd[body.catchBlocks[i].end])
+				mapTryCatchBlocksByEnd[body.catchBlocks[i].end] = [];
 			mapTryCatchBlocksByEnd[body.catchBlocks[i].end].push(body.catchBlocks[i]);
 
 			// make sure that the target-instruction for the catch is propagated and set as target
 			// using the stack value of the start-instruction does seem to do the trick
-			let stack=0;
+			let stack = 0;
 			//let scope=0;
-			for (let c: number = 0; c < q.length; c++){
-				if (q[c].position==body.catchBlocks[i].start){
-					stack=q[c].stack+q[c].delta;
+			for (let c: number = 0; c < q.length; c++) {
+				if (q[c].position == body.catchBlocks[i].start) {
+					stack = q[c].stack + q[c].delta;
 					//scope=q[c].scope+q[c].deltaScope;
 					break;
 				}
@@ -995,22 +995,22 @@ export function compile(methodInfo: MethodInfo, sync = false): ICompilerProcess 
 		}
 	}
 	//	creates a catch condition for a list of ExceptionInfo
-	let createCatchConditions = (catchBlocks:ExceptionInfo[], indent:string)=>{
+	let createCatchConditions = (catchBlocks: ExceptionInfo[], indent: string) => {
 		js.push(`            ${indent}catch(e){`);
 
-		
+
 		js.push(`                ${indent}// in case this is a error coming from stack0.__fast when stack0 is undefined,`);
 		js.push(`                ${indent}// we convert it to a ASError, so that avm2 can still catch it`);
 		js.push(`                ${indent}if (e instanceof TypeError)`);
 		js.push(`                ${indent}    e=context.sec.createError("TypeError", {code:1065, message:e.message})`);
 		js.push(`                ${indent}stack0=e;`);
-		for(var i=0; i<catchBlocks.length; i++){
-			var typeName=catchBlocks[i].getType();
-			if(!typeName){
+		for (var i = 0; i < catchBlocks.length; i++) {
+			var typeName = catchBlocks[i].getType();
+			if (!typeName) {
 				js.push(`                ${indent}{ p = ${catchBlocks[i].target}; continue; };`);
 				continue;
 			}
-			else{				
+			else {
 				let n = names.indexOf(typeName)
 				if (n < 0) {
 					n = names.length
@@ -1027,879 +1027,879 @@ export function compile(methodInfo: MethodInfo, sync = false): ICompilerProcess 
 		js.push(`            ${indent}}`);
 	}
 	//	closes all try-catch blocks. used when entering a new case-block
-	let closeAllTryCatch = ()=>{
-		let indent="";
+	let closeAllTryCatch = () => {
+		let indent = "";
 		//js.push(`//CLOSE ALL`);
-		for(let i=0; i<openTryCatchBlockGroups.length; i++)
-			indent+="    ";
-		for(let i=0; i<openTryCatchBlockGroups.length; i++){
+		for (let i = 0; i < openTryCatchBlockGroups.length; i++)
+			indent += "    ";
+		for (let i = 0; i < openTryCatchBlockGroups.length; i++) {
 			js.push(`            ${indent}}`);
 			createCatchConditions(openTryCatchBlockGroups[i], indent);
-		}		
+		}
 	}
 	//	reopen all try-catch blocks. used when entering a new case-block
-	let openAllTryCatch = ()=>{
+	let openAllTryCatch = () => {
 
-		let indent="";
-		for(let i=0; i<openTryCatchBlockGroups.length; i++){
+		let indent = "";
+		for (let i = 0; i < openTryCatchBlockGroups.length; i++) {
 			js.push(`                ${indent}try{`);
-			indent+="    ";
+			indent += "    ";
 
 		}
-		
-	}	
 
-			
-    for (let i: number = 0; i < q.length; i++)
-        for (let j: number = 0; j < q[i].refs.length; j++)
-            targets.push(q[i].refs[j])
-
-    let maxstack = 0
-    for (let i: number = 0; i < q.length; i++)
-        if (q[i].stack > maxstack)
-            maxstack = q[i].stack
-
-    let maxlocal = 0
-    for (let i: number = 0; i < q.length; i++)
-        if (q[i].name == Bytecode.GETLOCAL || q[i].name == Bytecode.SETLOCAL)
-            if (q[i].params[0] > maxlocal)
-                maxlocal = q[i].params[0]
-
-    let temp = false
-    for (let i: number = 0; i < q.length; i++)
-        if (q[i].name == Bytecode.NEWOBJECT || q[i].name == Bytecode.SWAP || q[i].name == Bytecode.HASNEXT2)
-            temp = true
-
-    let maxscope = 0
-    for (let i: number = 0; i < q.length; i++){
-        if (q[i].scope > maxscope)
-            maxscope = q[i].scope
 	}
 
-    let params = methodInfo.parameters
 
-    const funcName = (methodInfo.getName()).replace(/([^a-z0-9]+)/gi, "_");
-    const underrun = "[stack underrun]"
-    
+	for (let i: number = 0; i < q.length; i++)
+		for (let j: number = 0; j < q[i].refs.length; j++)
+			targets.push(q[i].refs[j])
 
-    js0.push("return function compiled_"+ funcName + "() {")
+	let maxstack = 0
+	for (let i: number = 0; i < q.length; i++)
+		if (q[i].stack > maxstack)
+			maxstack = q[i].stack
 
-    for (let i: number = 0; i < params.length; i++)
-        if (params[i].hasOptionalValue()) {
-            js0.push("    let argnum = arguments.length;")
-            break
-        }
+	let maxlocal = 0
+	for (let i: number = 0; i < q.length; i++)
+		if (q[i].name == Bytecode.GETLOCAL || q[i].name == Bytecode.SETLOCAL)
+			if (q[i].params[0] > maxlocal)
+				maxlocal = q[i].params[0]
 
-    js0.push("    let local0 = this === context.jsGlobal ? context.savedScope.global.object : this;")
+	let temp = false
+	for (let i: number = 0; i < q.length; i++)
+		if (q[i].name == Bytecode.NEWOBJECT || q[i].name == Bytecode.SWAP || q[i].name == Bytecode.HASNEXT2)
+			temp = true
 
-    for (let i: number = 0; i < params.length; i++) {
-        let p = params[i]
-        js0.push(`    let local${(i + 1)} = arguments[${i}];`)
+	let maxscope = 0
+	for (let i: number = 0; i < q.length; i++) {
+		if (q[i].scope > maxscope)
+			maxscope = q[i].scope
+	}
 
-        if (params[i].hasOptionalValue())
-            switch (p.optionalValueKind) {
-                case CONSTANT.Utf8:
-                    js0.push(`    if (argnum <= ${i}) local${(i + 1)} = context.abc.getString(${p.optionalValueIndex});`)
-                    break
-                default:
-                    js0.push(`    if (argnum <= ${i}) local${(i + 1)} = ${p.getOptionalValue()};`)
-                    break
-            }
+	let params = methodInfo.parameters
+
+	const funcName = (methodInfo.getName()).replace(/([^a-z0-9]+)/gi, "_");
+	const underrun = "[stack underrun]"
+
+
+	js0.push("return function compiled_" + funcName + "() {")
+
+	for (let i: number = 0; i < params.length; i++)
+		if (params[i].hasOptionalValue()) {
+			js0.push("    let argnum = arguments.length;")
+			break
+		}
+
+	js0.push("    let local0 = this === context.jsGlobal ? context.savedScope.global.object : this;")
+
+	for (let i: number = 0; i < params.length; i++) {
+		let p = params[i]
+		js0.push(`    let local${(i + 1)} = arguments[${i}];`)
+
+		if (params[i].hasOptionalValue())
+			switch (p.optionalValueKind) {
+				case CONSTANT.Utf8:
+					js0.push(`    if (argnum <= ${i}) local${(i + 1)} = context.abc.getString(${p.optionalValueIndex});`)
+					break
+				default:
+					js0.push(`    if (argnum <= ${i}) local${(i + 1)} = ${p.getOptionalValue()};`)
+					break
+			}
 	}
 	for (let i: number = params.length + 1; i <= maxlocal; i++)
-		js0.push(`    let local${i} = ${((i==params.length + 1)?"context.sec.createArrayUnsafe(Array.from(arguments))":"undefined")};`);
+		js0.push(`    let local${i} = ${((i == params.length + 1) ? "context.sec.createArrayUnsafe(Array.from(arguments))" : "undefined")};`);
 
 
-    for (let i: number = 0; i <= maxstack; i++)
-        js0.push(`    let stack${i} = undefined;`)
+	for (let i: number = 0; i <= maxstack; i++)
+		js0.push(`    let stack${i} = undefined;`)
 
-    for (let i: number = 0; i <= maxscope; i++)
-        js0.push(`    let scope${i} = undefined;`)
+	for (let i: number = 0; i <= maxscope; i++)
+		js0.push(`    let scope${i} = undefined;`)
 
-    if (temp)
-        js0.push("    let temp = undefined;")
+	if (temp)
+		js0.push("    let temp = undefined;")
 
-    js0.push("    let tr = undefined;")
+	js0.push("    let tr = undefined;")
 
-    let names: Multiname[] = []
+	let names: Multiname[] = []
 
-    let getname = (n: number) => {
-        let mn = abc.getMultiname(n)
-        let i = names.indexOf(mn)
-        if (i < 0) {
-            i = names.length
-            names.push(mn)
-            js0.push(`    let name${i} = context.names[${i}];`)
-        }
-        return "name" + i
-    }
-
-
-    js0.push("    let sec = context.sec;")
+	let getname = (n: number) => {
+		let mn = abc.getMultiname(n)
+		let i = names.indexOf(mn)
+		if (i < 0) {
+			i = names.length
+			names.push(mn)
+			js0.push(`    let name${i} = context.names[${i}];`)
+		}
+		return "name" + i
+	}
 
 
-    js.push("    let p = 0;")
-    js.push("    while (true) {")
-    js.push("        switch (p) {")
+	js0.push("    let sec = context.sec;")
 
-	let currentCatchBlocks:ExceptionInfo[];
 
-    for (let i: number = 0; i < q.length; i++) {
-        let z = q[i]
+	js.push("    let p = 0;")
+	js.push("    while (true) {")
+	js.push("        switch (p) {")
 
-		
-        if (targets.indexOf(z.position) >= 0){
+	let currentCatchBlocks: ExceptionInfo[];
+
+	for (let i: number = 0; i < q.length; i++) {
+		let z = q[i]
+
+
+		if (targets.indexOf(z.position) >= 0) {
 
 			// if we are in any try-catch-blocks, we must close them
 			if (openTryCatchBlockGroups) closeAllTryCatch();
 
 			js.push(`            case ${z.position}:`)
-			
+
 			// now we reopen all the try-catch again 
-			if (openTryCatchBlockGroups) openAllTryCatch();			
+			if (openTryCatchBlockGroups) openAllTryCatch();
 
 		}
 
-		currentCatchBlocks=mapTryCatchBlocksByStart?mapTryCatchBlocksByStart[z.position]:null;
-		if(currentCatchBlocks){
+		currentCatchBlocks = mapTryCatchBlocksByStart ? mapTryCatchBlocksByStart[z.position] : null;
+		if (currentCatchBlocks) {
 			openTryCatchBlockGroups.push(currentCatchBlocks);
-			idnt+="    ";
+			idnt += "    ";
 			js.push(`            ${idnt}try{`)
 		}
 
-        js.push(`${idnt}                //${BytecodeName[z.name]} ${z.params.join(" / ")}`);// + " pos: " + z.position+ " scope:"+z.scope+ " stack:"+z.stack)
+		js.push(`${idnt}                //${BytecodeName[z.name]} ${z.params.join(" / ")}`);// + " pos: " + z.position+ " scope:"+z.scope+ " stack:"+z.stack)
 
-        let stackF = (n: number) => ((z.stack - 1 - n) >= 0) ? (`stack${(z.stack - 1 - n)}`) : underrun
-        let stack0 = stackF(0)
-        let stack1 = stackF(1)
-        let stack2 = stackF(2)
-        let stack3 = stackF(3)
+		let stackF = (n: number) => ((z.stack - 1 - n) >= 0) ? (`stack${(z.stack - 1 - n)}`) : underrun
+		let stack0 = stackF(0)
+		let stack1 = stackF(1)
+		let stack2 = stackF(2)
+		let stack3 = stackF(3)
 		let stackN = stackF(-1)
 
-        let scope = z.scope > 0 ? `scope${(z.scope - 1)}` : "context.savedScope"
-        let scopeN = "scope" + z.scope
+		let scope = z.scope > 0 ? `scope${(z.scope - 1)}` : "context.savedScope"
+		let scopeN = "scope" + z.scope
 
-        let local = (n: number) => "local" + n
+		let local = (n: number) => "local" + n
 
-        let param = (n: number) => z.params[n]
-        if (z.stack < 0) {
-            js.push("                    // unreachable")
-        }
-        else{
-			
-            switch (z.name) {
-                case Bytecode.LABEL:
-                    break
-                case Bytecode.DXNSLATE:
-                    js.push(`${idnt}                ${ scope}.defaultNamespace = context.internNamespace(0, ${stack0});`)
-                    break
-                case Bytecode.DEBUGFILE:
-                    break
-                case Bytecode.DEBUGLINE:
-                    break
-                case Bytecode.DEBUG:
-                    break
-                case Bytecode.THROW:
-                    break
-                case Bytecode.GETLOCAL:
-                    js.push(`${idnt}                ${stackN} = ${local(param(0))};`)
-                    break
-                case Bytecode.SETLOCAL:
-                    js.push(`${idnt}                ${local(param(0))} = ${stack0};`)
-                    break
+		let param = (n: number) => z.params[n]
+		if (z.stack < 0) {
+			js.push("                    // unreachable")
+		}
+		else {
 
-                case Bytecode.GETSLOT:
-                    js.push(`${idnt}                ${stack0} = sec.box(${stack0}).axGetSlot(${param(0)});`)
-                    break
-                case Bytecode.SETSLOT:
-                    js.push(`${idnt}                sec.box(${stack1}).axSetSlot(${param(0)}, ${stack0});`)
-                    break
+			switch (z.name) {
+				case Bytecode.LABEL:
+					break
+				case Bytecode.DXNSLATE:
+					js.push(`${idnt}                ${scope}.defaultNamespace = context.internNamespace(0, ${stack0});`)
+					break
+				case Bytecode.DEBUGFILE:
+					break
+				case Bytecode.DEBUGLINE:
+					break
+				case Bytecode.DEBUG:
+					break
+				case Bytecode.THROW:
+					break
+				case Bytecode.GETLOCAL:
+					js.push(`${idnt}                ${stackN} = ${local(param(0))};`)
+					break
+				case Bytecode.SETLOCAL:
+					js.push(`${idnt}                ${local(param(0))} = ${stack0};`)
+					break
 
-                case Bytecode.GETGLOBALSCOPE:
-                    js.push(`${idnt}                ${stackN} = context.savedScope.global.object;`)
-                    break
-                case Bytecode.PUSHSCOPE:
-                    js.push(`${idnt}                ${scopeN} = ${scope}.extend(sec.box(${stack0}));`)
-                    break
-                case Bytecode.PUSHWITH:
-                    js.push(`${idnt}                ${scopeN} = context.pushwith(${scope}, ${stack0});`)
-                    break
-                case Bytecode.POPSCOPE:
-                    js.push(`${idnt}                ${scope} = undefined;`)
-                    break
-                case Bytecode.GETSCOPEOBJECT:
-                    js.push(`${idnt}                ${stackN} = scope${param(0)}.object;`)
-                    break
+				case Bytecode.GETSLOT:
+					js.push(`${idnt}                ${stack0} = sec.box(${stack0}).axGetSlot(${param(0)});`)
+					break
+				case Bytecode.SETSLOT:
+					js.push(`${idnt}                sec.box(${stack1}).axSetSlot(${param(0)}, ${stack0});`)
+					break
 
-                case Bytecode.NEXTNAME:
-                    js.push(`${idnt}                ${stack1} = sec.box(${stack1}).axNextName(${stack0});`)
-                    break
-                case Bytecode.NEXTVALUE:
-                    js.push(`${idnt}                ${stack1} = sec.box(${stack1}).axNextValue(${stack0});`)
-                    break
-                case Bytecode.HASNEXT:
-                    js.push(`${idnt}                ${stack1} = sec.box(${stack1}).axNextNameIndex(${stack0});`)
-                    break
-                case Bytecode.HASNEXT2:
-                    js.push(`${idnt}                temp = context.hasnext2(${local(param(0))}, ${local(param(1))});`)
-                    js.push(`${idnt}                ${local(param(0))} = temp[0];`)
-                    js.push(`${idnt}                ${local(param(1))} = temp[1];`)
-                    js.push(`${idnt}                ${stackN} = ${local(param(0))} > 0;`)
-                    break
-                case Bytecode.IN:
-                    js.push(`${idnt}                ${stack1} = (${stack1} && ${stack1}.axClass === sec.AXQName) ? obj.axHasProperty(${stack1}.name) : ${stack0}.axHasPublicProperty(${stack1});`)
-                    break
+				case Bytecode.GETGLOBALSCOPE:
+					js.push(`${idnt}                ${stackN} = context.savedScope.global.object;`)
+					break
+				case Bytecode.PUSHSCOPE:
+					js.push(`${idnt}                ${scopeN} = ${scope}.extend(sec.box(${stack0}));`)
+					break
+				case Bytecode.PUSHWITH:
+					js.push(`${idnt}                ${scopeN} = context.pushwith(${scope}, ${stack0});`)
+					break
+				case Bytecode.POPSCOPE:
+					js.push(`${idnt}                ${scope} = undefined;`)
+					break
+				case Bytecode.GETSCOPEOBJECT:
+					js.push(`${idnt}                ${stackN} = scope${param(0)}.object;`)
+					break
 
-                case Bytecode.DUP:
-                    js.push(`${idnt}                ${stackN} = ${stack0};`)
-                    break
-                case Bytecode.POP:
-                    js.push(`${idnt}                ;`)
-                    break
-                case Bytecode.SWAP:
-                    js.push(`${idnt}                temp = ${stack0};`)
-                    js.push(`${idnt}                ${stack0} = ${stack1};`)
-                    js.push(`${idnt}                ${stack1} = temp;`)
-                    js.push(`${idnt}                temp = undefined;`)
-                    break
-                case Bytecode.PUSHTRUE:
-                    js.push(`${idnt}                ${ stackN} = true;`)
-                    break
-                case Bytecode.PUSHFALSE:
-                    js.push(`${idnt}                ${ stackN} = false;`)
-                    break
-                case Bytecode.PUSHBYTE:
-                    js.push(`${idnt}                ${ stackN} = ${param(0)};`)
-                    break
-                case Bytecode.PUSHSHORT:
-                    js.push(`${idnt}                ${ stackN} = ${param(0)};`)
-                    break
-                case Bytecode.PUSHINT:
-                    js.push(`${idnt}                ${ stackN} = ${abc.ints[param(0)]};`)
-                    break
-                case Bytecode.PUSHDOUBLE:
-                    js.push(`${idnt}                ${ stackN} = ${abc.doubles[param(0)]};`)
-                    break
-                case Bytecode.PUSHSTRING:
-                    js.push(`${idnt}                ${ stackN} = context.abc.getString(${param(0)});`)
-                    break
-                case Bytecode.PUSHNAN:
-                    js.push(`${idnt}                ${ stackN} = NaN;`)
-                    break
-                case Bytecode.PUSHNULL:
-                    js.push(`${idnt}                ${ stackN} = null;`)
-                    break
-                case Bytecode.PUSHUNDEFINED:
-                    js.push(`${idnt}                ${ stackN} = undefined;`)
-                    break
-                case Bytecode.IFEQ:
-                    js.push(`${idnt}                if (${stack0} == ${stack1}) { p = ${param(0)}; continue; };`)
-                    break
-                case Bytecode.IFNE:
-                    js.push(`${idnt}                if (${stack0} != ${stack1}) { p = ${param(0)}; continue; };`)
-                    break
-                case Bytecode.IFSTRICTEQ:
-                    js.push(`${idnt}                if (${stack0} === ${stack1}) { p = ${param(0)}; continue; };`)
-                    break
-                case Bytecode.IFSTRICTNE:
-                    js.push(`${idnt}                if (${stack0} !== ${stack1}) { p = ${param(0)}; continue; };`)
-                    break
-                case Bytecode.IFGT:
-                    js.push(`${idnt}                if (${stack0} < ${stack1}) { p = ${param(0)}; continue; };`)
-                    break
-                case Bytecode.IFGE:
-                    js.push(`${idnt}                if (${stack0} <= ${stack1}) { p = ${param(0)}; continue; };`)
-                    break
-                case Bytecode.IFLT:
-                    js.push(`${idnt}                if (${stack0} > ${stack1}) { p = ${param(0)}; continue; };`)
-                    break
-                case Bytecode.IFLE:
-                    js.push(`${idnt}                if (${stack0} >= ${stack1}) { p = ${param(0)}; continue; };`)
-                    break
-                case Bytecode.IFFALSE:
-                    js.push(`${idnt}                if (!${stack0}) { p = ${param(0)}; continue; };`)
-                    break
-                case Bytecode.IFTRUE:
-                    js.push(`${idnt}                if (${stack0}) { p = ${param(0)}; continue; };`)
-                    break
-                case Bytecode.LOOKUPSWITCH:
-                    var jj = z.params.concat()
-                    var dj = jj.shift()
-                    js.push(`${idnt}                if (${stack0} >= 0 && ${stack0} < ${jj.length}) { p = [${jj.join(", ")}][${stack0}]; continue; } else { p = ${dj}; continue; };`)
-                    break
-                case Bytecode.JUMP:
-                    js.push(`${idnt}                { p = ${param(0)}; continue; };`)
-                    break
-                case Bytecode.INCREMENT:
-                    js.push(`${idnt}                ${stack0}++;`)
-                    break
-                case Bytecode.DECREMENT:
-                    js.push(`${idnt}                ${stack0}--;`)
-                    break
-                case Bytecode.INCLOCAL:
-                    js.push(`${idnt}                ${ local(param(0))}++;`)
-                    break
-                case Bytecode.DECLOCAL:
-                    js.push(`${idnt}                ${ local(param(0))}--;`)
-                    break
-                case Bytecode.INCREMENT_I:
-                    js.push(`${idnt}                ${stack0} |= 0;`)
-                    js.push(`${idnt}                ${stack0}++;`)
-                    break
-                case Bytecode.DECREMENT_I:
-                    js.push(`${idnt}                ${stack0} |= 0;`)
-                    js.push(`${idnt}                ${stack0}--;`)
-                    break
-                case Bytecode.INCLOCAL_I:
-                    js.push(`${idnt}                ${ local(param(0))} |= 0;`)
-                    js.push(`${idnt}                ${ local(param(0))}++;`)
-                    break
-                case Bytecode.DECLOCAL_I:
-                    js.push(`${idnt}                ${ local(param(0))} |= 0;`)
-                    js.push(`${idnt}                ${ local(param(0))}++;`)
-                case Bytecode.NEGATE_I:
-                    js.push(`${idnt}                ${stack0} = -(${stack0} | 0);`)
-                    break
-                case Bytecode.ADD_I:
-                    js.push(`${idnt}                ${stack1} = (${stack1} | 0) + (${stack0} | 0);`)
-                    break
-                case Bytecode.SUBTRACT_I:
-                    js.push(`${idnt}                ${stack1} = (${stack1} | 0) - (${stack0} | 0);`)
-                    break
-                case Bytecode.MULTIPLY_I:
-                    js.push(`${idnt}                ${stack1} = (${stack1} | 0) * (${stack0} | 0);`)
-                    break
-                case Bytecode.ADD:
-                    js.push(`${idnt}                ${stack1} += ${stack0};`)
-                    break
-                case Bytecode.SUBTRACT:
-                    js.push(`${idnt}                ${stack1} -= ${stack0};`)
-                    break
-                case Bytecode.MULTIPLY:
-                    js.push(`${idnt}                ${stack1} *= ${stack0};`)
-                    break
-                case Bytecode.DIVIDE:
-                    js.push(`${idnt}                ${stack1} /= ${stack0};`)
-                    break
-                case Bytecode.MODULO:
-                    js.push(`${idnt}                ${stack1} %= ${stack0};`)
-                    break
+				case Bytecode.NEXTNAME:
+					js.push(`${idnt}                ${stack1} = sec.box(${stack1}).axNextName(${stack0});`)
+					break
+				case Bytecode.NEXTVALUE:
+					js.push(`${idnt}                ${stack1} = sec.box(${stack1}).axNextValue(${stack0});`)
+					break
+				case Bytecode.HASNEXT:
+					js.push(`${idnt}                ${stack1} = sec.box(${stack1}).axNextNameIndex(${stack0});`)
+					break
+				case Bytecode.HASNEXT2:
+					js.push(`${idnt}                temp = context.hasnext2(${local(param(0))}, ${local(param(1))});`)
+					js.push(`${idnt}                ${local(param(0))} = temp[0];`)
+					js.push(`${idnt}                ${local(param(1))} = temp[1];`)
+					js.push(`${idnt}                ${stackN} = ${local(param(0))} > 0;`)
+					break
+				case Bytecode.IN:
+					js.push(`${idnt}                ${stack1} = (${stack1} && ${stack1}.axClass === sec.AXQName) ? obj.axHasProperty(${stack1}.name) : ${stack0}.axHasPublicProperty(${stack1});`)
+					break
 
-                case Bytecode.LSHIFT:
-                    js.push(`${idnt}                ${stack1} <<= ${stack0};`)
-                    break
-                case Bytecode.RSHIFT:
-                    js.push(`${idnt}                ${stack1} >>= ${stack0};`)
-                    break
-                case Bytecode.URSHIFT:
-                    js.push(`${idnt}                ${stack1} >>>= ${stack0};`)
-                    break
+				case Bytecode.DUP:
+					js.push(`${idnt}                ${stackN} = ${stack0};`)
+					break
+				case Bytecode.POP:
+					js.push(`${idnt}                ;`)
+					break
+				case Bytecode.SWAP:
+					js.push(`${idnt}                temp = ${stack0};`)
+					js.push(`${idnt}                ${stack0} = ${stack1};`)
+					js.push(`${idnt}                ${stack1} = temp;`)
+					js.push(`${idnt}                temp = undefined;`)
+					break
+				case Bytecode.PUSHTRUE:
+					js.push(`${idnt}                ${stackN} = true;`)
+					break
+				case Bytecode.PUSHFALSE:
+					js.push(`${idnt}                ${stackN} = false;`)
+					break
+				case Bytecode.PUSHBYTE:
+					js.push(`${idnt}                ${stackN} = ${param(0)};`)
+					break
+				case Bytecode.PUSHSHORT:
+					js.push(`${idnt}                ${stackN} = ${param(0)};`)
+					break
+				case Bytecode.PUSHINT:
+					js.push(`${idnt}                ${stackN} = ${abc.ints[param(0)]};`)
+					break
+				case Bytecode.PUSHDOUBLE:
+					js.push(`${idnt}                ${stackN} = ${abc.doubles[param(0)]};`)
+					break
+				case Bytecode.PUSHSTRING:
+					js.push(`${idnt}                ${stackN} = context.abc.getString(${param(0)});`)
+					break
+				case Bytecode.PUSHNAN:
+					js.push(`${idnt}                ${stackN} = NaN;`)
+					break
+				case Bytecode.PUSHNULL:
+					js.push(`${idnt}                ${stackN} = null;`)
+					break
+				case Bytecode.PUSHUNDEFINED:
+					js.push(`${idnt}                ${stackN} = undefined;`)
+					break
+				case Bytecode.IFEQ:
+					js.push(`${idnt}                if (${stack0} == ${stack1}) { p = ${param(0)}; continue; };`)
+					break
+				case Bytecode.IFNE:
+					js.push(`${idnt}                if (${stack0} != ${stack1}) { p = ${param(0)}; continue; };`)
+					break
+				case Bytecode.IFSTRICTEQ:
+					js.push(`${idnt}                if (${stack0} === ${stack1}) { p = ${param(0)}; continue; };`)
+					break
+				case Bytecode.IFSTRICTNE:
+					js.push(`${idnt}                if (${stack0} !== ${stack1}) { p = ${param(0)}; continue; };`)
+					break
+				case Bytecode.IFGT:
+					js.push(`${idnt}                if (${stack0} < ${stack1}) { p = ${param(0)}; continue; };`)
+					break
+				case Bytecode.IFGE:
+					js.push(`${idnt}                if (${stack0} <= ${stack1}) { p = ${param(0)}; continue; };`)
+					break
+				case Bytecode.IFLT:
+					js.push(`${idnt}                if (${stack0} > ${stack1}) { p = ${param(0)}; continue; };`)
+					break
+				case Bytecode.IFLE:
+					js.push(`${idnt}                if (${stack0} >= ${stack1}) { p = ${param(0)}; continue; };`)
+					break
+				case Bytecode.IFFALSE:
+					js.push(`${idnt}                if (!${stack0}) { p = ${param(0)}; continue; };`)
+					break
+				case Bytecode.IFTRUE:
+					js.push(`${idnt}                if (${stack0}) { p = ${param(0)}; continue; };`)
+					break
+				case Bytecode.LOOKUPSWITCH:
+					var jj = z.params.concat()
+					var dj = jj.shift()
+					js.push(`${idnt}                if (${stack0} >= 0 && ${stack0} < ${jj.length}) { p = [${jj.join(", ")}][${stack0}]; continue; } else { p = ${dj}; continue; };`)
+					break
+				case Bytecode.JUMP:
+					js.push(`${idnt}                { p = ${param(0)}; continue; };`)
+					break
+				case Bytecode.INCREMENT:
+					js.push(`${idnt}                ${stack0}++;`)
+					break
+				case Bytecode.DECREMENT:
+					js.push(`${idnt}                ${stack0}--;`)
+					break
+				case Bytecode.INCLOCAL:
+					js.push(`${idnt}                ${local(param(0))}++;`)
+					break
+				case Bytecode.DECLOCAL:
+					js.push(`${idnt}                ${local(param(0))}--;`)
+					break
+				case Bytecode.INCREMENT_I:
+					js.push(`${idnt}                ${stack0} |= 0;`)
+					js.push(`${idnt}                ${stack0}++;`)
+					break
+				case Bytecode.DECREMENT_I:
+					js.push(`${idnt}                ${stack0} |= 0;`)
+					js.push(`${idnt}                ${stack0}--;`)
+					break
+				case Bytecode.INCLOCAL_I:
+					js.push(`${idnt}                ${local(param(0))} |= 0;`)
+					js.push(`${idnt}                ${local(param(0))}++;`)
+					break
+				case Bytecode.DECLOCAL_I:
+					js.push(`${idnt}                ${local(param(0))} |= 0;`)
+					js.push(`${idnt}                ${local(param(0))}++;`)
+				case Bytecode.NEGATE_I:
+					js.push(`${idnt}                ${stack0} = -(${stack0} | 0);`)
+					break
+				case Bytecode.ADD_I:
+					js.push(`${idnt}                ${stack1} = (${stack1} | 0) + (${stack0} | 0);`)
+					break
+				case Bytecode.SUBTRACT_I:
+					js.push(`${idnt}                ${stack1} = (${stack1} | 0) - (${stack0} | 0);`)
+					break
+				case Bytecode.MULTIPLY_I:
+					js.push(`${idnt}                ${stack1} = (${stack1} | 0) * (${stack0} | 0);`)
+					break
+				case Bytecode.ADD:
+					js.push(`${idnt}                ${stack1} += ${stack0};`)
+					break
+				case Bytecode.SUBTRACT:
+					js.push(`${idnt}                ${stack1} -= ${stack0};`)
+					break
+				case Bytecode.MULTIPLY:
+					js.push(`${idnt}                ${stack1} *= ${stack0};`)
+					break
+				case Bytecode.DIVIDE:
+					js.push(`${idnt}                ${stack1} /= ${stack0};`)
+					break
+				case Bytecode.MODULO:
+					js.push(`${idnt}                ${stack1} %= ${stack0};`)
+					break
 
-                case Bytecode.BITAND:
-                    js.push(`${idnt}                ${stack1} &= ${stack0};`)
-                    break
-                case Bytecode.BITOR:
-                    js.push(`${idnt}                ${stack1} |= ${stack0};`)
-                    break
-                case Bytecode.BITXOR:
-                    js.push(`${idnt}                ${stack1} ^= ${stack0};`)
-                    break
+				case Bytecode.LSHIFT:
+					js.push(`${idnt}                ${stack1} <<= ${stack0};`)
+					break
+				case Bytecode.RSHIFT:
+					js.push(`${idnt}                ${stack1} >>= ${stack0};`)
+					break
+				case Bytecode.URSHIFT:
+					js.push(`${idnt}                ${stack1} >>>= ${stack0};`)
+					break
 
-                case Bytecode.EQUALS:
-                    js.push(`${idnt}                ${stack1} = ${stack1} == ${stack0};`)
-                    break
-                case Bytecode.STRICTEQUALS:
-                    js.push(`${idnt}                ${stack1} = ${stack1} === ${stack0};`)
-                    break
-                case Bytecode.GREATERTHAN:
-                    js.push(`${idnt}                ${stack1} = ${stack1} > ${stack0};`)
-                    break
-                case Bytecode.GREATEREQUALS:
-                    js.push(`${idnt}                ${stack1} = ${stack1} >= ${stack0};`)
-                    break
-                case Bytecode.LESSTHAN:
-                    js.push(`${idnt}                ${stack1} = ${stack1} < ${stack0};`)
-                    break
-                case Bytecode.LESSEQUALS:
-                    js.push(`${idnt}                ${stack1} = ${stack1} <= ${stack0};`)
-                    break
-                case Bytecode.NOT:
-                    js.push(`${idnt}                ${stack0} = !${stack0};`)
-                    break
-                case Bytecode.BITNOT:
-                    js.push(`${idnt}                ${stack0} = ~${stack0};`)
-                    break
-                case Bytecode.NEGATE:
-                    js.push(`${idnt}                ${stack0} = -${stack0};`)
-                    break
-                case Bytecode.TYPEOF:
-                    js.push(`${idnt}                if (${stack0}) {`)
-                    js.push(`${idnt}                    if (${stack0}.value) {`)
-                    js.push(`${idnt}                        return typeof ${stack0}.value;`)
-                    js.push(`${idnt}                    }`)
-                    js.push(`${idnt}                    if (sec.AXXML.dPrototype.isPrototypeOf(${stack0}) || sec.AXXMLList.dPrototype.isPrototypeOf(${stack0})) {`)
-                    js.push(`${idnt}                        return 'xml';`)
-                    js.push(`${idnt}                    }`)
-                    js.push(`${idnt}                }`)
-                    js.push(`${idnt}                return typeof ${stack0};`)
-                    break;
-                case Bytecode.INSTANCEOF:
-                    js.push(`${idnt}                ${stack1} = ${stack0}.axIsInstanceOf(${stack1});`)
-                    break
-                case Bytecode.ISTYPELATE:
-                    js.push(`${idnt}                ${stack1} = ${stack0}.axIsType(${stack1});`)
-                    break
-                case Bytecode.ASTYPELATE:
-                    js.push(`${idnt}                ${stack1} = ${stack0}.axAsType(${stack1});`)
-                    break
+				case Bytecode.BITAND:
+					js.push(`${idnt}                ${stack1} &= ${stack0};`)
+					break
+				case Bytecode.BITOR:
+					js.push(`${idnt}                ${stack1} |= ${stack0};`)
+					break
+				case Bytecode.BITXOR:
+					js.push(`${idnt}                ${stack1} ^= ${stack0};`)
+					break
 
-                case Bytecode.CALL: {
-                    let pp = []
+				case Bytecode.EQUALS:
+					js.push(`${idnt}                ${stack1} = ${stack1} == ${stack0};`)
+					break
+				case Bytecode.STRICTEQUALS:
+					js.push(`${idnt}                ${stack1} = ${stack1} === ${stack0};`)
+					break
+				case Bytecode.GREATERTHAN:
+					js.push(`${idnt}                ${stack1} = ${stack1} > ${stack0};`)
+					break
+				case Bytecode.GREATEREQUALS:
+					js.push(`${idnt}                ${stack1} = ${stack1} >= ${stack0};`)
+					break
+				case Bytecode.LESSTHAN:
+					js.push(`${idnt}                ${stack1} = ${stack1} < ${stack0};`)
+					break
+				case Bytecode.LESSEQUALS:
+					js.push(`${idnt}                ${stack1} = ${stack1} <= ${stack0};`)
+					break
+				case Bytecode.NOT:
+					js.push(`${idnt}                ${stack0} = !${stack0};`)
+					break
+				case Bytecode.BITNOT:
+					js.push(`${idnt}                ${stack0} = ~${stack0};`)
+					break
+				case Bytecode.NEGATE:
+					js.push(`${idnt}                ${stack0} = -${stack0};`)
+					break
+				case Bytecode.TYPEOF:
+					js.push(`${idnt}                if (${stack0}) {`)
+					js.push(`${idnt}                    if (${stack0}.value) {`)
+					js.push(`${idnt}                        return typeof ${stack0}.value;`)
+					js.push(`${idnt}                    }`)
+					js.push(`${idnt}                    if (sec.AXXML.dPrototype.isPrototypeOf(${stack0}) || sec.AXXMLList.dPrototype.isPrototypeOf(${stack0})) {`)
+					js.push(`${idnt}                        return 'xml';`)
+					js.push(`${idnt}                    }`)
+					js.push(`${idnt}                }`)
+					js.push(`${idnt}                return typeof ${stack0};`)
+					break;
+				case Bytecode.INSTANCEOF:
+					js.push(`${idnt}                ${stack1} = ${stack0}.axIsInstanceOf(${stack1});`)
+					break
+				case Bytecode.ISTYPELATE:
+					js.push(`${idnt}                ${stack1} = ${stack0}.axIsType(${stack1});`)
+					break
+				case Bytecode.ASTYPELATE:
+					js.push(`${idnt}                ${stack1} = ${stack0}.axAsType(${stack1});`)
+					break
 
-                    for (let j: number = 1; j <= param(0); j++)
-                        pp.push(stackF(param(0) - j))
+				case Bytecode.CALL: {
+					let pp = []
 
-                    js.push(`${idnt}                ${ stackF(param(0) + 1)} = context.call(${stackF(param(0) + 1)}, ${stackF(param(0))}, [${pp.join(", ")}]);`)
-                }
-                    break
-                case Bytecode.CONSTRUCT: {
-                    let pp = []
+					for (let j: number = 1; j <= param(0); j++)
+						pp.push(stackF(param(0) - j))
 
-                    for (let j: number = 1; j <= param(0); j++)
-                        pp.push(stackF(param(0) - j))
+					js.push(`${idnt}                ${stackF(param(0) + 1)} = context.call(${stackF(param(0) + 1)}, ${stackF(param(0))}, [${pp.join(", ")}]);`)
+				}
+					break
+				case Bytecode.CONSTRUCT: {
+					let pp = []
 
-                    js.push(`${idnt}                ${ stackF(param(0))} = context.construct(${stackF(param(0))}, [${pp.join(", ")}]);`)
-                }
-                    break
-                case Bytecode.CALLPROPERTY:
-                    var mn = abc.getMultiname(param(1));
-                    let pp = []
+					for (let j: number = 1; j <= param(0); j++)
+						pp.push(stackF(param(0) - j))
 
-                    for (let j: number = 0; j <= param(0); j++)
-                        pp.push(stackF(param(0) - j))
+					js.push(`${idnt}                ${stackF(param(0))} = context.construct(${stackF(param(0))}, [${pp.join(", ")}]);`)
+				}
+					break
+				case Bytecode.CALLPROPERTY:
+					var mn = abc.getMultiname(param(1));
+					let pp = []
 
-                    let obj = pp.shift();
-                    if (abc.getMultiname(param(1)).name == "getDefinitionByName") {
-                        js.push(`${idnt}                ${ stackF(param(0))} = context.getdefinitionbyname(${scope}, ${obj}, [${pp.join(", ")}]);`)
-                    }
-                    else {
-                        js.push(`${idnt}                if (${obj}.__fast__) {`)
-                        js.push(`${idnt}                    ${stackF(param(0))} = ${obj}['${mn.name}'].apply(${obj}, [${pp.join(", ")}]);`)
-                        js.push(`${idnt}                } else {`)    
-                        js.push(`${idnt}                // ${mn}`)
-                        js.push(`${idnt}                    temp = sec.box(${obj});`)
-                        js.push(`${idnt}                    ${stackF(param(0))} = (typeof temp['$Bg${mn.name}'] === 'function')? temp['$Bg${mn.name}'](${pp.join(", ")}) : temp.axCallProperty(${getname(param(1))}, [${pp.join(", ")}], false);`)
-                        js.push(`${idnt}                }`)
-                    }
-                    break
-                case Bytecode.CALLPROPLEX: {
-                    let pp = []
+					for (let j: number = 0; j <= param(0); j++)
+						pp.push(stackF(param(0) - j))
 
-                    for (let j: number = 0; j <= param(0); j++)
-                        pp.push(stackF(param(0) - j))
+					let obj = pp.shift();
+					if (abc.getMultiname(param(1)).name == "getDefinitionByName") {
+						js.push(`${idnt}                ${stackF(param(0))} = context.getdefinitionbyname(${scope}, ${obj}, [${pp.join(", ")}]);`)
+					}
+					else {
+						js.push(`${idnt}                if (${obj}.__fast__) {`)
+						js.push(`${idnt}                    ${stackF(param(0))} = ${obj}['${mn.name}'].apply(${obj}, [${pp.join(", ")}]);`)
+						js.push(`${idnt}                } else {`)
+						js.push(`${idnt}                // ${mn}`)
+						js.push(`${idnt}                    temp = sec.box(${obj});`)
+						js.push(`${idnt}                    ${stackF(param(0))} = (typeof temp['$Bg${mn.name}'] === 'function')? temp['$Bg${mn.name}'](${pp.join(", ")}) : temp.axCallProperty(${getname(param(1))}, [${pp.join(", ")}], false);`)
+						js.push(`${idnt}                }`)
+					}
+					break
+				case Bytecode.CALLPROPLEX: {
+					let pp = []
 
-                    js.push(`${idnt}                    temp = sec.box(${pp.shift()});`)
-                    js.push(`${idnt}                ${ stackF(param(0))} = (typeof temp['$Bg${mn.name}'] === 'function')? temp['$Bg${mn.name}'](${pp.join(", ")}) : temp.axCallProperty(${getname(param(1))}, [${pp.join(", ")}], true);`)
-                }
-                    break
-                case Bytecode.CALLPROPVOID: {
-                    var mn = abc.getMultiname(param(1));
-                    let pp = [];
+					for (let j: number = 0; j <= param(0); j++)
+						pp.push(stackF(param(0) - j))
 
-                    for (let j: number = 0; j <= param(0); j++)
-                        pp.push(stackF(param(0) - j))
+					js.push(`${idnt}                    temp = sec.box(${pp.shift()});`)
+					js.push(`${idnt}                ${stackF(param(0))} = (typeof temp['$Bg${mn.name}'] === 'function')? temp['$Bg${mn.name}'](${pp.join(", ")}) : temp.axCallProperty(${getname(param(1))}, [${pp.join(", ")}], true);`)
+				}
+					break
+				case Bytecode.CALLPROPVOID: {
+					var mn = abc.getMultiname(param(1));
+					let pp = [];
 
-                    let obj = pp.shift();
-                    js.push(`${idnt}                if (${obj}.__fast__) {`)
-                    js.push(`${idnt}                    ${obj}['${mn.name}'].apply(${obj}, [${pp.join(", ")}]);`)
-                    js.push(`${idnt}                } else {`)
-                    js.push(`${idnt}                    temp = sec.box(${obj});`)
-                    js.push(`${idnt}                    (typeof temp['$Bg${mn.name}'] === 'function')? temp['$Bg${mn.name}'](${pp.join(", ")}) : temp.axCallProperty(${getname(param(1))}, [${pp.join(", ")}], false);`)
-                    js.push(`${idnt}                }`)
-                }
-                    break
-                case Bytecode.APPLYTYPE: {
-                    let pp = []
+					for (let j: number = 0; j <= param(0); j++)
+						pp.push(stackF(param(0) - j))
 
-                    for (let j: number = 1; j <= param(0); j++)
-                        pp.push(stackF(param(0) - j))
+					let obj = pp.shift();
+					js.push(`${idnt}                if (${obj}.__fast__) {`)
+					js.push(`${idnt}                    ${obj}['${mn.name}'].apply(${obj}, [${pp.join(", ")}]);`)
+					js.push(`${idnt}                } else {`)
+					js.push(`${idnt}                    temp = sec.box(${obj});`)
+					js.push(`${idnt}                    (typeof temp['$Bg${mn.name}'] === 'function')? temp['$Bg${mn.name}'](${pp.join(", ")}) : temp.axCallProperty(${getname(param(1))}, [${pp.join(", ")}], false);`)
+					js.push(`${idnt}                }`)
+				}
+					break
+				case Bytecode.APPLYTYPE: {
+					let pp = []
 
-                    js.push(`${idnt}                ${stackF(param(0))} = sec.applyType(${stackF(param(0))}, [${pp.join(", ")}]);`)
-                }
-                    break
+					for (let j: number = 1; j <= param(0); j++)
+						pp.push(stackF(param(0) - j))
+
+					js.push(`${idnt}                ${stackF(param(0))} = sec.applyType(${stackF(param(0))}, [${pp.join(", ")}]);`)
+				}
+					break
 
 
-                case Bytecode.FINDPROPSTRICT:
-                    js.push(`${idnt}                // ${abc.getMultiname(param(0))}`)
-                    js.push(`${idnt}                ${ stackN} = ${scope}.findScopeProperty(${getname(param(0))}, true, false);`)
-                    break
-                case Bytecode.FINDPROPERTY:
-                    js.push(`${idnt}                // ${abc.getMultiname(param(0))}`)
-                    js.push(`${idnt}                ${ stackN} = ${scope}.findScopeProperty(${getname(param(0))}, false, false);`)
-                    break
-                case Bytecode.NEWFUNCTION:
-                    js.push(`${idnt}                // ${abc.getMethodInfo(param(0))}`)
-                    js.push(`${idnt}                ${ stackN} = sec.createFunction(context.abc.getMethodInfo(${param(0)}), ${scope}, true);`)
-                    break
-                case Bytecode.NEWCLASS:
-                    js.push(`${idnt}                // ${abc.classes[param(0)]}`)
-                    js.push(`${idnt}                ${stack0} = sec.createClass(context.abc.classes[${param(0)}], ${stack0}, ${scope});`)
-                    break
-                case Bytecode.NEWARRAY: {
-                    let pp = []
+				case Bytecode.FINDPROPSTRICT:
+					js.push(`${idnt}                // ${abc.getMultiname(param(0))}`)
+					js.push(`${idnt}                ${stackN} = ${scope}.findScopeProperty(${getname(param(0))}, true, false);`)
+					break
+				case Bytecode.FINDPROPERTY:
+					js.push(`${idnt}                // ${abc.getMultiname(param(0))}`)
+					js.push(`${idnt}                ${stackN} = ${scope}.findScopeProperty(${getname(param(0))}, false, false);`)
+					break
+				case Bytecode.NEWFUNCTION:
+					js.push(`${idnt}                // ${abc.getMethodInfo(param(0))}`)
+					js.push(`${idnt}                ${stackN} = sec.createFunction(context.abc.getMethodInfo(${param(0)}), ${scope}, true);`)
+					break
+				case Bytecode.NEWCLASS:
+					js.push(`${idnt}                // ${abc.classes[param(0)]}`)
+					js.push(`${idnt}                ${stack0} = sec.createClass(context.abc.classes[${param(0)}], ${stack0}, ${scope});`)
+					break
+				case Bytecode.NEWARRAY: {
+					let pp = []
 
-                    for (let j: number = 1; j <= param(0); j++)
-                        pp.push(stackF(param(0) - j))
+					for (let j: number = 1; j <= param(0); j++)
+						pp.push(stackF(param(0) - j))
 
-                    js.push(`${idnt}                ${ stackF(param(0) - 1)} = sec.AXArray.axBox([${pp.join(", ")}]);`)
-                }
-                    break
-                case Bytecode.NEWOBJECT:
-                    js.push(`${idnt}                temp = Object.create(sec.AXObject.tPrototype);`)
+					js.push(`${idnt}                ${stackF(param(0) - 1)} = sec.AXArray.axBox([${pp.join(", ")}]);`)
+				}
+					break
+				case Bytecode.NEWOBJECT:
+					js.push(`${idnt}                temp = Object.create(sec.AXObject.tPrototype);`)
 
-                    for (let j: number = 1; j <= param(0); j++) {
-                        js.push(`${idnt}                temp.axSetPublicProperty(${stackF(2 * param(0) - 2 * j + 1)}, ${stackF(2 * param(0) - 2 * j)});`)
-                    }
+					for (let j: number = 1; j <= param(0); j++) {
+						js.push(`${idnt}                temp.axSetPublicProperty(${stackF(2 * param(0) - 2 * j + 1)}, ${stackF(2 * param(0) - 2 * j)});`)
+					}
 
-                    js.push(`${idnt}                ${ stackF(2 * param(0) - 1)} = temp;`)
-                    js.push(`${idnt}                temp = undefined;`)
+					js.push(`${idnt}                ${stackF(2 * param(0) - 1)} = temp;`)
+					js.push(`${idnt}                temp = undefined;`)
 
-                    break
-                case Bytecode.NEWACTIVATION:
-                    js.push(`${idnt}                ${ stackN} = sec.createActivation(context.mi, ${scope});`)
-                    break
-                case Bytecode.NEWCATCH:
-                    js.push(`${idnt}                ${ stackN} = sec.createCatch(context.mi.getBody().catchBlocks[${param(0)}], ${scope});`)
-                    break
-                case Bytecode.CONSTRUCTSUPER: {
-                    let pp = []
+					break
+				case Bytecode.NEWACTIVATION:
+					js.push(`${idnt}                ${stackN} = sec.createActivation(context.mi, ${scope});`)
+					break
+				case Bytecode.NEWCATCH:
+					js.push(`${idnt}                ${stackN} = sec.createCatch(context.mi.getBody().catchBlocks[${param(0)}], ${scope});`)
+					break
+				case Bytecode.CONSTRUCTSUPER: {
+					let pp = []
 
-                    for (let j: number = 1; j <= param(0); j++)
-                        pp.push(stackF(param(0) - j))
+					for (let j: number = 1; j <= param(0); j++)
+						pp.push(stackF(param(0) - j))
 
-                    js.push(`${idnt}                context.savedScope.object.superClass.tPrototype.axInitializer.apply(${stackF(param(0))}, [${pp.join(", ")}]);`)
-                }
-                    break
-                case Bytecode.CALLSUPER: {
-                    let pp = []
+					js.push(`${idnt}                context.savedScope.object.superClass.tPrototype.axInitializer.apply(${stackF(param(0))}, [${pp.join(", ")}]);`)
+				}
+					break
+				case Bytecode.CALLSUPER: {
+					let pp = []
 
-                    for (let j: number = 1; j <= param(0); j++)
-                        pp.push(stackF(param(0) - j))
+					for (let j: number = 1; j <= param(0); j++)
+						pp.push(stackF(param(0) - j))
 
-                    js.push(`${idnt}                ${ stackF(param(0))} = sec.box(${stackF(param(0))}).axCallSuper(${getname(param(1))}, context.savedScope, [${pp.join(", ")}]);`)
-                }
-                    break
-                case Bytecode.CALLSUPER_DYN: {
-                    let pp = []
+					js.push(`${idnt}                ${stackF(param(0))} = sec.box(${stackF(param(0))}).axCallSuper(${getname(param(1))}, context.savedScope, [${pp.join(", ")}]);`)
+				}
+					break
+				case Bytecode.CALLSUPER_DYN: {
+					let pp = []
 
-                    for (let j: number = 1; j <= param(0); j++)
-                        pp.push(stackF(param(0) - j))
+					for (let j: number = 1; j <= param(0); j++)
+						pp.push(stackF(param(0) - j))
 
-                    js.push(`${idnt}                ${ stackF(param(0) + 1)} = sec.box(${stackF(param(0) + 1)}).axCallSuper(context.runtimename(${stackF(param(0))}, ${param(1)}), context.savedScope, [${pp.join(", ")}]);`)
-                }
-                    break
-                case Bytecode.CALLSUPERVOID: {
-                    let pp = []
+					js.push(`${idnt}                ${stackF(param(0) + 1)} = sec.box(${stackF(param(0) + 1)}).axCallSuper(context.runtimename(${stackF(param(0))}, ${param(1)}), context.savedScope, [${pp.join(", ")}]);`)
+				}
+					break
+				case Bytecode.CALLSUPERVOID: {
+					let pp = []
 
-                    for (let j: number = 1; j <= param(0); j++)
-                        pp.push(stackF(param(0) - j))
+					for (let j: number = 1; j <= param(0); j++)
+						pp.push(stackF(param(0) - j))
 
-                    js.push(`${idnt}                sec.box(${stackF(param(0))}).axCallSuper(${getname(param(1))}, context.savedScope, [${pp.join(", ")}]);`)
-                }
-                    break
-                case Bytecode.CONSTRUCTPROP: {
-                    let pp = []
+					js.push(`${idnt}                sec.box(${stackF(param(0))}).axCallSuper(${getname(param(1))}, context.savedScope, [${pp.join(", ")}]);`)
+				}
+					break
+				case Bytecode.CONSTRUCTPROP: {
+					let pp = []
 
-                    for (let j: number = 1; j <= param(0); j++)
-                        pp.push(stackF(param(0) - j))
-                    
-                    js.push(`${idnt}                ${ stackF(param(0))} = context.constructprop(${getname(param(1))}, ${stackF(param(0))}, [${pp.join(", ")}]);`)
-                }
-                    break
-                case Bytecode.GETPROPERTY:
-                    var mn = abc.getMultiname(param(0));
-                    js.push(`${idnt}                // ${mn}`)
-                    js.push(`${idnt}                if (${stack0}.__fast__) {`)
-                    js.push(`${idnt}                    ${stack0} = ${stack0}['${mn.name}'];`)
-                    js.push(`${idnt}                } else {`)
-                    js.push(`${idnt}                    temp = sec.box(${stack0});`)
-                    js.push(`${idnt}                    ${stack0} = temp['$Bg${mn.name}'];`)
-                    js.push(`${idnt}                    if (${stack0} === undefined) {`)
-                    js.push(`${idnt}                        ${stack0} = temp.axGetProperty(${getname(param(0))});`)
-                    js.push(`${idnt}                    }`)
-                    js.push(`${idnt}                    if (typeof ${stack0} === 'function') {`)
-                    js.push(`${idnt}                        ${stack0} = temp.axGetMethod('$Bg${mn.name}');`)
-                    js.push(`${idnt}                    }`)
-                    js.push(`${idnt}                }`)
-                    break
-                case Bytecode.GETPROPERTY_DYN:
-                    var mn = abc.getMultiname(param(0));
-                    js.push(`${idnt}                ${stack1} = context.getpropertydyn(context.runtimename(${stack0}, ${param(0)}), ${stack1});`)
-                    break
-                case Bytecode.SETPROPERTY:
-                    var mn = abc.getMultiname(param(0))
-                    js.push(`${idnt}                // ${mn}`)
-                    js.push(`${idnt}                if (${stack1}.__fast__) {`)
-                    js.push(`${idnt}                    ${stack1}['${mn.name}'] = ${stack0};`)
-                    js.push(`${idnt}                } else {`)
-                    js.push(`${idnt}                context.setproperty(${getname(param(0))}, ${stack0}, ${stack1});`)
-                    js.push(`${idnt}                }`)
-                    break
-                case Bytecode.SETPROPERTY_DYN:
-                    js.push(`${idnt}                context.setproperty(context.runtimename(${stack1}, ${param(0)}), ${stack0}, ${stack2});`)
-                    break
-                case Bytecode.DELETEPROPERTY:
-                    js.push(`${idnt}                // ${abc.getMultiname(param(0))}`)
-                    js.push(`${idnt}                ${stack0} = context.deleteproperty(${getname(param(0)) }, ${stack0});`)
-                    break
-                case Bytecode.DELETEPROPERTY_DYN:
-                    js.push(`${idnt}                ${stack1} = context.deleteproperty(context.runtimename(${stack0}, ${param(0)}), ${stack1});`)
-                    break
-                case Bytecode.GETSUPER:
-                    js.push(`${idnt}                ${stack0} = sec.box(${stack0}).axGetSuper(${getname(param(0)) }, context.savedScope);`)
-                    break
-                case Bytecode.GETSUPER_DYN:
-                    js.push(`${idnt}                ${stack1} = sec.box(${stack1}).axGetSuper(context.runtimename(${stack0}, ${param(0)}), context.savedScope);`)
-                    break
-                case Bytecode.SETSUPER:
-                    js.push(`${idnt}                sec.box(${stack1}).axSetSuper(${getname(param(0)) }, context.savedScope, ${stack0});`)
-                    break
-                case Bytecode.SETSUPER_DYN:
-                    js.push(`${idnt}                sec.box(${stack2}).axSetSuper(context.runtimename(${stack1}, ${param(0)}), context.savedScope, ${stack0});`)
-                    break
-                case Bytecode.GETLEX:
-                    var mn = abc.getMultiname(param(0))
-                    js.push(`${idnt}                // ${mn}`)
-                    js.push(`${idnt}                temp = ${scope}.findScopeProperty(${getname(param(0)) }, true, false);`)
-                    js.push(`${idnt}                ${ stackN} = temp['$Bg${mn.name}'];`)
-                    js.push(`${idnt}                if (${stackN} === undefined) {`)
-                    js.push(`${idnt}                    ${stackN} = temp.axGetProperty(${getname(param(0))});`)
-                    js.push(`${idnt}                }`)
-                    js.push(`${idnt}                if (typeof ${stackN} === 'function') {`)
-                    js.push(`${idnt}                    ${stackN} = temp.axGetMethod('$Bg${mn.name}');`)
-                    js.push(`${idnt}                }`)
-                    break
-                case Bytecode.RETURNVALUE:
-                    js.push(`${idnt}                return ${stack0};`)
-                    break
-                case Bytecode.RETURNVOID:
-                    js.push(`${idnt}                return;`)
-                    break
-                case Bytecode.COERCE:
-                    js.push(`${idnt}                ${stack0} = ${scope}.getScopeProperty(${getname(param(0)) }, true, false).axCoerce(${stack0});`)
-                    break
-                case Bytecode.COERCE_A:
-                    js.push(`${idnt}                ;`)
-                    break
-                case Bytecode.COERCE_S:
-                    js.push(`${idnt}                ${stack0} = context.axCoerceString(${stack0});`)
-                    break
-                case Bytecode.CONVERT_I:
-                    js.push(`${idnt}                ${stack0} |= 0;`)
-                    break
-                case Bytecode.CONVERT_D:
-                    js.push(`${idnt}                ${stack0} = +${stack0};`)
-                    break
-                case Bytecode.CONVERT_B:
-                    js.push(`${idnt}                ${stack0} = !!${stack0};`)
-                    break
-                case Bytecode.CONVERT_U:
-                    js.push(`${idnt}                ${stack0} >>>= 0;`)
-                    break
-                case Bytecode.CONVERT_S:
-                    js.push(`${idnt}                if (typeof ${stack0} !== 'string') ${stack0} = ${stack0} + '';`)
-                    break
-                case Bytecode.CONVERT_O:
-                    js.push(`${idnt}                ;`)
-                    break
-                case Bytecode.CHECKFILTER:
-                    js.push(`${idnt}                ${stack0} = context.axCheckFilter(sec, ${stack0});`)
-                    break
-                case Bytecode.KILL:
-                    js.push(`${idnt}                ${ local(param(0))} = undefined;`)
-                    break
-                default:
-                    js.push(`${idnt}                //unknown instruction${q[i]}`)
-                    console.log(`unknown instruction ${q[i]} (method N${methodInfo.index()})`)
-                    return "unhandled instruction " + z
+					for (let j: number = 1; j <= param(0); j++)
+						pp.push(stackF(param(0) - j))
+
+					js.push(`${idnt}                ${stackF(param(0))} = context.constructprop(${getname(param(1))}, ${stackF(param(0))}, [${pp.join(", ")}]);`)
+				}
+					break
+				case Bytecode.GETPROPERTY:
+					var mn = abc.getMultiname(param(0));
+					js.push(`${idnt}                // ${mn}`)
+					js.push(`${idnt}                if (${stack0}.__fast__) {`)
+					js.push(`${idnt}                    ${stack0} = ${stack0}['${mn.name}'];`)
+					js.push(`${idnt}                } else {`)
+					js.push(`${idnt}                    temp = sec.box(${stack0});`)
+					js.push(`${idnt}                    ${stack0} = temp['$Bg${mn.name}'];`)
+					js.push(`${idnt}                    if (${stack0} === undefined) {`)
+					js.push(`${idnt}                        ${stack0} = temp.axGetProperty(${getname(param(0))});`)
+					js.push(`${idnt}                    }`)
+					js.push(`${idnt}                    if (typeof ${stack0} === 'function') {`)
+					js.push(`${idnt}                        ${stack0} = temp.axGetMethod('$Bg${mn.name}');`)
+					js.push(`${idnt}                    }`)
+					js.push(`${idnt}                }`)
+					break
+				case Bytecode.GETPROPERTY_DYN:
+					var mn = abc.getMultiname(param(0));
+					js.push(`${idnt}                ${stack1} = context.getpropertydyn(context.runtimename(${stack0}, ${param(0)}), ${stack1});`)
+					break
+				case Bytecode.SETPROPERTY:
+					var mn = abc.getMultiname(param(0))
+					js.push(`${idnt}                // ${mn}`)
+					js.push(`${idnt}                if (${stack1}.__fast__) {`)
+					js.push(`${idnt}                    ${stack1}['${mn.name}'] = ${stack0};`)
+					js.push(`${idnt}                } else {`)
+					js.push(`${idnt}                context.setproperty(${getname(param(0))}, ${stack0}, ${stack1});`)
+					js.push(`${idnt}                }`)
+					break
+				case Bytecode.SETPROPERTY_DYN:
+					js.push(`${idnt}                context.setproperty(context.runtimename(${stack1}, ${param(0)}), ${stack0}, ${stack2});`)
+					break
+				case Bytecode.DELETEPROPERTY:
+					js.push(`${idnt}                // ${abc.getMultiname(param(0))}`)
+					js.push(`${idnt}                ${stack0} = context.deleteproperty(${getname(param(0))}, ${stack0});`)
+					break
+				case Bytecode.DELETEPROPERTY_DYN:
+					js.push(`${idnt}                ${stack1} = context.deleteproperty(context.runtimename(${stack0}, ${param(0)}), ${stack1});`)
+					break
+				case Bytecode.GETSUPER:
+					js.push(`${idnt}                ${stack0} = sec.box(${stack0}).axGetSuper(${getname(param(0))}, context.savedScope);`)
+					break
+				case Bytecode.GETSUPER_DYN:
+					js.push(`${idnt}                ${stack1} = sec.box(${stack1}).axGetSuper(context.runtimename(${stack0}, ${param(0)}), context.savedScope);`)
+					break
+				case Bytecode.SETSUPER:
+					js.push(`${idnt}                sec.box(${stack1}).axSetSuper(${getname(param(0))}, context.savedScope, ${stack0});`)
+					break
+				case Bytecode.SETSUPER_DYN:
+					js.push(`${idnt}                sec.box(${stack2}).axSetSuper(context.runtimename(${stack1}, ${param(0)}), context.savedScope, ${stack0});`)
+					break
+				case Bytecode.GETLEX:
+					var mn = abc.getMultiname(param(0))
+					js.push(`${idnt}                // ${mn}`)
+					js.push(`${idnt}                temp = ${scope}.findScopeProperty(${getname(param(0))}, true, false);`)
+					js.push(`${idnt}                ${stackN} = temp['$Bg${mn.name}'];`)
+					js.push(`${idnt}                if (${stackN} === undefined) {`)
+					js.push(`${idnt}                    ${stackN} = temp.axGetProperty(${getname(param(0))});`)
+					js.push(`${idnt}                }`)
+					js.push(`${idnt}                if (typeof ${stackN} === 'function') {`)
+					js.push(`${idnt}                    ${stackN} = temp.axGetMethod('$Bg${mn.name}');`)
+					js.push(`${idnt}                }`)
+					break
+				case Bytecode.RETURNVALUE:
+					js.push(`${idnt}                return ${stack0};`)
+					break
+				case Bytecode.RETURNVOID:
+					js.push(`${idnt}                return;`)
+					break
+				case Bytecode.COERCE:
+					js.push(`${idnt}                ${stack0} = ${scope}.getScopeProperty(${getname(param(0))}, true, false).axCoerce(${stack0});`)
+					break
+				case Bytecode.COERCE_A:
+					js.push(`${idnt}                ;`)
+					break
+				case Bytecode.COERCE_S:
+					js.push(`${idnt}                ${stack0} = context.axCoerceString(${stack0});`)
+					break
+				case Bytecode.CONVERT_I:
+					js.push(`${idnt}                ${stack0} |= 0;`)
+					break
+				case Bytecode.CONVERT_D:
+					js.push(`${idnt}                ${stack0} = +${stack0};`)
+					break
+				case Bytecode.CONVERT_B:
+					js.push(`${idnt}                ${stack0} = !!${stack0};`)
+					break
+				case Bytecode.CONVERT_U:
+					js.push(`${idnt}                ${stack0} >>>= 0;`)
+					break
+				case Bytecode.CONVERT_S:
+					js.push(`${idnt}                if (typeof ${stack0} !== 'string') ${stack0} = ${stack0} + '';`)
+					break
+				case Bytecode.CONVERT_O:
+					js.push(`${idnt}                ;`)
+					break
+				case Bytecode.CHECKFILTER:
+					js.push(`${idnt}                ${stack0} = context.axCheckFilter(sec, ${stack0});`)
+					break
+				case Bytecode.KILL:
+					js.push(`${idnt}                ${local(param(0))} = undefined;`)
+					break
+				default:
+					js.push(`${idnt}                //unknown instruction${q[i]}`)
+					console.log(`unknown instruction ${q[i]} (method N${methodInfo.index()})`)
+					return "unhandled instruction " + z
 			}
 		}
-		
-		currentCatchBlocks=mapTryCatchBlocksByEnd?mapTryCatchBlocksByEnd[z.position]:null;
-		if(currentCatchBlocks){
-			var lastCatchBlocks=openTryCatchBlockGroups.pop();
-			if(lastCatchBlocks){
+
+		currentCatchBlocks = mapTryCatchBlocksByEnd ? mapTryCatchBlocksByEnd[z.position] : null;
+		if (currentCatchBlocks) {
+			var lastCatchBlocks = openTryCatchBlockGroups.pop();
+			if (lastCatchBlocks) {
 				js.push(`            ${idnt}}`)
 				createCatchConditions(lastCatchBlocks, idnt);
-				idnt=idnt.slice(0, idnt.length-4);
+				idnt = idnt.slice(0, idnt.length - 4);
 			}
-			
+
 		}
-    }
+	}
 
-    js.push("        }")
-    js.push("    }")
-    js.push("}")
+	js.push("        }")
+	js.push("    }")
+	js.push("}")
 
-    // Debugging magic 
-    // https://developer.mozilla.org/en-US/docs/Tools/Debugger/How_to/Debug_eval_sources
+	// Debugging magic 
+	// https://developer.mozilla.org/en-US/docs/Tools/Debugger/How_to/Debug_eval_sources
 
-    const prefix = ("" + (SCRIPT_ID ++)).padLeft("0", 4);
-    
-    js.push(`//# sourceURL=http://jit/${prefix}_${funcName || 'unknown'}.js`)
+	const prefix = ("" + (SCRIPT_ID++)).padLeft("0", 4);
 
-    let w = js0.join("\n") + "\n" + js.join("\n");
+	js.push(`//# sourceURL=http://jit/${prefix}_${funcName || 'unknown'}.js`)
 
-    if (w.indexOf(underrun) >= 0) {
-        return "STACK UNDERRUN"
-    }
+	let w = js0.join("\n") + "\n" + js.join("\n");
 
-    const scriptPrefix = "// (#" + methodInfo.index() + ") --- " + methodInfo + "\n";
+	if (w.indexOf(underrun) >= 0) {
+		return "STACK UNDERRUN"
+	}
 
-    let compiled;
-    if(USE_EVAL) {
-        w = scriptPrefix + "(function(context) {\n" + w + "\n})";
-        compiled = eval(w);
+	const scriptPrefix = "// (#" + methodInfo.index() + ") --- " + methodInfo + "\n";
 
-    } else {
-        w = scriptPrefix + w;
-        compiled = new Function("context", w);
-    }
+	let compiled;
+	if (USE_EVAL) {
+		w = scriptPrefix + "(function(context) {\n" + w + "\n})";
+		compiled = eval(w);
 
-    return {
-        names: names,
-        compiled
-    };
+	} else {
+		w = scriptPrefix + w;
+		compiled = new Function("context", w);
+	}
+
+	return {
+		names: names,
+		compiled
+	};
 }
 
 export class Context {
-    private readonly mi: MethodInfo;
-    private readonly savedScope: Scope;
-    private readonly sec: AXSecurityDomain
-    private readonly abc: ABCFile
-    private readonly names: Multiname[]
-    private readonly jsGlobal: Object = jsGlobal;
-    private readonly axCoerceString: Function = axCoerceString;
-    private readonly axCheckFilter: Function = axCheckFilter;
-    private readonly internNamespace: Function = internNamespace;
+	private readonly mi: MethodInfo;
+	private readonly savedScope: Scope;
+	private readonly sec: AXSecurityDomain
+	private readonly abc: ABCFile
+	private readonly names: Multiname[]
+	private readonly jsGlobal: Object = jsGlobal;
+	private readonly axCoerceString: Function = axCoerceString;
+	private readonly axCheckFilter: Function = axCheckFilter;
+	private readonly internNamespace: Function = internNamespace;
 
-    constructor(mi: MethodInfo, savedScope: Scope, names:Multiname[]) {
-        this.mi = mi;
-        this.savedScope = savedScope;
-        this.abc = mi.abc;
-        this.sec = mi.abc.applicationDomain.sec;
-        this.names = names;
-    }
+	constructor(mi: MethodInfo, savedScope: Scope, names: Multiname[]) {
+		this.mi = mi;
+		this.savedScope = savedScope;
+		this.abc = mi.abc;
+		this.sec = mi.abc.applicationDomain.sec;
+		this.names = names;
+	}
 
-    call(value, obj, pp): any {
-        validateCall(this.sec, value, pp.length)
-        return value.axApply(obj, pp)
-    }
+	call(value, obj, pp): any {
+		validateCall(this.sec, value, pp.length)
+		return value.axApply(obj, pp)
+	}
 
-    getdefinitionbyname(scope, obj, pp) {
-        return (<ScriptInfo>(<any>scope.global.object).scriptInfo).abc.env.app.getClass(Multiname.FromSimpleName(pp[0]))
-    }
+	getdefinitionbyname(scope, obj, pp) {
+		return (<ScriptInfo>(<any>scope.global.object).scriptInfo).abc.env.app.getClass(Multiname.FromSimpleName(pp[0]))
+	}
 
-    getpropertydyn(mn, obj) {
-        let b = this.sec.box(obj)
-        
-        if (typeof mn === "number")
-            return b.axGetNumericProperty(mn)
+	getpropertydyn(mn, obj) {
+		let b = this.sec.box(obj)
 
-        return b['$Bg' + mn.name] || b.axGetProperty(mn)
-    }
+		if (typeof mn === "number")
+			return b.axGetNumericProperty(mn)
 
-    setproperty(mn, value, obj) {
-        if (typeof mn === "number")
-            return this.sec.box(obj).axSetNumericProperty(mn, value)
+		return b['$Bg' + mn.name] || b.axGetProperty(mn)
+	}
 
-        this.sec.box(obj).axSetProperty(mn, value, Bytecode.INITPROPERTY)
-    }
+	setproperty(mn, value, obj) {
+		if (typeof mn === "number")
+			return this.sec.box(obj).axSetNumericProperty(mn, value)
 
-    deleteproperty(name, obj) {
-        let b = this.sec.box(obj);
-        if(typeof name ==="number" || typeof name ==="string")
-            return delete b[name];
-        return b.axDeleteProperty(name)
-    }
+		this.sec.box(obj).axSetProperty(mn, value, Bytecode.INITPROPERTY)
+	}
 
-    construct(obj, pp) {
-        let mn = obj.classInfo.instanceInfo.getName()
+	deleteproperty(name, obj) {
+		let b = this.sec.box(obj);
+		if (typeof name === "number" || typeof name === "string")
+			return delete b[name];
+		return b.axDeleteProperty(name)
+	}
 
-        let r = b2Class(mn.name, pp)
+	construct(obj, pp) {
+		let mn = obj.classInfo.instanceInfo.getName()
 
-        if (r != null)
-            return r
+		let r = b2Class(mn.name, pp)
 
-        // if (mn.name.indexOf("b2") >= 0)
-        //     console.log("*B2: " + mn.name)
+		if (r != null)
+			return r
 
-        validateConstruct(this.sec, obj, pp.length)
-        return obj.axConstruct(pp)
-    }
+		// if (mn.name.indexOf("b2") >= 0)
+		//     console.log("*B2: " + mn.name)
 
-
-    constructprop(mn, obj, pp) {
-        let r = b2Class(mn.name, pp)
-
-        if (r != null)
-            return r
-
-        // if (mn.name.indexOf("b2") >= 0)
-        //     console.log("B2: " + mn.name)
-        
-        let b = this.sec.box(obj)
-        let name = b.axResolveMultiname(mn)
-        let ctor = b[name]
-
-        validateConstruct(b.sec, ctor, pp.length)
-        return ctor.axConstruct(pp)
-    }
+		validateConstruct(this.sec, obj, pp.length)
+		return obj.axConstruct(pp)
+	}
 
 
-    pushwith(scope, obj) {
-        let b = this.sec.box(obj)
-        return (scope.object === b && scope.isWith == true) ? scope : new Scope(scope, b, true)
-    }
+	constructprop(mn, obj, pp) {
+		let r = b2Class(mn.name, pp)
+
+		if (r != null)
+			return r
+
+		// if (mn.name.indexOf("b2") >= 0)
+		//     console.log("B2: " + mn.name)
+
+		let b = this.sec.box(obj)
+		let name = b.axResolveMultiname(mn)
+		let ctor = b[name]
+
+		validateConstruct(b.sec, ctor, pp.length)
+		return ctor.axConstruct(pp)
+	}
 
 
-    hasnext2(obj, name) {
-        let info = new HasNext2Info(null, 0)
-        info.next(this.sec.box(obj), name)
-        return [info.object, info.index]
-    }
+	pushwith(scope, obj) {
+		let b = this.sec.box(obj)
+		return (scope.object === b && scope.isWith == true) ? scope : new Scope(scope, b, true)
+	}
 
-    runtimename(name, index) {
-        if (typeof name === "number")
-            return name
 
-        let mn = this.abc.getMultiname(index)
+	hasnext2(obj, name) {
+		let info = new HasNext2Info(null, 0)
+		info.next(this.sec.box(obj), name)
+		return [info.object, info.index]
+	}
 
-        if (name && name.axClass && name.axClass === name.sec.AXQName) {
-            let rn = new Multiname(this.abc, 0, null, null, null)
-            rn.numeric = false
-            rn.id = mn.id
-            rn.kind = mn.kind
+	runtimename(name, index) {
+		if (typeof name === "number")
+			return name
 
-            release || assert(name.name instanceof Multiname)
-            rn.kind = mn.isAttribute() ? CONSTANT.RTQNameLA : CONSTANT.RTQNameL
-            rn.id = name.name.id
-            rn.name = name.name.name
-            rn.namespaces = name.name.namespaces
-            return rn
-        }
+		let mn = this.abc.getMultiname(index)
 
-        if (typeof name === "number" || isNumeric(axCoerceName(name))) {
-            let rn = new Multiname(this.abc, 0, null, null, null)
-            rn.numeric = false
-            rn.id = mn.id
-            rn.kind = mn.kind
+		if (name && name.axClass && name.axClass === name.sec.AXQName) {
+			let rn = new Multiname(this.abc, 0, null, null, null)
+			rn.numeric = false
+			rn.id = mn.id
+			rn.kind = mn.kind
 
-            rn.numeric = true
-            rn.numericValue = +(axCoerceName(name))
-        }
+			release || assert(name.name instanceof Multiname)
+			rn.kind = mn.isAttribute() ? CONSTANT.RTQNameLA : CONSTANT.RTQNameL
+			rn.id = name.name.id
+			rn.name = name.name.name
+			rn.namespaces = name.name.namespaces
+			return rn
+		}
 
-        return mn.rename(name)
-    }
+		if (typeof name === "number" || isNumeric(axCoerceName(name))) {
+			let rn = new Multiname(this.abc, 0, null, null, null)
+			rn.numeric = false
+			rn.id = mn.id
+			rn.kind = mn.kind
+
+			rn.numeric = true
+			rn.numericValue = +(axCoerceName(name))
+		}
+
+		return mn.rename(name)
+	}
 
 }
