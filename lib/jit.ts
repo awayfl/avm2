@@ -20,6 +20,7 @@ import {ABCFile} from "./abc/lazy/ABCFile"
 import {ScriptInfo} from "./abc/lazy/ScriptInfo"
 import {b2Class} from "./btd"
 import {AXGlobal} from "./run/AXGlobal"
+import { ExceptionInfo } from './abc/lazy/ExceptionInfo'
 
 export enum Bytecode {
     BKPT = 0x01,
@@ -292,7 +293,10 @@ export let BytecodeName = Bytecode
 
 class Instruction {
     public stack: number = -1024
-    public scope: number = -1024
+	public scope: number = -1024
+	public catchBlock:ExceptionInfo;
+	public catchStart:boolean=false;
+	public catchEnd:boolean=false;
 
     constructor(readonly position: number, readonly name: Bytecode, readonly params: Array<any> = [], readonly delta: number = 0, readonly deltaScope: number = 0, readonly terminal: boolean = false, readonly refs: Array<number> = []) {
     }
@@ -317,6 +321,8 @@ export function compile(methodInfo: MethodInfo, sync = false): ICompilerProcess 
     let abc = methodInfo.abc
     let code = methodInfo.getBody().code
 
+	var body = methodInfo.getBody();
+	
     let q: Instruction[] = []
 
     for (let i: number = 0; i < code.length;) {
@@ -893,10 +899,20 @@ export function compile(methodInfo: MethodInfo, sync = false): ICompilerProcess 
         }
 
     }
+    let js0 = [];
+	let js = [];
+	/*
+	for (let i: number = 0; i < q.length; i++) {
+		let z=q[i];
+		js0.push(`//instr:${BytecodeName[z.name]}   params:${z.params.join(" / ")}\
+			pos:${z.position}    scope:${z.scope}    stack:${z.stack}    \
+			delta:${z.delta}    terminal:${z.terminal}    \
+			deltaScope${z.deltaScope}    \
+			refs${z.refs}`);		
+	}*/
 
     let propagate = function (position: number, stack: number) {
         let v = stack
-
         for (let i: number = 0; i < q.length; i++) {
             if (q[i].position >= position) {
                 if (q[i].stack >= 0)
@@ -942,6 +958,98 @@ export function compile(methodInfo: MethodInfo, sync = false): ICompilerProcess 
 
     targets.push(0)
 
+
+	let openTryCatchBlockGroups:ExceptionInfo[][]=[];
+	let idnt:string="";
+	let mapTryCatchBlocksByStart:NumberMap<ExceptionInfo[]>;
+	let mapTryCatchBlocksByEnd:NumberMap<ExceptionInfo[]>;
+
+	if(body.catchBlocks.length){
+		// collect try-catch blocks sorted by their start-position		
+		mapTryCatchBlocksByStart={};
+		// collect try-catch blocks sorted by their end-position	
+		mapTryCatchBlocksByEnd={};
+		for (let i: number = 0; i < body.catchBlocks.length; i++){
+			if(!mapTryCatchBlocksByStart[body.catchBlocks[i].start])
+				mapTryCatchBlocksByStart[body.catchBlocks[i].start]=[];
+			mapTryCatchBlocksByStart[body.catchBlocks[i].start].push(body.catchBlocks[i]);
+
+			if(!mapTryCatchBlocksByEnd[body.catchBlocks[i].end])
+				mapTryCatchBlocksByEnd[body.catchBlocks[i].end]=[];
+			mapTryCatchBlocksByEnd[body.catchBlocks[i].end].push(body.catchBlocks[i]);
+
+			// make sure that the target-instruction for the catch is propagated and set as target
+			// using the stack value of the start-instruction does seem to do the trick
+			let stack=0;
+			//let scope=0;
+			for (let c: number = 0; c < q.length; c++){
+				if (q[c].position==body.catchBlocks[i].start){
+					stack=q[c].stack+q[c].delta;
+					//scope=q[c].scope+q[c].deltaScope;
+					break;
+				}
+			}
+			propagate(body.catchBlocks[i].target, stack)
+			propagateScope(body.catchBlocks[i].target, 0)
+			targets.push(body.catchBlocks[i].target)
+		}
+	}
+	//	creates a catch condition for a list of ExceptionInfo
+	let createCatchConditions = (catchBlocks:ExceptionInfo[], indent:string)=>{
+		js.push(`            ${indent}catch(e){`);
+
+		
+		js.push(`                ${indent}// in case this is a error coming from stack0.__fast when stack0 is undefined,`);
+		js.push(`                ${indent}// we convert it to a ASError, so that avm2 can still catch it`);
+		js.push(`                ${indent}if (e instanceof TypeError)`);
+		js.push(`                ${indent}    e=context.sec.createError("TypeError", {code:1065, message:e.message})`);
+		js.push(`                ${indent}stack0=e;`);
+		for(var i=0; i<catchBlocks.length; i++){
+			var typeName=catchBlocks[i].getType();
+			if(!typeName){
+				js.push(`                ${indent}{ p = ${catchBlocks[i].target}; continue; };`);
+				continue;
+			}
+			else{				
+				let n = names.indexOf(typeName)
+				if (n < 0) {
+					n = names.length
+					names.push(typeName)
+					js0.push(`    let name${n} = context.names[${n}];`)
+				}
+				js.push(`                ${indent}var errorClass=context.sec.application.getClass(name${n});`);
+				js.push(`                ${indent}if(errorClass && errorClass.axIsType(e))`);
+				js.push(`                ${indent}    { p = ${catchBlocks[i].target}; continue; };`);
+			}
+		}
+		// if error was not catched by now, we throw it
+		js.push(`                ${indent}throw e;`);
+		js.push(`            ${indent}}`);
+	}
+	//	closes all try-catch blocks. used when entering a new case-block
+	let closeAllTryCatch = ()=>{
+		let indent="";
+		//js.push(`//CLOSE ALL`);
+		for(let i=0; i<openTryCatchBlockGroups.length; i++)
+			indent+="    ";
+		for(let i=0; i<openTryCatchBlockGroups.length; i++){
+			js.push(`            ${indent}}`);
+			createCatchConditions(openTryCatchBlockGroups[i], indent);
+		}		
+	}
+	//	reopen all try-catch blocks. used when entering a new case-block
+	let openAllTryCatch = ()=>{
+
+		let indent="";
+		for(let i=0; i<openTryCatchBlockGroups.length; i++){
+			js.push(`                ${indent}try{`);
+			indent+="    ";
+
+		}
+		
+	}	
+
+			
     for (let i: number = 0; i < q.length; i++)
         for (let j: number = 0; j < q[i].refs.length; j++)
             targets.push(q[i].refs[j])
@@ -963,16 +1071,16 @@ export function compile(methodInfo: MethodInfo, sync = false): ICompilerProcess 
             temp = true
 
     let maxscope = 0
-    for (let i: number = 0; i < q.length; i++)
+    for (let i: number = 0; i < q.length; i++){
         if (q[i].scope > maxscope)
             maxscope = q[i].scope
+	}
 
     let params = methodInfo.parameters
 
     const funcName = (methodInfo.getName()).replace(/([^a-z0-9]+)/gi, "_");
     const underrun = "[stack underrun]"
     
-    let js0 = [];
 
     js0.push("return function compiled_"+ funcName + "() {")
 
@@ -986,27 +1094,27 @@ export function compile(methodInfo: MethodInfo, sync = false): ICompilerProcess 
 
     for (let i: number = 0; i < params.length; i++) {
         let p = params[i]
-        js0.push("    let local" + (i + 1) + " = arguments[" + i + "];")
+        js0.push(`    let local${(i + 1)} = arguments[${i}];`)
 
         if (params[i].hasOptionalValue())
             switch (p.optionalValueKind) {
                 case CONSTANT.Utf8:
-                    js0.push("    if (argnum <= " + i + ") local" + (i + 1) + " = context.abc.getString(" + p.optionalValueIndex + ");")
+                    js0.push(`    if (argnum <= ${i}) local${(i + 1)} = context.abc.getString(${p.optionalValueIndex});`)
                     break
                 default:
-                    js0.push("    if (argnum <= " + i + ") local" + (i + 1) + " = " + p.getOptionalValue() + ";")
+                    js0.push(`    if (argnum <= ${i}) local${(i + 1)} = ${p.getOptionalValue()};`)
                     break
             }
 	}
 	for (let i: number = params.length + 1; i <= maxlocal; i++)
-		js0.push("    let local" + i + " = "+((i==params.length + 1)?"context.sec.createArrayUnsafe(Array.from(arguments))":"undefined")+";");
+		js0.push(`    let local${i} = ${((i==params.length + 1)?"context.sec.createArrayUnsafe(Array.from(arguments))":"undefined")};`);
 
 
     for (let i: number = 0; i <= maxstack; i++)
-        js0.push("    let stack" + i + " = undefined;")
+        js0.push(`    let stack${i} = undefined;`)
 
     for (let i: number = 0; i <= maxscope; i++)
-        js0.push("    let scope" + i + " = undefined;")
+        js0.push(`    let scope${i} = undefined;`)
 
     if (temp)
         js0.push("    let temp = undefined;")
@@ -1021,50 +1129,69 @@ export function compile(methodInfo: MethodInfo, sync = false): ICompilerProcess 
         if (i < 0) {
             i = names.length
             names.push(mn)
-            js0.push("    let name" + i + " = context.names[" + i + "];")
+            js0.push(`    let name${i} = context.names[${i}];`)
         }
         return "name" + i
     }
 
+
     js0.push("    let sec = context.sec;")
 
-    let js = []
 
     js.push("    let p = 0;")
     js.push("    while (true) {")
     js.push("        switch (p) {")
 
+	let currentCatchBlocks:ExceptionInfo[];
+
     for (let i: number = 0; i < q.length; i++) {
         let z = q[i]
 
-        if (targets.indexOf(z.position) >= 0)
-            js.push("            case " + z.position + ":")
+		
+        if (targets.indexOf(z.position) >= 0){
 
-        js.push("                    //" + BytecodeName[z.name] + " " + z.params.join(" / "))
+			// if we are in any try-catch-blocks, we must close them
+			if (openTryCatchBlockGroups) closeAllTryCatch();
 
-        let stackF = (n: number) => ((z.stack - 1 - n) >= 0) ? ("stack" + (z.stack - 1 - n)) : underrun
+			js.push(`            case ${z.position}:`)
+			
+			// now we reopen all the try-catch again 
+			if (openTryCatchBlockGroups) openAllTryCatch();			
+
+		}
+
+		currentCatchBlocks=mapTryCatchBlocksByStart?mapTryCatchBlocksByStart[z.position]:null;
+		if(currentCatchBlocks){
+			openTryCatchBlockGroups.push(currentCatchBlocks);
+			idnt+="    ";
+			js.push(`            ${idnt}try{`)
+		}
+
+        js.push(`${idnt}                //${BytecodeName[z.name]} ${z.params.join(" / ")}`);// + " pos: " + z.position+ " scope:"+z.scope+ " stack:"+z.stack)
+
+        let stackF = (n: number) => ((z.stack - 1 - n) >= 0) ? (`stack${(z.stack - 1 - n)}`) : underrun
         let stack0 = stackF(0)
         let stack1 = stackF(1)
         let stack2 = stackF(2)
         let stack3 = stackF(3)
-        let stackN = stackF(-1)
+		let stackN = stackF(-1)
 
-        let scope = z.scope > 0 ? "scope" + (z.scope - 1) : "context.savedScope"
+        let scope = z.scope > 0 ? `scope${(z.scope - 1)}` : "context.savedScope"
         let scopeN = "scope" + z.scope
 
         let local = (n: number) => "local" + n
 
         let param = (n: number) => z.params[n]
-        
         if (z.stack < 0) {
             js.push("                    // unreachable")
         }
-        else
+        else{
+			
             switch (z.name) {
                 case Bytecode.LABEL:
                     break
                 case Bytecode.DXNSLATE:
-                    js.push("                " + scope + ".defaultNamespace = context.internNamespace(0, " + stack0 + ");")
+                    js.push(`${idnt}                ${ scope}.defaultNamespace = context.internNamespace(0, ${stack0});`)
                     break
                 case Bytecode.DEBUGFILE:
                     break
@@ -1075,255 +1202,255 @@ export function compile(methodInfo: MethodInfo, sync = false): ICompilerProcess 
                 case Bytecode.THROW:
                     break
                 case Bytecode.GETLOCAL:
-                    js.push("                " + stackN + " = " + local(param(0)) + ";")
+                    js.push(`${idnt}                ${stackN} = ${local(param(0))};`)
                     break
                 case Bytecode.SETLOCAL:
-                    js.push("                " + local(param(0)) + " = " + stack0 + ";")
+                    js.push(`${idnt}                ${local(param(0))} = ${stack0};`)
                     break
 
                 case Bytecode.GETSLOT:
-                    js.push("                " + stack0 + " = sec.box(" + stack0 + ").axGetSlot(" + param(0) + ");")
+                    js.push(`${idnt}                ${stack0} = sec.box(${stack0}).axGetSlot(${param(0)});`)
                     break
                 case Bytecode.SETSLOT:
-                    js.push("                sec.box(" + stack1 + ").axSetSlot(" + param(0) + ", " + stack0 + ");")
+                    js.push(`${idnt}                sec.box(${stack1}).axSetSlot(${param(0)}, ${stack0});`)
                     break
 
                 case Bytecode.GETGLOBALSCOPE:
-                    js.push("                " + stackN + " = context.savedScope.global.object;")
+                    js.push(`${idnt}                ${stackN} = context.savedScope.global.object;`)
                     break
                 case Bytecode.PUSHSCOPE:
-                    js.push("                " + scopeN + " = " + scope + ".extend(sec.box(" + stack0 + "));")
+                    js.push(`${idnt}                ${scopeN} = ${scope}.extend(sec.box(${stack0}));`)
                     break
                 case Bytecode.PUSHWITH:
-                    js.push("                " + scopeN + " = context.pushwith(" + scope + ", " + stack0 + ");")
+                    js.push(`${idnt}                ${scopeN} = context.pushwith(${scope}, ${stack0});`)
                     break
                 case Bytecode.POPSCOPE:
-                    js.push("                " + scope + " = undefined;")
+                    js.push(`${idnt}                ${scope} = undefined;`)
                     break
                 case Bytecode.GETSCOPEOBJECT:
-                    js.push("                " + stackN + " = scope" + param(0) + ".object;")
+                    js.push(`${idnt}                ${stackN} = scope${param(0)}.object;`)
                     break
 
                 case Bytecode.NEXTNAME:
-                    js.push("                " + stack1 + " = sec.box(" + stack1 + ").axNextName(" + stack0 + ");")
+                    js.push(`${idnt}                ${stack1} = sec.box(${stack1}).axNextName(${stack0});`)
                     break
                 case Bytecode.NEXTVALUE:
-                    js.push("                " + stack1 + " = sec.box(" + stack1 + ").axNextValue(" + stack0 + ");")
+                    js.push(`${idnt}                ${stack1} = sec.box(${stack1}).axNextValue(${stack0});`)
                     break
                 case Bytecode.HASNEXT:
-                    js.push("                " + stack1 + " = sec.box(" + stack1 + ").axNextNameIndex(" + stack0 + ");")
+                    js.push(`${idnt}                ${stack1} = sec.box(${stack1}).axNextNameIndex(${stack0});`)
                     break
                 case Bytecode.HASNEXT2:
-                    js.push("                temp = context.hasnext2(" + local(param(0)) + ", " + local(param(1)) + ");")
-                    js.push("                " + local(param(0)) + " = temp[0];")
-                    js.push("                " + local(param(1)) + " = temp[1];")
-                    js.push("                " + stackN + " = " + local(param(1)) + " > 0;")
+                    js.push(`${idnt}                temp = context.hasnext2(${local(param(0))}, ${local(param(1))});`)
+                    js.push(`${idnt}                ${local(param(0))} = temp[0];`)
+                    js.push(`${idnt}                ${local(param(1))} = temp[1];`)
+                    js.push(`${idnt}                ${stackN} = ${local(param(0))} > 0;`)
                     break
                 case Bytecode.IN:
-                    js.push("                " + stack1 + " = (" + stack1 + " && " + stack1 + ".axClass === sec.AXQName) ? obj.axHasProperty(" + stack1 + ".name) : " + stack0 + ".axHasPublicProperty(" + stack1 + ");")
+                    js.push(`${idnt}                ${stack1} = (${stack1} && ${stack1}.axClass === sec.AXQName) ? obj.axHasProperty(${stack1}.name) : ${stack0}.axHasPublicProperty(${stack1});`)
                     break
 
                 case Bytecode.DUP:
-                    js.push("                " + stackN + " = " + stack0 + ";")
+                    js.push(`${idnt}                ${stackN} = ${stack0};`)
                     break
                 case Bytecode.POP:
-                    js.push("                ;")
+                    js.push(`${idnt}                ;`)
                     break
                 case Bytecode.SWAP:
-                    js.push("                temp = " + stack0 + ";")
-                    js.push("                " + stack0 + " = " + stack1 + ";")
-                    js.push("                " + stack1 + " = temp;")
-                    js.push("                temp = undefined;")
+                    js.push(`${idnt}                temp = ${stack0};`)
+                    js.push(`${idnt}                ${stack0} = ${stack1};`)
+                    js.push(`${idnt}                ${stack1} = temp;`)
+                    js.push(`${idnt}                temp = undefined;`)
                     break
                 case Bytecode.PUSHTRUE:
-                    js.push("                " + stackN + " = true;")
+                    js.push(`${idnt}                ${ stackN} = true;`)
                     break
                 case Bytecode.PUSHFALSE:
-                    js.push("                " + stackN + " = false;")
+                    js.push(`${idnt}                ${ stackN} = false;`)
                     break
                 case Bytecode.PUSHBYTE:
-                    js.push("                " + stackN + " = " + param(0) + ";")
+                    js.push(`${idnt}                ${ stackN} = ${param(0)};`)
                     break
                 case Bytecode.PUSHSHORT:
-                    js.push("                " + stackN + " = " + param(0) + ";")
+                    js.push(`${idnt}                ${ stackN} = ${param(0)};`)
                     break
                 case Bytecode.PUSHINT:
-                    js.push("                " + stackN + " = " + abc.ints[param(0)] + ";")
+                    js.push(`${idnt}                ${ stackN} = ${abc.ints[param(0)]};`)
                     break
                 case Bytecode.PUSHDOUBLE:
-                    js.push("                " + stackN + " = " + abc.doubles[param(0)] + ";")
+                    js.push(`${idnt}                ${ stackN} = ${abc.doubles[param(0)]};`)
                     break
                 case Bytecode.PUSHSTRING:
-                    js.push("                " + stackN + " = context.abc.getString(" + param(0) + ");")
+                    js.push(`${idnt}                ${ stackN} = context.abc.getString(${param(0)});`)
                     break
                 case Bytecode.PUSHNAN:
-                    js.push("                " + stackN + " = NaN;")
+                    js.push(`${idnt}                ${ stackN} = NaN;`)
                     break
                 case Bytecode.PUSHNULL:
-                    js.push("                " + stackN + " = null;")
+                    js.push(`${idnt}                ${ stackN} = null;`)
                     break
                 case Bytecode.PUSHUNDEFINED:
-                    js.push("                " + stackN + " = undefined;")
+                    js.push(`${idnt}                ${ stackN} = undefined;`)
                     break
                 case Bytecode.IFEQ:
-                    js.push("                if (" + stack0 + " == " + stack1 + ") { p = " + param(0) + "; continue; };")
+                    js.push(`${idnt}                if (${stack0} == ${stack1}) { p = ${param(0)}; continue; };`)
                     break
                 case Bytecode.IFNE:
-                    js.push("                if (" + stack0 + " != " + stack1 + ") { p = " + param(0) + "; continue; };")
+                    js.push(`${idnt}                if (${stack0} != ${stack1}) { p = ${param(0)}; continue; };`)
                     break
                 case Bytecode.IFSTRICTEQ:
-                    js.push("                if (" + stack0 + " === " + stack1 + ") { p = " + param(0) + "; continue; };")
+                    js.push(`${idnt}                if (${stack0} === ${stack1}) { p = ${param(0)}; continue; };`)
                     break
                 case Bytecode.IFSTRICTNE:
-                    js.push("                if (" + stack0 + " !== " + stack1 + ") { p = " + param(0) + "; continue; };")
+                    js.push(`${idnt}                if (${stack0} !== ${stack1}) { p = ${param(0)}; continue; };`)
                     break
                 case Bytecode.IFGT:
-                    js.push("                if (" + stack0 + " < " + stack1 + ") { p = " + param(0) + "; continue; };")
+                    js.push(`${idnt}                if (${stack0} < ${stack1}) { p = ${param(0)}; continue; };`)
                     break
                 case Bytecode.IFGE:
-                    js.push("                if (" + stack0 + " <= " + stack1 + ") { p = " + param(0) + "; continue; };")
+                    js.push(`${idnt}                if (${stack0} <= ${stack1}) { p = ${param(0)}; continue; };`)
                     break
                 case Bytecode.IFLT:
-                    js.push("                if (" + stack0 + " > " + stack1 + ") { p = " + param(0) + "; continue; };")
+                    js.push(`${idnt}                if (${stack0} > ${stack1}) { p = ${param(0)}; continue; };`)
                     break
                 case Bytecode.IFLE:
-                    js.push("                if (" + stack0 + " >= " + stack1 + ") { p = " + param(0) + "; continue; };")
+                    js.push(`${idnt}                if (${stack0} >= ${stack1}) { p = ${param(0)}; continue; };`)
                     break
                 case Bytecode.IFFALSE:
-                    js.push("                if (!" + stack0 + ") { p = " + param(0) + "; continue; };")
+                    js.push(`${idnt}                if (!${stack0}) { p = ${param(0)}; continue; };`)
                     break
                 case Bytecode.IFTRUE:
-                    js.push("                if (" + stack0 + ") { p = " + param(0) + "; continue; };")
+                    js.push(`${idnt}                if (${stack0}) { p = ${param(0)}; continue; };`)
                     break
                 case Bytecode.LOOKUPSWITCH:
                     var jj = z.params.concat()
                     var dj = jj.shift()
-                    js.push("                if (" + stack0 + " >= 0 && " + stack0 + " < " + jj.length + ") { p = [" + jj.join(", ") + "][" + stack0 + "]; continue; } else { p = " + dj + "; continue; };")
+                    js.push(`${idnt}                if (${stack0} >= 0 && ${stack0} < ${jj.length}) { p = [${jj.join(", ")}][${stack0}]; continue; } else { p = ${dj}; continue; };`)
                     break
                 case Bytecode.JUMP:
-                    js.push("                { p = " + param(0) + "; continue; };")
+                    js.push(`${idnt}                { p = ${param(0)}; continue; };`)
                     break
                 case Bytecode.INCREMENT:
-                    js.push("                " + stack0 + "++;")
+                    js.push(`${idnt}                ${stack0}++;`)
                     break
                 case Bytecode.DECREMENT:
-                    js.push("                " + stack0 + "--;")
+                    js.push(`${idnt}                ${stack0}--;`)
                     break
                 case Bytecode.INCLOCAL:
-                    js.push("                " + local(param(0)) + "++;")
+                    js.push(`${idnt}                ${ local(param(0))}++;`)
                     break
                 case Bytecode.DECLOCAL:
-                    js.push("                " + local(param(0)) + "--;")
+                    js.push(`${idnt}                ${ local(param(0))}--;`)
                     break
                 case Bytecode.INCREMENT_I:
-                    js.push("                " + stack0 + " |= 0;")
-                    js.push("                " + stack0 + "++;")
+                    js.push(`${idnt}                ${stack0} |= 0;`)
+                    js.push(`${idnt}                ${stack0}++;`)
                     break
                 case Bytecode.DECREMENT_I:
-                    js.push("                " + stack0 + " |= 0;")
-                    js.push("                " + stack0 + "--;")
+                    js.push(`${idnt}                ${stack0} |= 0;`)
+                    js.push(`${idnt}                ${stack0}--;`)
                     break
                 case Bytecode.INCLOCAL_I:
-                    js.push("                " + local(param(0)) + " |= 0;")
-                    js.push("                " + local(param(0)) + "++;")
+                    js.push(`${idnt}                ${ local(param(0))} |= 0;`)
+                    js.push(`${idnt}                ${ local(param(0))}++;`)
                     break
                 case Bytecode.DECLOCAL_I:
-                    js.push("                " + local(param(0)) + " |= 0;")
-                    js.push("                " + local(param(0)) + "++;")
+                    js.push(`${idnt}                ${ local(param(0))} |= 0;`)
+                    js.push(`${idnt}                ${ local(param(0))}++;`)
                 case Bytecode.NEGATE_I:
-                    js.push("                " + stack0 + " = -(" + stack0 + " | 0);")
+                    js.push(`${idnt}                ${stack0} = -(${stack0} | 0);`)
                     break
                 case Bytecode.ADD_I:
-                    js.push("                " + stack1 + " = (" + stack1 + " | 0) + (" + stack0 + " | 0);")
+                    js.push(`${idnt}                ${stack1} = (${stack1} | 0) + (${stack0} | 0);`)
                     break
                 case Bytecode.SUBTRACT_I:
-                    js.push("                " + stack1 + " = (" + stack1 + " | 0) - (" + stack0 + " | 0);")
+                    js.push(`${idnt}                ${stack1} = (${stack1} | 0) - (${stack0} | 0);`)
                     break
                 case Bytecode.MULTIPLY_I:
-                    js.push("                " + stack1 + " = (" + stack1 + " | 0) * (" + stack0 + " | 0);")
+                    js.push(`${idnt}                ${stack1} = (${stack1} | 0) * (${stack0} | 0);`)
                     break
                 case Bytecode.ADD:
-                    js.push("                " + stack1 + " += " + stack0 + ";")
+                    js.push(`${idnt}                ${stack1} += ${stack0};`)
                     break
                 case Bytecode.SUBTRACT:
-                    js.push("                " + stack1 + " -= " + stack0 + ";")
+                    js.push(`${idnt}                ${stack1} -= ${stack0};`)
                     break
                 case Bytecode.MULTIPLY:
-                    js.push("                " + stack1 + " *= " + stack0 + ";")
+                    js.push(`${idnt}                ${stack1} *= ${stack0};`)
                     break
                 case Bytecode.DIVIDE:
-                    js.push("                " + stack1 + " /= " + stack0 + ";")
+                    js.push(`${idnt}                ${stack1} /= ${stack0};`)
                     break
                 case Bytecode.MODULO:
-                    js.push("                " + stack1 + " %= " + stack0 + ";")
+                    js.push(`${idnt}                ${stack1} %= ${stack0};`)
                     break
 
                 case Bytecode.LSHIFT:
-                    js.push("                " + stack1 + " <<= " + stack0 + ";")
+                    js.push(`${idnt}                ${stack1} <<= ${stack0};`)
                     break
                 case Bytecode.RSHIFT:
-                    js.push("                " + stack1 + " >>= " + stack0 + ";")
+                    js.push(`${idnt}                ${stack1} >>= ${stack0};`)
                     break
                 case Bytecode.URSHIFT:
-                    js.push("                " + stack1 + " >>>= " + stack0 + ";")
+                    js.push(`${idnt}                ${stack1} >>>= ${stack0};`)
                     break
 
                 case Bytecode.BITAND:
-                    js.push("                " + stack1 + " &= " + stack0 + ";")
+                    js.push(`${idnt}                ${stack1} &= ${stack0};`)
                     break
                 case Bytecode.BITOR:
-                    js.push("                " + stack1 + " |= " + stack0 + ";")
+                    js.push(`${idnt}                ${stack1} |= ${stack0};`)
                     break
                 case Bytecode.BITXOR:
-                    js.push("                " + stack1 + " ^= " + stack0 + ";")
+                    js.push(`${idnt}                ${stack1} ^= ${stack0};`)
                     break
 
                 case Bytecode.EQUALS:
-                    js.push("                " + stack1 + " = " + stack1 + " == " + stack0 + ";")
+                    js.push(`${idnt}                ${stack1} = ${stack1} == ${stack0};`)
                     break
                 case Bytecode.STRICTEQUALS:
-                    js.push("                " + stack1 + " = " + stack1 + " === " + stack0 + ";")
+                    js.push(`${idnt}                ${stack1} = ${stack1} === ${stack0};`)
                     break
                 case Bytecode.GREATERTHAN:
-                    js.push("                " + stack1 + " = " + stack1 + " > " + stack0 + ";")
+                    js.push(`${idnt}                ${stack1} = ${stack1} > ${stack0};`)
                     break
                 case Bytecode.GREATEREQUALS:
-                    js.push("                " + stack1 + " = " + stack1 + " >= " + stack0 + ";")
+                    js.push(`${idnt}                ${stack1} = ${stack1} >= ${stack0};`)
                     break
                 case Bytecode.LESSTHAN:
-                    js.push("                " + stack1 + " = " + stack1 + " < " + stack0 + ";")
+                    js.push(`${idnt}                ${stack1} = ${stack1} < ${stack0};`)
                     break
                 case Bytecode.LESSEQUALS:
-                    js.push("                " + stack1 + " = " + stack1 + " <= " + stack0 + ";")
+                    js.push(`${idnt}                ${stack1} = ${stack1} <= ${stack0};`)
                     break
                 case Bytecode.NOT:
-                    js.push("                " + stack0 + " = !" + stack0 + ";")
+                    js.push(`${idnt}                ${stack0} = !${stack0};`)
                     break
                 case Bytecode.BITNOT:
-                    js.push("                " + stack0 + " = ~" + stack0 + ";")
+                    js.push(`${idnt}                ${stack0} = ~${stack0};`)
                     break
                 case Bytecode.NEGATE:
-                    js.push("                " + stack0 + " = -" + stack0 + ";")
+                    js.push(`${idnt}                ${stack0} = -${stack0};`)
                     break
                 case Bytecode.TYPEOF:
-                    js.push("                if (" + stack0 + ") {")
-                    js.push("                    if (" + stack0 + ".value) {")
-                    js.push("                        return typeof " + stack0 + ".value;")
-                    js.push("                    }")
-                    js.push("                    if (sec.AXXML.dPrototype.isPrototypeOf(" + stack0 + ") || sec.AXXMLList.dPrototype.isPrototypeOf(" + stack0 + ")) {")
-                    js.push("                        return 'xml';")
-                    js.push("                    }")
-                    js.push("                }")
-                    js.push("                return typeof " + stack0 + ";")
+                    js.push(`${idnt}                if (${stack0}) {`)
+                    js.push(`${idnt}                    if (${stack0}.value) {`)
+                    js.push(`${idnt}                        return typeof ${stack0}.value;`)
+                    js.push(`${idnt}                    }`)
+                    js.push(`${idnt}                    if (sec.AXXML.dPrototype.isPrototypeOf(${stack0}) || sec.AXXMLList.dPrototype.isPrototypeOf(${stack0})) {`)
+                    js.push(`${idnt}                        return 'xml';`)
+                    js.push(`${idnt}                    }`)
+                    js.push(`${idnt}                }`)
+                    js.push(`${idnt}                return typeof ${stack0};`)
                     break;
                 case Bytecode.INSTANCEOF:
-                    js.push("                " + stack1 + " = " + stack0 + ".axIsInstanceOf(" + stack1 + ");")
+                    js.push(`${idnt}                ${stack1} = ${stack0}.axIsInstanceOf(${stack1});`)
                     break
                 case Bytecode.ISTYPELATE:
-                    js.push("                " + stack1 + " = " + stack0 + ".axIsType(" + stack1 + ");")
+                    js.push(`${idnt}                ${stack1} = ${stack0}.axIsType(${stack1});`)
                     break
                 case Bytecode.ASTYPELATE:
-                    js.push("                " + stack1 + " = " + stack0 + ".axAsType(" + stack1 + ");")
+                    js.push(`${idnt}                ${stack1} = ${stack0}.axAsType(${stack1});`)
                     break
 
                 case Bytecode.CALL: {
@@ -1332,7 +1459,7 @@ export function compile(methodInfo: MethodInfo, sync = false): ICompilerProcess 
                     for (let j: number = 1; j <= param(0); j++)
                         pp.push(stackF(param(0) - j))
 
-                    js.push("                " + stackF(param(0) + 1) + " = context.call(" + stackF(param(0) + 1) + ", " + stackF(param(0)) + ", [" + pp.join(", ") + "]);")
+                    js.push(`${idnt}                ${ stackF(param(0) + 1)} = context.call(${stackF(param(0) + 1)}, ${stackF(param(0))}, [${pp.join(", ")}]);`)
                 }
                     break
                 case Bytecode.CONSTRUCT: {
@@ -1341,7 +1468,7 @@ export function compile(methodInfo: MethodInfo, sync = false): ICompilerProcess 
                     for (let j: number = 1; j <= param(0); j++)
                         pp.push(stackF(param(0) - j))
 
-                    js.push("                " + stackF(param(0)) + " = context.construct(" + stackF(param(0)) + ", [" + pp.join(", ") + "]);")
+                    js.push(`${idnt}                ${ stackF(param(0))} = context.construct(${stackF(param(0))}, [${pp.join(", ")}]);`)
                 }
                     break
                 case Bytecode.CALLPROPERTY:
@@ -1353,16 +1480,16 @@ export function compile(methodInfo: MethodInfo, sync = false): ICompilerProcess 
 
                     let obj = pp.shift();
                     if (abc.getMultiname(param(1)).name == "getDefinitionByName") {
-                        js.push("                " + stackF(param(0)) + " = context.getdefinitionbyname(" + scope + ", " + obj + ", [" + pp.join(", ") + "]);")
+                        js.push(`${idnt}                ${ stackF(param(0))} = context.getdefinitionbyname(${scope}, ${obj}, [${pp.join(", ")}]);`)
                     }
                     else {
-                        js.push("                if (" + obj + ".__fast__) {")
-                        js.push("                    " + stackF(param(0)) + " = " + obj + "['" + mn.name + "'].apply(" + obj + ", [" + pp.join(", ") + "]);")
-                        js.push("                } else {")    
-                        js.push("                // " + mn)
-                        js.push("                    temp = sec.box(" + obj + ");")
-                        js.push("                    " + stackF(param(0)) + " = (typeof temp['$Bg" + mn.name + "'] === 'function')? temp['$Bg" + mn.name + "'](" + pp.join(", ") + ") : temp.axCallProperty(" + getname(param(1)) + ", [" + pp.join(", ") + "], false);")
-                        js.push("                }")
+                        js.push(`${idnt}                if (${obj}.__fast__) {`)
+                        js.push(`${idnt}                    ${stackF(param(0))} = ${obj}['${mn.name}'].apply(${obj}, [${pp.join(", ")}]);`)
+                        js.push(`${idnt}                } else {`)    
+                        js.push(`${idnt}                // ${mn}`)
+                        js.push(`${idnt}                    temp = sec.box(${obj});`)
+                        js.push(`${idnt}                    ${stackF(param(0))} = (typeof temp['$Bg${mn.name}'] === 'function')? temp['$Bg${mn.name}'](${pp.join(", ")}) : temp.axCallProperty(${getname(param(1))}, [${pp.join(", ")}], false);`)
+                        js.push(`${idnt}                }`)
                     }
                     break
                 case Bytecode.CALLPROPLEX: {
@@ -1371,8 +1498,8 @@ export function compile(methodInfo: MethodInfo, sync = false): ICompilerProcess 
                     for (let j: number = 0; j <= param(0); j++)
                         pp.push(stackF(param(0) - j))
 
-                    js.push("                    temp = sec.box(" + pp.shift() + ");")
-                    js.push("                " + stackF(param(0)) + " = (typeof temp['$Bg" + mn.name + "'] === 'function')? temp['$Bg" + mn.name + "'](" + pp.join(", ") + ") : temp.axCallProperty(" + getname(param(1)) + ", [" + pp.join(", ") + "], true);")
+                    js.push(`${idnt}                    temp = sec.box(${pp.shift()});`)
+                    js.push(`${idnt}                ${ stackF(param(0))} = (typeof temp['$Bg${mn.name}'] === 'function')? temp['$Bg${mn.name}'](${pp.join(", ")}) : temp.axCallProperty(${getname(param(1))}, [${pp.join(", ")}], true);`)
                 }
                     break
                 case Bytecode.CALLPROPVOID: {
@@ -1383,12 +1510,12 @@ export function compile(methodInfo: MethodInfo, sync = false): ICompilerProcess 
                         pp.push(stackF(param(0) - j))
 
                     let obj = pp.shift();
-                    js.push("                if (" + obj + ".__fast__) {")
-                    js.push("                    " + obj + "['" + mn.name + "'].apply(" + obj + ", [" + pp.join(", ") + "]);")
-                    js.push("                } else {")
-                    js.push("                    temp = sec.box(" + obj + ");")
-                    js.push("                    (typeof temp['$Bg" + mn.name + "'] === 'function')? temp['$Bg" + mn.name + "'](" + pp.join(", ") + ") : temp.axCallProperty(" + getname(param(1)) + ", [" + pp.join(", ") + "], false);")
-                    js.push("                }")
+                    js.push(`${idnt}                if (${obj}.__fast__) {`)
+                    js.push(`${idnt}                    ${obj}['${mn.name}'].apply(${obj}, [${pp.join(", ")}]);`)
+                    js.push(`${idnt}                } else {`)
+                    js.push(`${idnt}                    temp = sec.box(${obj});`)
+                    js.push(`${idnt}                    (typeof temp['$Bg${mn.name}'] === 'function')? temp['$Bg${mn.name}'](${pp.join(", ")}) : temp.axCallProperty(${getname(param(1))}, [${pp.join(", ")}], false);`)
+                    js.push(`${idnt}                }`)
                 }
                     break
                 case Bytecode.APPLYTYPE: {
@@ -1397,26 +1524,26 @@ export function compile(methodInfo: MethodInfo, sync = false): ICompilerProcess 
                     for (let j: number = 1; j <= param(0); j++)
                         pp.push(stackF(param(0) - j))
 
-                    js.push("                " + stackF(param(0)) + " = sec.applyType(" + stackF(param(0)) + ", [" + pp.join(", ") + "]);")
+                    js.push(`${idnt}                ${stackF(param(0))} = sec.applyType(${stackF(param(0))}, [${pp.join(", ")}]);`)
                 }
                     break
 
 
                 case Bytecode.FINDPROPSTRICT:
-                    js.push("                // " + abc.getMultiname(param(0)))
-                    js.push("                " + stackN + " = " + scope + ".findScopeProperty(" + getname(param(0)) + ", true, false);")
+                    js.push(`${idnt}                // ${abc.getMultiname(param(0))}`)
+                    js.push(`${idnt}                ${ stackN} = ${scope}.findScopeProperty(${getname(param(0))}, true, false);`)
                     break
                 case Bytecode.FINDPROPERTY:
-                    js.push("                // " + abc.getMultiname(param(0)))
-                    js.push("                " + stackN + " = " + scope + ".findScopeProperty(" + getname(param(0)) + ", false, false);")
+                    js.push(`${idnt}                // ${abc.getMultiname(param(0))}`)
+                    js.push(`${idnt}                ${ stackN} = ${scope}.findScopeProperty(${getname(param(0))}, false, false);`)
                     break
                 case Bytecode.NEWFUNCTION:
-                    js.push("                // " + abc.getMethodInfo(param(0)))
-                    js.push("                " + stackN + " = sec.createFunction(context.abc.getMethodInfo(" + param(0) + "), " + scope + ", true);")
+                    js.push(`${idnt}                // ${abc.getMethodInfo(param(0))}`)
+                    js.push(`${idnt}                ${ stackN} = sec.createFunction(context.abc.getMethodInfo(${param(0)}), ${scope}, true);`)
                     break
                 case Bytecode.NEWCLASS:
-                    js.push("                // " + abc.classes[param(0)])
-                    js.push("                " + stack0 + " = sec.createClass(context.abc.classes[" + param(0) + "], " + stack0 + ", " + scope + ");")
+                    js.push(`${idnt}                // ${abc.classes[param(0)]}`)
+                    js.push(`${idnt}                ${stack0} = sec.createClass(context.abc.classes[${param(0)}], ${stack0}, ${scope});`)
                     break
                 case Bytecode.NEWARRAY: {
                     let pp = []
@@ -1424,25 +1551,25 @@ export function compile(methodInfo: MethodInfo, sync = false): ICompilerProcess 
                     for (let j: number = 1; j <= param(0); j++)
                         pp.push(stackF(param(0) - j))
 
-                    js.push("                " + stackF(param(0) - 1) + " = sec.AXArray.axBox([" + pp.join(", ") + "]);")
+                    js.push(`${idnt}                ${ stackF(param(0) - 1)} = sec.AXArray.axBox([${pp.join(", ")}]);`)
                 }
                     break
                 case Bytecode.NEWOBJECT:
-                    js.push("                temp = Object.create(sec.AXObject.tPrototype);")
+                    js.push(`${idnt}                temp = Object.create(sec.AXObject.tPrototype);`)
 
                     for (let j: number = 1; j <= param(0); j++) {
-                        js.push("                temp.axSetPublicProperty(" + stackF(2 * param(0) - 2 * j + 1) + ", " + stackF(2 * param(0) - 2 * j) + ");")
+                        js.push(`${idnt}                temp.axSetPublicProperty(${stackF(2 * param(0) - 2 * j + 1)}, ${stackF(2 * param(0) - 2 * j)});`)
                     }
 
-                    js.push("                " + stackF(2 * param(0) - 1) + " = temp;")
-                    js.push("                temp = undefined;")
+                    js.push(`${idnt}                ${ stackF(2 * param(0) - 1)} = temp;`)
+                    js.push(`${idnt}                temp = undefined;`)
 
                     break
                 case Bytecode.NEWACTIVATION:
-                    js.push("                " + stackN + " = sec.createActivation(context.mi, " + scope + ");")
+                    js.push(`${idnt}                ${ stackN} = sec.createActivation(context.mi, ${scope});`)
                     break
                 case Bytecode.NEWCATCH:
-                    js.push("                " + stackN + " = sec.createCatch(context.mi.getBody().catchBlocks[" + param(0) + "], " + scope + ");")
+                    js.push(`${idnt}                ${ stackN} = sec.createCatch(context.mi.getBody().catchBlocks[${param(0)}], ${scope});`)
                     break
                 case Bytecode.CONSTRUCTSUPER: {
                     let pp = []
@@ -1450,7 +1577,7 @@ export function compile(methodInfo: MethodInfo, sync = false): ICompilerProcess 
                     for (let j: number = 1; j <= param(0); j++)
                         pp.push(stackF(param(0) - j))
 
-                    js.push("                context.savedScope.object.superClass.tPrototype.axInitializer.apply(" + stackF(param(0)) + ", [" + pp.join(", ") + "]);")
+                    js.push(`${idnt}                context.savedScope.object.superClass.tPrototype.axInitializer.apply(${stackF(param(0))}, [${pp.join(", ")}]);`)
                 }
                     break
                 case Bytecode.CALLSUPER: {
@@ -1459,7 +1586,7 @@ export function compile(methodInfo: MethodInfo, sync = false): ICompilerProcess 
                     for (let j: number = 1; j <= param(0); j++)
                         pp.push(stackF(param(0) - j))
 
-                    js.push("                " + stackF(param(0)) + " = sec.box(" + stackF(param(0)) + ").axCallSuper(" + getname(param(1)) + ", context.savedScope, [" + pp.join(", ") + "]);")
+                    js.push(`${idnt}                ${ stackF(param(0))} = sec.box(${stackF(param(0))}).axCallSuper(${getname(param(1))}, context.savedScope, [${pp.join(", ")}]);`)
                 }
                     break
                 case Bytecode.CALLSUPER_DYN: {
@@ -1468,7 +1595,7 @@ export function compile(methodInfo: MethodInfo, sync = false): ICompilerProcess 
                     for (let j: number = 1; j <= param(0); j++)
                         pp.push(stackF(param(0) - j))
 
-                    js.push("                " + stackF(param(0) + 1) + " = sec.box(" + stackF(param(0) + 1) + ").axCallSuper(context.runtimename(" + stackF(param(0)) + ", " + param(1) + "), context.savedScope, [" + pp.join(", ") + "]);")
+                    js.push(`${idnt}                ${ stackF(param(0) + 1)} = sec.box(${stackF(param(0) + 1)}).axCallSuper(context.runtimename(${stackF(param(0))}, ${param(1)}), context.savedScope, [${pp.join(", ")}]);`)
                 }
                     break
                 case Bytecode.CALLSUPERVOID: {
@@ -1477,7 +1604,7 @@ export function compile(methodInfo: MethodInfo, sync = false): ICompilerProcess 
                     for (let j: number = 1; j <= param(0); j++)
                         pp.push(stackF(param(0) - j))
 
-                    js.push("                sec.box(" + stackF(param(0)) + ").axCallSuper(" + getname(param(1)) + ", context.savedScope, [" + pp.join(", ") + "]);")
+                    js.push(`${idnt}                sec.box(${stackF(param(0))}).axCallSuper(${getname(param(1))}, context.savedScope, [${pp.join(", ")}]);`)
                 }
                     break
                 case Bytecode.CONSTRUCTPROP: {
@@ -1486,116 +1613,128 @@ export function compile(methodInfo: MethodInfo, sync = false): ICompilerProcess 
                     for (let j: number = 1; j <= param(0); j++)
                         pp.push(stackF(param(0) - j))
                     
-                    js.push("                " + stackF(param(0)) + " = context.constructprop(" + getname(param(1)) + ", " + stackF(param(0)) + ", [" + pp.join(", ") + "]);")
+                    js.push(`${idnt}                ${ stackF(param(0))} = context.constructprop(${getname(param(1))}, ${stackF(param(0))}, [${pp.join(", ")}]);`)
                 }
                     break
                 case Bytecode.GETPROPERTY:
                     var mn = abc.getMultiname(param(0));
-                    js.push("                // " + mn)
-                    js.push("                if (" + stack0 + ".__fast__) {")
-                    js.push("                    " + stack0 + " = " + stack0 + "['" + mn.name + "'];")
-                    js.push("                } else {")
-                    js.push("                    temp = sec.box(" + stack0 + ");")
-                    js.push("                    " + stack0 + " = temp['$Bg" + mn.name + "'];")
-                    js.push("                    if (" + stack0 + " === undefined) {")
-                    js.push("                        " + stack0 + " = temp.axGetProperty(" + getname(param(0)) + ");")
-                    js.push("                    }")
-                    js.push("                    if (typeof " + stack0 + " === 'function') {")
-                    js.push("                        " + stack0 + " = temp.axGetMethod('$Bg" + mn.name + "');")
-                    js.push("                    }")
-                    js.push("                }")
+                    js.push(`${idnt}                // ${mn}`)
+                    js.push(`${idnt}                if (${stack0}.__fast__) {`)
+                    js.push(`${idnt}                    ${stack0} = ${stack0}['${mn.name}'];`)
+                    js.push(`${idnt}                } else {`)
+                    js.push(`${idnt}                    temp = sec.box(${stack0});`)
+                    js.push(`${idnt}                    ${stack0} = temp['$Bg${mn.name}'];`)
+                    js.push(`${idnt}                    if (${stack0} === undefined) {`)
+                    js.push(`${idnt}                        ${stack0} = temp.axGetProperty(${getname(param(0))});`)
+                    js.push(`${idnt}                    }`)
+                    js.push(`${idnt}                    if (typeof ${stack0} === 'function') {`)
+                    js.push(`${idnt}                        ${stack0} = temp.axGetMethod('$Bg${mn.name}');`)
+                    js.push(`${idnt}                    }`)
+                    js.push(`${idnt}                }`)
                     break
                 case Bytecode.GETPROPERTY_DYN:
                     var mn = abc.getMultiname(param(0));
-                    js.push("                " + stack1 + " = context.getpropertydyn(context.runtimename(" + stack0 + ", " + param(0) + "), " + stack1 + ");")
+                    js.push(`${idnt}                ${stack1} = context.getpropertydyn(context.runtimename(${stack0}, ${param(0)}), ${stack1});`)
                     break
                 case Bytecode.SETPROPERTY:
                     var mn = abc.getMultiname(param(0))
-                    js.push("                // " + mn)
-                    js.push("                if (" + stack1 + ".__fast__) {")
-                    js.push("                    " + stack1 + "['" + mn.name + "'] = " + stack0 + ";")
-                    js.push("                } else {")
-                    js.push("                context.setproperty(" + getname(param(0)) + ", " + stack0 + ", " + stack1 + ");")
-                    js.push("                }")
+                    js.push(`${idnt}                // ${mn}`)
+                    js.push(`${idnt}                if (${stack1}.__fast__) {`)
+                    js.push(`${idnt}                    ${stack1}['${mn.name}'] = ${stack0};`)
+                    js.push(`${idnt}                } else {`)
+                    js.push(`${idnt}                context.setproperty(${getname(param(0))}, ${stack0}, ${stack1});`)
+                    js.push(`${idnt}                }`)
                     break
                 case Bytecode.SETPROPERTY_DYN:
-                    js.push("                context.setproperty(context.runtimename(" + stack1 + ", " + param(0) + "), " + stack0 + ", " + stack2 + ");")
+                    js.push(`${idnt}                context.setproperty(context.runtimename(${stack1}, ${param(0)}), ${stack0}, ${stack2});`)
                     break
                 case Bytecode.DELETEPROPERTY:
-                    js.push("                // " + abc.getMultiname(param(0)))
-                    js.push("                " + stack0 + " = context.deleteproperty(" + getname(param(0)) + ", " + stack0 + ");")
+                    js.push(`${idnt}                // ${abc.getMultiname(param(0))}`)
+                    js.push(`${idnt}                ${stack0} = context.deleteproperty(${getname(param(0)) }, ${stack0});`)
                     break
                 case Bytecode.DELETEPROPERTY_DYN:
-                    js.push("                " + stack1 + " = context.deleteproperty(context.runtimename(" + stack0 + ", " + param(0) + "), " + stack1 + ");")
+                    js.push(`${idnt}                ${stack1} = context.deleteproperty(context.runtimename(${stack0}, ${param(0)}), ${stack1});`)
                     break
                 case Bytecode.GETSUPER:
-                    js.push("                " + stack0 + " = sec.box(" + stack0 + ").axGetSuper(" + getname(param(0)) + ", context.savedScope);")
+                    js.push(`${idnt}                ${stack0} = sec.box(${stack0}).axGetSuper(${getname(param(0)) }, context.savedScope);`)
                     break
                 case Bytecode.GETSUPER_DYN:
-                    js.push("                " + stack1 + " = sec.box(" + stack1 + ").axGetSuper(context.runtimename(" + stack0 + ", " + param(0) + "), context.savedScope);")
+                    js.push(`${idnt}                ${stack1} = sec.box(${stack1}).axGetSuper(context.runtimename(${stack0}, ${param(0)}), context.savedScope);`)
                     break
                 case Bytecode.SETSUPER:
-                    js.push("                sec.box(" + stack1 + ").axSetSuper(" + getname(param(0)) + ", context.savedScope, " + stack0 + ");")
+                    js.push(`${idnt}                sec.box(${stack1}).axSetSuper(${getname(param(0)) }, context.savedScope, ${stack0});`)
                     break
                 case Bytecode.SETSUPER_DYN:
-                    js.push("                sec.box(" + stack2 + ").axSetSuper(context.runtimename(" + stack1 + ", " + param(0) + "), context.savedScope, " + stack0 + ");")
+                    js.push(`${idnt}                sec.box(${stack2}).axSetSuper(context.runtimename(${stack1}, ${param(0)}), context.savedScope, ${stack0});`)
                     break
                 case Bytecode.GETLEX:
                     var mn = abc.getMultiname(param(0))
-                    js.push("                // " + mn)
-                    js.push("                temp = " + scope + ".findScopeProperty(" + getname(param(0)) + ", true, false);")
-                    js.push("                " + stackN + " = temp['$Bg" + mn.name + "'];")
-                    js.push("                if (" + stackN + " === undefined) {")
-                    js.push("                    " + stackN + " = temp.axGetProperty(" + getname(param(0)) + ");")
-                    js.push("                }")
-                    js.push("                if (typeof " + stackN + " === 'function') {")
-                    js.push("                    " + stackN + " = temp.axGetMethod('$Bg" + mn.name + "');")
-                    js.push("                }")
+                    js.push(`${idnt}                // ${mn}`)
+                    js.push(`${idnt}                temp = ${scope}.findScopeProperty(${getname(param(0)) }, true, false);`)
+                    js.push(`${idnt}                ${ stackN} = temp['$Bg${mn.name}'];`)
+                    js.push(`${idnt}                if (${stackN} === undefined) {`)
+                    js.push(`${idnt}                    ${stackN} = temp.axGetProperty(${getname(param(0))});`)
+                    js.push(`${idnt}                }`)
+                    js.push(`${idnt}                if (typeof ${stackN} === 'function') {`)
+                    js.push(`${idnt}                    ${stackN} = temp.axGetMethod('$Bg${mn.name}');`)
+                    js.push(`${idnt}                }`)
                     break
                 case Bytecode.RETURNVALUE:
-                    js.push("                return " + stack0 + ";")
+                    js.push(`${idnt}                return ${stack0};`)
                     break
                 case Bytecode.RETURNVOID:
-                    js.push("                return;")
+                    js.push(`${idnt}                return;`)
                     break
                 case Bytecode.COERCE:
-                    js.push("                " + stack0 + " = " + scope + ".getScopeProperty(" + getname(param(0)) + ", true, false).axCoerce(" + stack0 + ");")
+                    js.push(`${idnt}                ${stack0} = ${scope}.getScopeProperty(${getname(param(0)) }, true, false).axCoerce(${stack0});`)
                     break
                 case Bytecode.COERCE_A:
-                    js.push("                ;")
+                    js.push(`${idnt}                ;`)
                     break
                 case Bytecode.COERCE_S:
-                    js.push("                " + stack0 + " = context.axCoerceString(" + stack0 + ");")
+                    js.push(`${idnt}                ${stack0} = context.axCoerceString(${stack0});`)
                     break
                 case Bytecode.CONVERT_I:
-                    js.push("                " + stack0 + " |= 0;")
+                    js.push(`${idnt}                ${stack0} |= 0;`)
                     break
                 case Bytecode.CONVERT_D:
-                    js.push("                " + stack0 + " = +" + stack0 + ";")
+                    js.push(`${idnt}                ${stack0} = +${stack0};`)
                     break
                 case Bytecode.CONVERT_B:
-                    js.push("                " + stack0 + " = !!" + stack0 + ";")
+                    js.push(`${idnt}                ${stack0} = !!${stack0};`)
                     break
                 case Bytecode.CONVERT_U:
-                    js.push("                " + stack0 + " >>>= 0;")
+                    js.push(`${idnt}                ${stack0} >>>= 0;`)
                     break
                 case Bytecode.CONVERT_S:
-                    js.push("                if (typeof " + stack0 + " !== 'string') " + stack0 + " = " + stack0 + " + '';")
+                    js.push(`${idnt}                if (typeof ${stack0} !== 'string') ${stack0} = ${stack0} + '';`)
                     break
                 case Bytecode.CONVERT_O:
-                    js.push("                ;")
+                    js.push(`${idnt}                ;`)
                     break
                 case Bytecode.CHECKFILTER:
-                    js.push("                " + stack0 + " = context.axCheckFilter(sec, " + stack0 + ");")
+                    js.push(`${idnt}                ${stack0} = context.axCheckFilter(sec, ${stack0});`)
                     break
                 case Bytecode.KILL:
-                    js.push("                " + local(param(0)) + " = undefined;")
+                    js.push(`${idnt}                ${ local(param(0))} = undefined;`)
                     break
                 default:
-                    js.push("                //" + "unknown instruction " + q[i])
-                    console.log("unknown instruction " + q[i] + " (method N" + methodInfo.index() + ")")
+                    js.push(`${idnt}                //unknown instruction${q[i]}`)
+                    console.log(`unknown instruction ${q[i]} (method N${methodInfo.index()})`)
                     return "unhandled instruction " + z
-            }
+			}
+		}
+		
+		currentCatchBlocks=mapTryCatchBlocksByEnd?mapTryCatchBlocksByEnd[z.position]:null;
+		if(currentCatchBlocks){
+			var lastCatchBlocks=openTryCatchBlockGroups.pop();
+			if(lastCatchBlocks){
+				js.push(`            ${idnt}}`)
+				createCatchConditions(lastCatchBlocks, idnt);
+				idnt=idnt.slice(0, idnt.length-4);
+			}
+			
+		}
     }
 
     js.push("        }")
