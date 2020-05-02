@@ -478,6 +478,10 @@ export function compile(methodInfo: MethodInfo, sync = false): ICompilerProcess 
 				q.push(new Instruction(oldi, z, [u30()], 1))
 				break
 
+			case Bytecode.PUSHUINT:
+				q.push(new Instruction(oldi, z, [u30()], 1))
+				break
+
 			case Bytecode.PUSHDOUBLE:
 				q.push(new Instruction(oldi, z, [u30()], 1))
 				break
@@ -1273,6 +1277,9 @@ export function compile(methodInfo: MethodInfo, sync = false): ICompilerProcess 
 					break
 				case Bytecode.PUSHSHORT:
 					js.push(`${idnt}                ${stackN} = ${param(0)};`)
+				case Bytecode.PUSHUINT:
+					js.push(`${idnt}                ${stackN} = ${abc.uints[param(0)]};`)
+					break
 					break
 				case Bytecode.PUSHINT:
 					js.push(`${idnt}                ${stackN} = ${abc.ints[param(0)]};`)
