@@ -1647,7 +1647,7 @@ export function compile(methodInfo: MethodInfo, sync = false): ICompilerProcess 
 					break
 				case Bytecode.GETPROPERTY_DYNNS:
 					var mn = abc.getMultiname(param(0));
-					js.push(`${idnt}                ${stack1} = context.getpropertydyn(context.runtimenamespace(${stack0}, ${param(0)}), ${stack1});`)
+					js.push(`${idnt}                ${stack1} = context.getpropertydyn(context.runtimenamespace(${stack0}, ${stack1}, ${param(0)}), ${stack2});`)
 					break
 				case Bytecode.SETPROPERTY:
 					var mn = abc.getMultiname(param(0))
@@ -1662,7 +1662,7 @@ export function compile(methodInfo: MethodInfo, sync = false): ICompilerProcess 
 					js.push(`${idnt}                context.setproperty(context.runtimename(${stack1}, ${param(0)}), ${stack0}, ${stack2});`)
 					break
 				case Bytecode.SETPROPERTY_DYNNS:
-					js.push(`${idnt}                context.setproperty(context.runtimenamespace(${stack1}, ${param(0)}), ${stack0}, ${stack2});`)
+					js.push(`${idnt}                context.setproperty(context.runtimenamespace(${stack1}, ${stack2}, ${param(0)}), ${stack0}, ${stack3});`)
 					break
 				case Bytecode.DELETEPROPERTY:
 					js.push(`${idnt}                // ${abc.getMultiname(param(0))}`)
@@ -1919,14 +1919,14 @@ export class Context {
 		return mn.rename(name)
 	}
 
-	runtimenamespace(ns, index) {
+	runtimenamespace(name, ns, index) {
 		let mn = this.abc.getMultiname(index)
 
 		if (ns._ns) {
 			release || assert(ns.sec && ns.axClass === ns.sec.AXNamespace);
 			ns = ns._ns;
 		}
-		let rn = mn.rename(mn.name)
+		let rn = mn.rename(name)
 		rn.namespaces = [ns];
 
 		return rn;
