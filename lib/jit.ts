@@ -127,12 +127,14 @@ export enum Bytecode {
 	GETLEX_DYN = 0x0160,
 	SETPROPERTY = 0x61,
 	SETPROPERTY_DYN = 0x0161,
+	SETPROPERTY_DYNNS = 0x0261,
 	GETLOCAL = 0x62,
 	SETLOCAL = 0x63,
 	GETGLOBALSCOPE = 0x64,
 	GETSCOPEOBJECT = 0x65,
 	GETPROPERTY = 0x66,
 	GETPROPERTY_DYN = 0x0166,
+	GETPROPERTY_DYNNS = 0x0266,
 	GETOUTERSCOPE = 0x67,
 	INITPROPERTY = 0x68,
 	UNUSED_69 = 0x69,
@@ -1636,6 +1638,10 @@ export function compile(methodInfo: MethodInfo, sync = false): ICompilerProcess 
 					var mn = abc.getMultiname(param(0));
 					js.push(`${idnt}                ${stack1} = context.getpropertydyn(context.runtimename(${stack0}, ${param(0)}), ${stack1});`)
 					break
+				case Bytecode.GETPROPERTY_DYNNS:
+					var mn = abc.getMultiname(param(0));
+					js.push(`${idnt}                ${stack1} = context.getpropertydyn(context.runtimenamespace(${stack0}, ${param(0)}), ${stack1});`)
+					break
 				case Bytecode.SETPROPERTY:
 					var mn = abc.getMultiname(param(0))
 					js.push(`${idnt}                // ${mn}`)
@@ -1647,6 +1653,9 @@ export function compile(methodInfo: MethodInfo, sync = false): ICompilerProcess 
 					break
 				case Bytecode.SETPROPERTY_DYN:
 					js.push(`${idnt}                context.setproperty(context.runtimename(${stack1}, ${param(0)}), ${stack0}, ${stack2});`)
+					break
+				case Bytecode.SETPROPERTY_DYNNS:
+					js.push(`${idnt}                context.setproperty(context.runtimenamespace(${stack1}, ${param(0)}), ${stack0}, ${stack2});`)
 					break
 				case Bytecode.DELETEPROPERTY:
 					js.push(`${idnt}                // ${abc.getMultiname(param(0))}`)
@@ -1902,4 +1911,16 @@ export class Context {
 		return mn.rename(name)
 	}
 
+	runtimenamespace(ns, index) {
+		let mn = this.abc.getMultiname(index)
+
+		if (ns._ns) {
+			release || assert(ns.sec && ns.axClass === ns.sec.AXNamespace);
+			ns = ns._ns;
+		}
+		let rn = mn.rename(mn.name)
+		rn.namespaces = [ns];
+
+		return rn;
+	}
 }
