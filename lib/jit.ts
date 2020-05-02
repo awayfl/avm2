@@ -898,8 +898,8 @@ export function compile(methodInfo: MethodInfo, sync = false): ICompilerProcess 
 				break
 
 			default:
-				console.log("UNKNOWN #" + code[i - 1].toString(16) + " " + BytecodeName[code[i - 1]] + " (method N" + methodInfo.index() + ")")
-				return "UNKNOWN BYTECODE $" + code[i - 1].toString(16) + " (" + BytecodeName[code[i - 1]] + ") at " + oldi
+				console.log(`UNKNOWN BYTECODE ${code[i - 1].toString(16)} ${BytecodeName[code[i - 1]]} at ${oldi} (method:`, methodInfo.index());
+				return `UNKNOWN BYTECODE ${code[i - 1].toString(16)} ${BytecodeName[code[i - 1]]} at ${oldi}`;
 		}
 
 	}
@@ -1277,12 +1277,12 @@ export function compile(methodInfo: MethodInfo, sync = false): ICompilerProcess 
 					break
 				case Bytecode.PUSHSHORT:
 					js.push(`${idnt}                ${stackN} = ${param(0)};`)
-				case Bytecode.PUSHUINT:
-					js.push(`${idnt}                ${stackN} = ${abc.uints[param(0)]};`)
-					break
 					break
 				case Bytecode.PUSHINT:
 					js.push(`${idnt}                ${stackN} = ${abc.ints[param(0)]};`)
+					break
+				case Bytecode.PUSHUINT:
+					js.push(`${idnt}                ${stackN} = ${abc.uints[param(0)]};`)
 					break
 				case Bytecode.PUSHDOUBLE:
 					js.push(`${idnt}                ${stackN} = ${abc.doubles[param(0)]};`)
@@ -1725,9 +1725,10 @@ export function compile(methodInfo: MethodInfo, sync = false): ICompilerProcess 
 				case Bytecode.KILL:
 					js.push(`${idnt}                ${local(param(0))} = undefined;`)
 					break
+					
 				default:
-					js.push(`${idnt}                //unknown instruction${q[i]}`)
-					console.log(`unknown instruction ${q[i]} (method N${methodInfo.index()})`)
+					js.push(`${idnt}                //unknown instruction ${BytecodeName[q[i].name]}`)
+					console.log(`unknown instruction ${BytecodeName[q[i].name]} (method N${methodInfo.index()})`)
 					return "unhandled instruction " + z
 			}
 		}
