@@ -127,14 +127,12 @@ export enum Bytecode {
 	GETLEX_DYN = 0x0160,
 	SETPROPERTY = 0x61,
 	SETPROPERTY_DYN = 0x0161,
-	SETPROPERTY_DYNNS = 0x0261,
 	GETLOCAL = 0x62,
 	SETLOCAL = 0x63,
 	GETGLOBALSCOPE = 0x64,
 	GETSCOPEOBJECT = 0x65,
 	GETPROPERTY = 0x66,
 	GETPROPERTY_DYN = 0x0166,
-	GETPROPERTY_DYNNS = 0x0266,
 	GETOUTERSCOPE = 0x67,
 	INITPROPERTY = 0x68,
 	UNUSED_69 = 0x69,
@@ -350,11 +348,8 @@ export function compile(methodInfo: MethodInfo, sync = false): ICompilerProcess 
 			let index = u30()
 			let name = abc.getMultiname(index)
 
-			if (name.isRuntimeName())
-				return [index, 256, -1]
-
-			if (name.isRuntimeNamespace())
-				return [index, 512, -1]
+			if (name.isRuntimeName() || name.isRuntimeNamespace())
+				return [index, 256, name.isRuntimeName() && name.isRuntimeNamespace()? -2 : -1]
 
 			return [index, 0, 0]
 		}
@@ -1604,7 +1599,12 @@ export function compile(methodInfo: MethodInfo, sync = false): ICompilerProcess 
 					for (let j: number = 1; j <= param(0); j++)
 						pp.push(stackF(param(0) - j))
 
-					js.push(`${idnt}                ${stackF(param(0) + 1)} = sec.box(${stackF(param(0) + 1)}).axCallSuper(context.runtimename(${stackF(param(0))}, ${param(1)}), context.savedScope, [${pp.join(", ")}]);`)
+					var mn = abc.getMultiname(param(1));
+					if (mn.isRuntimeName() && mn.isRuntimeNamespace()) {
+						js.push(`${idnt}                    ${stackF(param(0) + 2)} = sec.box(${stackF(param(0) + 2)}).axGetSuper(context.runtimename(${getname(param(1))}, ${stackF(param(0))}, ${stackF(param(0) + 1)}), context.savedScope, [${pp.join(", ")}]);`)
+					} else {
+						js.push(`${idnt}                    ${stackF(param(0) + 1)} = sec.box(${stackF(param(0) + 1)}).axGetSuper(context.runtimename(${getname(param(1))}, ${stackF(param(0))}), context.savedScope, [${pp.join(", ")}]);`)
+					}
 				}
 					break
 				case Bytecode.CALLSUPERVOID: {
@@ -1643,11 +1643,11 @@ export function compile(methodInfo: MethodInfo, sync = false): ICompilerProcess 
 					break
 				case Bytecode.GETPROPERTY_DYN:
 					var mn = abc.getMultiname(param(0));
-					js.push(`${idnt}                ${stack1} = context.getpropertydyn(context.runtimename(${stack0}, ${param(0)}), ${stack1});`)
-					break
-				case Bytecode.GETPROPERTY_DYNNS:
-					var mn = abc.getMultiname(param(0));
-					js.push(`${idnt}                ${stack1} = context.getpropertydyn(context.runtimenamespace(${stack0}, ${stack1}, ${param(0)}), ${stack2});`)
+					if (mn.isRuntimeName() && mn.isRuntimeNamespace()) {
+						js.push(`${idnt}                    ${stack2} = context.getpropertydyn(context.runtimename(${getname(param(0))}, ${stack0}, ${stack1}), ${stack2});`)
+					} else {
+						js.push(`${idnt}                    ${stack1} = context.getpropertydyn(context.runtimename(${getname(param(0))}, ${stack0}), ${stack1});`)
+					}
 					break
 				case Bytecode.SETPROPERTY:
 					var mn = abc.getMultiname(param(0))
@@ -1659,29 +1659,46 @@ export function compile(methodInfo: MethodInfo, sync = false): ICompilerProcess 
 					js.push(`${idnt}                }`)
 					break
 				case Bytecode.SETPROPERTY_DYN:
-					js.push(`${idnt}                context.setproperty(context.runtimename(${stack1}, ${param(0)}), ${stack0}, ${stack2});`)
-					break
-				case Bytecode.SETPROPERTY_DYNNS:
-					js.push(`${idnt}                context.setproperty(context.runtimenamespace(${stack1}, ${stack2}, ${param(0)}), ${stack0}, ${stack3});`)
+                    var mn = abc.getMultiname(param(0));
+                    if (mn.isRuntimeName() && mn.isRuntimeNamespace()) {
+						js.push(`${idnt}                    context.getpropertydyn(context.runtimename(${getname(param(0))}, ${stack1}, ${stack2}), ${stack0}, ${stack3});`)
+					} else {
+						js.push(`${idnt}                    context.getpropertydyn(context.runtimename(${getname(param(0))}, ${stack1}), ${stack0}, ${stack2});`)
+					}
 					break
 				case Bytecode.DELETEPROPERTY:
 					js.push(`${idnt}                // ${abc.getMultiname(param(0))}`)
 					js.push(`${idnt}                ${stack0} = context.deleteproperty(${getname(param(0))}, ${stack0});`)
 					break
 				case Bytecode.DELETEPROPERTY_DYN:
-					js.push(`${idnt}                ${stack1} = context.deleteproperty(context.runtimename(${stack0}, ${param(0)}), ${stack1});`)
+                    var mn = abc.getMultiname(param(0));
+					if (mn.isRuntimeName() && mn.isRuntimeNamespace()) {
+						js.push(`${idnt}                    ${stack2} = context.deleteproperty(context.runtimename(${getname(param(0))}, ${stack0}, ${stack1}), ${stack2});`)
+					} else {
+						js.push(`${idnt}                    ${stack1} = context.deleteproperty(context.runtimename(${getname(param(0))}, ${stack0}), ${stack1});`)
+					}
 					break
 				case Bytecode.GETSUPER:
 					js.push(`${idnt}                ${stack0} = sec.box(${stack0}).axGetSuper(${getname(param(0))}, context.savedScope);`)
 					break
 				case Bytecode.GETSUPER_DYN:
-					js.push(`${idnt}                ${stack1} = sec.box(${stack1}).axGetSuper(context.runtimename(${stack0}, ${param(0)}), context.savedScope);`)
+					var mn = abc.getMultiname(param(0));
+					if (mn.isRuntimeName() && mn.isRuntimeNamespace()) {
+						js.push(`${idnt}                    ${stack2} = sec.box(${stack2}).axGetSuper(context.runtimename(${getname(param(0))}, ${stack0}, ${stack1}), context.savedScope);`)
+					} else {
+						js.push(`${idnt}                    ${stack1} = sec.box(${stack1}).axGetSuper(context.runtimename(${getname(param(0))}, ${stack0}), context.savedScope);`)
+					}
 					break
 				case Bytecode.SETSUPER:
 					js.push(`${idnt}                sec.box(${stack1}).axSetSuper(${getname(param(0))}, context.savedScope, ${stack0});`)
 					break
 				case Bytecode.SETSUPER_DYN:
-					js.push(`${idnt}                sec.box(${stack2}).axSetSuper(context.runtimename(${stack1}, ${param(0)}), context.savedScope, ${stack0});`)
+					var mn = abc.getMultiname(param(0));
+					if (mn.isRuntimeName() && mn.isRuntimeNamespace()) {
+						js.push(`${idnt}                    sec.box(${stack3}).axSetSuper(context.runtimename(${getname(param(0))}, ${stack1}, ${stack2}), context.savedScope, ${stack0});`)
+					} else {
+						js.push(`${idnt}                    sec.box(${stack2}).axSetSuper(context.runtimename(${getname(param(0))}, ${stack1}), context.savedScope, ${stack0});`)
+					}
 					break
 				case Bytecode.GETLEX:
 					var mn = abc.getMultiname(param(0))
@@ -1792,6 +1809,7 @@ export function compile(methodInfo: MethodInfo, sync = false): ICompilerProcess 
 export class Context {
 	private readonly mi: MethodInfo;
 	private readonly savedScope: Scope;
+	private readonly rn:Multiname;
 	private readonly sec: AXSecurityDomain
 	private readonly abc: ABCFile
 	private readonly names: Multiname[]
@@ -1803,6 +1821,7 @@ export class Context {
 	constructor(mi: MethodInfo, savedScope: Scope, names: Multiname[]) {
 		this.mi = mi;
 		this.savedScope = savedScope;
+		this.rn = new Multiname(mi.abc, 0, null, null, null, null, true);
 		this.abc = mi.abc;
 		this.sec = mi.abc.applicationDomain.sec;
 		this.names = names;
@@ -1886,49 +1905,47 @@ export class Context {
 		return [info.object, info.index]
 	}
 
-	runtimename(name, index) {
-		if (typeof name === "number")
-			return name
+	runtimename(mn, stack0, stack1) {
+        this.rn.resolved = {}
+        this.rn.script = null  
+        this.rn.numeric = false
+        this.rn.id = mn.id;
+        this.rn.kind = mn.kind;
+        if (mn.isRuntimeName()) {
+            var name = stack0;
+            // Unwrap content script-created AXQName instances.
+            if (name && name.axClass && name.axClass === name.sec.AXQName) {
+              name = name.name;
+              release || assert(name instanceof Multiname);
+              this.rn.kind = mn.isAttribute() ? CONSTANT.RTQNameLA : CONSTANT.RTQNameL;
+              this.rn.id = name.id;
+              this.rn.name = name.name;
+              this.rn.namespaces = name.namespaces;
+              return this.rn;
+            }
+            if (typeof name === "number" || isNumeric(axCoerceName(name))) {
+                this.rn.numeric = true
+                this.rn.numericValue = +(axCoerceName(name))
+            }
+            this.rn.name = name;
+            this.rn.id = -1;
+          } else {
+            this.rn.name = mn.name;
+            stack1 = stack0
+          }
+          if (mn.isRuntimeNamespace()) {
+            var ns = stack1;
+            // Unwrap content script-created AXNamespace instances.
+            if (ns._ns) {
+              release || assert(ns.sec && ns.axClass === ns.sec.AXNamespace);
+              ns = ns._ns;
+            }
+            this.rn.namespaces = [ns];
+            this.rn.id = -1;
+          } else {
+            this.rn.namespaces = mn.namespaces;
+          }
 
-		let mn = this.abc.getMultiname(index)
-
-		if (name && name.axClass && name.axClass === name.sec.AXQName) {
-			let rn = new Multiname(this.abc, 0, null, null, null)
-			rn.numeric = false
-			rn.id = mn.id
-			rn.kind = mn.kind
-
-			release || assert(name.name instanceof Multiname)
-			rn.kind = mn.isAttribute() ? CONSTANT.RTQNameLA : CONSTANT.RTQNameL
-			rn.id = name.name.id
-			rn.name = name.name.name
-			rn.namespaces = name.name.namespaces
-			return rn
-		}
-
-		if (typeof name === "number" || isNumeric(axCoerceName(name))) {
-			let rn = new Multiname(this.abc, 0, null, null, null)
-			rn.numeric = false
-			rn.id = mn.id
-			rn.kind = mn.kind
-
-			rn.numeric = true
-			rn.numericValue = +(axCoerceName(name))
-		}
-
-		return mn.rename(name)
-	}
-
-	runtimenamespace(name, ns, index) {
-		let mn = this.abc.getMultiname(index)
-
-		if (ns._ns) {
-			release || assert(ns.sec && ns.axClass === ns.sec.AXNamespace);
-			ns = ns._ns;
-		}
-		let rn = mn.rename(name)
-		rn.namespaces = [ns];
-
-		return rn;
+		return this.rn
 	}
 }

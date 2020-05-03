@@ -36,23 +36,6 @@ export class Multiname {
       // ...
     }
 
-    private others: object = null
-
-    public rename(name : string): Multiname {
-        if (this.others == null)
-            this.others = {}
-            
-        let rn = this.others[name]
-        
-        if (rn === undefined) {
-            rn = new Multiname(this.abc, -1, null, this.namespaces, name, this.parameterType)
-            rn.script = this.script
-            this.others[name] = rn
-        }
-        
-        return rn
-    }
-  
     public key(): string {
         if (this._key)
             return this._key
