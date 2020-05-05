@@ -1,4 +1,4 @@
-import { IAVMHandler, AVMVERSION, AVMStage, SWFFile, PromiseWrapper, release } from "@awayfl/swf-loader"
+import { IAVMHandler, AVMVERSION, AVMStage, SWFFile, PromiseWrapper, release, SWFParser } from "@awayfl/swf-loader"
 import { AVM2LoadLibrariesFlags } from "./AVM2LoadLibrariesFlags";
 
 import {initSystem} from "./natives/system";
@@ -18,16 +18,20 @@ export class AVM2Handler implements IAVMHandler {
 	private _factory: ISceneGraphFactory;
 
 	private _playerglobal:IPlayerGlobal;
+	private _forceJIT: boolean;
 
-	constructor(playerglobal:IPlayerGlobal){
+	constructor(playerglobal:IPlayerGlobal, forceJIT:boolean=false){
 		
 		if(!playerglobal) throw("AVM2Handler must be init with a valid PlayerGlobal-class");
-
 		this._playerglobal=playerglobal;
+		this._forceJIT=forceJIT;
 	}
 
 	public init(avmStage: AVMStage, swfFile: SWFFile, callback: (hasInit:boolean)=>void) {
 
+		if(this._forceJIT){
+			SWFParser.SWFEncrypted=false;
+		}
 		if(this._avmStage){
 			callback(false);
 		}

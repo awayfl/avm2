@@ -135,7 +135,7 @@ function popNameInto(stack: any [], mn: Multiname, rn: Multiname) {
 
 
 export function interpret(methodInfo: MethodInfo, savedScope: Scope, callee: AXFunction) {
-	/*if(SWFParser.SWFEncrypted){
+	if(SWFParser.SWFEncrypted){
 		try {
 			var result = _interpret(methodInfo, savedScope, callee);
 			executionWriter && executionWriter.leave("< " + methodInfo.trait);
@@ -144,7 +144,7 @@ export function interpret(methodInfo: MethodInfo, savedScope: Scope, callee: AXF
 			executionWriter && executionWriter.leave("< " + methodInfo.trait + ", Exception: " + e);
 			throw e;
 		}
-	}*/
+	}
 	
     if (methodInfo.compiled == null && methodInfo.error == null && methodInfo.getBody() != null) {
         let r = compile(methodInfo)
