@@ -1020,7 +1020,8 @@ export function compile(methodInfo: MethodInfo, sync = false): ICompilerProcess 
 			var typeName = catchBlocks[i].getType();
 			if (!typeName) {
 				js.push(`                ${indent}{ p = ${catchBlocks[i].target}; continue; };`);
-				createFinally.push(`{ p = ${catchBlocks[i].target}; continue; };`);
+				//if(!catchBlocks[i].varName)
+				//createFinally.push(`{ p = ${catchBlocks[i].target}; continue; };`);
 				continue;
 			}
 			else {
