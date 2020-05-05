@@ -1,6 +1,6 @@
 {
   "name": "@awayfl/avm2",
-  "version": "0.2.29",
+  "version": "0.2.30",
   "description": "Virtual machine for executing AS3 code",
   "main": "bundle/awayfl-avm2.umd.js",
   "module": "dist/index.js",
