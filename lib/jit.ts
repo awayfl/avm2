@@ -971,25 +971,35 @@ export function compile(methodInfo: MethodInfo, sync = false): ICompilerProcess 
 		// collect try-catch blocks sorted by their end-position	
 		mapTryCatchBlocksByEnd = {};
 		for (let i: number = 0; i < body.catchBlocks.length; i++) {
-			if (!mapTryCatchBlocksByStart[body.catchBlocks[i].start])
-				mapTryCatchBlocksByStart[body.catchBlocks[i].start] = [];
-			mapTryCatchBlocksByStart[body.catchBlocks[i].start].push(body.catchBlocks[i]);
-
-			if (!mapTryCatchBlocksByEnd[body.catchBlocks[i].end])
-				mapTryCatchBlocksByEnd[body.catchBlocks[i].end] = [];
-			mapTryCatchBlocksByEnd[body.catchBlocks[i].end].push(body.catchBlocks[i]);
-
-			// make sure that the target-instruction for the catch is propagated and set as target
-			// using the stack value of the start-instruction does seem to do the trick
+			
 			let stack = 0;
+			let start = 0;
+			let end = 0;
 			//let scope=0;
 			for (let c: number = 0; c < q.length; c++) {
-				if (q[c].position == body.catchBlocks[i].start) {
+				if (q[c].position >= body.catchBlocks[i].start) {
 					stack = q[c].stack + q[c].delta;
-					//scope=q[c].scope+q[c].deltaScope;
+					start=q[c].position;
 					break;
 				}
 			}
+			for (let c: number = q.length-1; c >=0; c--) {
+				if (q[c].position <= body.catchBlocks[i].end) {
+					end=q[c].position;
+					break;
+				}
+			}
+			if (!mapTryCatchBlocksByStart[start])
+				mapTryCatchBlocksByStart[start] = [];
+			mapTryCatchBlocksByStart[start].push(body.catchBlocks[i]);
+
+			if (!mapTryCatchBlocksByEnd[end])
+				mapTryCatchBlocksByEnd[end] = [];
+			mapTryCatchBlocksByEnd[end].push(body.catchBlocks[i]);
+
+			// make sure that the target-instruction for the catch is propagated and set as target
+			// using the stack value of the start-instruction does seem to do the trick
+
 			propagate(body.catchBlocks[i].target, stack)
 			propagateScope(body.catchBlocks[i].target, 0)
 			targets.push(body.catchBlocks[i].target)
@@ -997,6 +1007,7 @@ export function compile(methodInfo: MethodInfo, sync = false): ICompilerProcess 
 	}
 	//	creates a catch condition for a list of ExceptionInfo
 	let createCatchConditions = (catchBlocks: ExceptionInfo[], indent: string) => {
+		let createFinally:string[]=[];
 		js.push(`            ${indent}catch(e){`);
 
 
@@ -1009,6 +1020,7 @@ export function compile(methodInfo: MethodInfo, sync = false): ICompilerProcess 
 			var typeName = catchBlocks[i].getType();
 			if (!typeName) {
 				js.push(`                ${indent}{ p = ${catchBlocks[i].target}; continue; };`);
+				createFinally.push(`{ p = ${catchBlocks[i].target}; continue; };`);
 				continue;
 			}
 			else {
@@ -1026,6 +1038,9 @@ export function compile(methodInfo: MethodInfo, sync = false): ICompilerProcess 
 		// if error was not catched by now, we throw it
 		js.push(`                ${indent}throw e;`);
 		js.push(`            ${indent}}`);
+		for (var i = 0; i < createFinally.length; i++) {
+			js.push(`            ${indent}${createFinally[i]}`);
+		}
 	}
 	//	closes all try-catch blocks. used when entering a new case-block
 	let closeAllTryCatch = () => {
