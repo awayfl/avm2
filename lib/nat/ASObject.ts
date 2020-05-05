@@ -251,7 +251,7 @@ export class ASObject implements IMetaobjectProtocol {
             return this.axGetMethod(name)
         
         //80pro: workaround:
-        if (typeof value === "undefined")
+        if (typeof value === "undefined" && typeof name !== "number")
             value = this[name.replace("$Bg", "")];
         
 
