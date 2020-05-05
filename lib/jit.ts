@@ -1677,9 +1677,9 @@ export function compile(methodInfo: MethodInfo, sync = false): ICompilerProcess 
 				case Bytecode.SETPROPERTY_DYN:
                     var mn = abc.getMultiname(param(0));
                     if (mn.isRuntimeName() && mn.isRuntimeNamespace()) {
-						js.push(`${idnt}                    context.getpropertydyn(context.runtimename(${getname(param(0))}, ${stack1}, ${stack2}), ${stack0}, ${stack3});`)
+						js.push(`${idnt}                    context.setproperty(context.runtimename(${getname(param(0))}, ${stack1}, ${stack2}), ${stack0}, ${stack3});`)
 					} else {
-						js.push(`${idnt}                    context.getpropertydyn(context.runtimename(${getname(param(0))}, ${stack1}), ${stack0}, ${stack2});`)
+						js.push(`${idnt}                    context.setproperty(context.runtimename(${getname(param(0))}, ${stack1}), ${stack0}, ${stack2});`)
 					}
 					break
 				case Bytecode.DELETEPROPERTY:
