@@ -1261,7 +1261,7 @@ export function compile(methodInfo: MethodInfo, sync = false): ICompilerProcess 
 					js.push(`${idnt}                temp = context.hasnext2(${local(param(0))}, ${local(param(1))});`)
 					js.push(`${idnt}                ${local(param(0))} = temp[0];`)
 					js.push(`${idnt}                ${local(param(1))} = temp[1];`)
-					js.push(`${idnt}                ${stackN} = ${local(param(0))} > 0;`)
+					js.push(`${idnt}                ${stackN} = ${local(param(1))} > 0;`)
 					break
 				case Bytecode.IN:
 					js.push(`${idnt}                ${stack1} = (${stack1} && ${stack1}.axClass === sec.AXQName) ? obj.axHasProperty(${stack1}.name) : ${stack0}.axHasPublicProperty(${stack1});`)
