@@ -92,6 +92,7 @@ Baumgarte method in performance critical scenarios.
 */
 export class b2Island
 {
+	__fast__: boolean = true;
 	
 	constructor()
 	{

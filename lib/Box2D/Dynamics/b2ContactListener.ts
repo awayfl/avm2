@@ -15,6 +15,8 @@ import { b2ContactImpulse } from "./b2ContactImpulse";
  */
 export class b2ContactListener
 {
+	__fast__: boolean = true;
+
 	/**
 	 * Called when two fixtures begin to touch.
 	 */

@@ -9,6 +9,8 @@ import { Sprite } from '@awayjs/scene';
 export class b2DebugDraw
 {
 
+	__fast__: boolean = true;
+
 	constructor(){
 		this.m_drawFlags = 0;
 	}

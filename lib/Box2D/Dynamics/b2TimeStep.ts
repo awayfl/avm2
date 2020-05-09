@@ -3,6 +3,8 @@
 */
 export class b2TimeStep
 {
+	__fast__: boolean = true;
+
 	public Set(step:b2TimeStep):void
 	{
 		this.dt = step.dt;

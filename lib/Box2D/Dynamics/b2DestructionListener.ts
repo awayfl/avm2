@@ -8,6 +8,7 @@ import { b2Joint } from "./Joints";
 */
 export class b2DestructionListener
 {
+	__fast__: boolean = true;
 
 	/**
 	* Called when any joint is about to be destroyed due

@@ -7,6 +7,8 @@ import { b2FilterData } from "./b2FilterData";
  */
 export class b2FixtureDef
 {
+	__fast__: boolean = true;
+
 	/**
 	 * The constructor sets the default fixture definition values.
 	 */

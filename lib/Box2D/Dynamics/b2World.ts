@@ -30,7 +30,8 @@ import { b2ControllerEdge } from './Controllers/b2ControllerEdge';
 */
 export class b2World
 {
-	
+	__fast__: boolean = true;
+
 	// Construct a world object.
 	/**
 	* @param gravity the world gravity vector.

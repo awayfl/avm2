@@ -7,6 +7,8 @@
  */
 export class b2ContactImpulse 
 {
+	__fast__: boolean = true;
+
 	public normalImpulses:Array<number> = new Array<number>(b2Settings.b2_maxManifoldPoints);
 	public tangentImpulses:Array<number> = new Array<number>(b2Settings.b2_maxManifoldPoints);
 }

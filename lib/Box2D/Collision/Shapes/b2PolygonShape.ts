@@ -12,6 +12,7 @@ import { b2RayCastInput } from "../b2RayCastInput";
 import { b2AABB } from "../b2AABB";
 import { b2MassData } from "./b2MassData";
 import { b2OBB } from "../b2OBB";
+import { ASArray } from '../../../nat/ASArray';
 
 export class b2PolygonShape extends b2Shape
 {
@@ -45,13 +46,16 @@ export class b2PolygonShape extends b2Shape
 	 * Copy vertices. This assumes the vertices define a convex polygon.
 	 * It is assumed that the exterior is the the right of each edge.
 	 */
-	public SetAsArray(vertices:Array<b2Vec2>, vertexCount:number = 0):void
+	public SetAsArray(vertices:Array<b2Vec2> | ASArray, vertexCount:number = 0):void
 	{
-		var v:Array<b2Vec2> = new Array<b2Vec2>();
-		for (let tVec of vertices)
-		{
-			v.push(tVec);
+		var vert = <any>vertices;
+		
+		if(typeof vert.axInitializer === 'function') {
+			vert = (<ASArray>vertices).value;
 		}
+		
+		const v = vert.slice();
+
 		this.SetAsVector(v, vertexCount);
 	}
 	

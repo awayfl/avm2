@@ -7,6 +7,7 @@ import { b2FilterData } from "./b2FilterData";
 */
 export class b2ContactFilter
 {
+	__fast__: boolean = true;
 
 	/**
 	* Return true if contact calculations should be performed between these two fixtures.

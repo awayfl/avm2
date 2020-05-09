@@ -19,6 +19,8 @@ import { IBroadPhase } from '../Collision/IBroadPhase';
  */
 export class b2Fixture
 {
+	__fast__: boolean = true;
+
 	/**
 	 * Get the type of the child shape. You can use this to down cast to the concrete shape.
 	 * @return the shape type.

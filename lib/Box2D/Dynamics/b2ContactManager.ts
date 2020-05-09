@@ -15,6 +15,8 @@ import { b2DynamicTreeBroadPhase } from "../Collision/b2DynamicTreeBroadPhase";
 */
 export class b2ContactManager 
 {
+	__fast__: boolean = true;
+
 	constructor() {
 		this.m_world = null;
 		this.m_contactCount = 0;
