@@ -1,6 +1,7 @@
 import { ABCFile } from "../abc/lazy/ABCFile";
 import { ScriptInfo } from "../abc/lazy/ScriptInfo";
 import { Multiname } from "../abc/lazy/Multiname";
+import { Errors } from '../errors';
 import { AXSecurityDomain } from "./AXSecurityDomain";
 import { assert } from "@awayjs/graphics";
 import { ScriptInfoState } from "./ScriptInfoState";
@@ -103,7 +104,7 @@ export class AXApplicationDomain {
       if (global) {
         return global.axGetProperty(mn);
       }
-      return null;
+      this.sec.throwError('ReferenceError', Errors.DefinitionNotFoundError, mn.name);
     }
   
     public findDefiningScript(mn: Multiname, execute: boolean): ScriptInfo {
