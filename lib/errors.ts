@@ -287,7 +287,7 @@ export var Errors = {
 //  FileRefBadPostDataTypeError                               : { code: 2127, message: "FileReference POST data cannot be type ByteArray."},
 //  NetConnectionConnectError                                 : { code: 2129, message: "Connection to %1 failed."},
 //  SharedObjectFlushFailedError                              : { code: 2130, message: "Unable to flush SharedObject."},
-//  DefinitionNotFoundError                                   : { code: 2131, message: "Definition %1 cannot be found."},
+  DefinitionNotFoundError                                   : { code: 2131, message: "Definition %1 cannot be found."},
 //  NetConnectionInvalidConnectFromNetStatusEventError        : { code: 2132, message: "NetConnection.connect cannot be called from a netStatus event handler."},
 //  CallbackNotRegisteredError                                : { code: 2133, message: "Callback %1 is not registered."},
 //  SharedObjectCreateError                                   : { code: 2134, message: "Cannot create SharedObject."},
