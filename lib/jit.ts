@@ -18,7 +18,7 @@ import { axCoerceName } from "./run/axCoerceName"
 import { isNumeric, jsGlobal } from "@awayfl/swf-loader"
 import { ABCFile } from "./abc/lazy/ABCFile"
 import { ScriptInfo } from "./abc/lazy/ScriptInfo"
-import { b2Class } from "./btd"
+import { b2Class } from "./btdold"
 import { AXGlobal } from "./run/AXGlobal"
 import { ExceptionInfo } from './abc/lazy/ExceptionInfo'
 
