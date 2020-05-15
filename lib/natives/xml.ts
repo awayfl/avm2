@@ -2575,7 +2575,6 @@ export class ASXML extends ASObject implements XMLType {
 
   // 9.1.1.2 [[Put]] (P, V)
   setProperty(mn: Multiname, v) {
-    release || assert(mn instanceof Multiname);
     // Step 1. (Step 3 in Tamarin source.)
     var sec = this.sec;
     if (!mn.isAnyName() && !mn.isAttribute() && mn.name === mn.name >>> 0) {
@@ -2727,7 +2726,6 @@ export class ASXML extends ASObject implements XMLType {
 
   // 9.1.1.1 XML.[[Get]] (P)
   getProperty(mn: Multiname): any {
-    release || assert(mn instanceof Multiname);
     // Step 1.
     var nm = mn.name;
     if (isIndex(nm)) {

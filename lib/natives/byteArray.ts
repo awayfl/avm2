@@ -236,7 +236,6 @@ export class ByteArray extends ASObject implements IDataInput, IDataOutput {
   }
 
   axGetNumericProperty(nm: number) {
-    release || assert(typeof nm === 'number');
     return (<any>this).getValue(nm);
   }
 
@@ -250,7 +249,6 @@ export class ByteArray extends ASObject implements IDataInput, IDataOutput {
   }
 
   axSetNumericProperty(nm: number, value: any) {
-    release || assert(typeof nm === 'number');
     (<any>this).setValue(nm, value);
   }
 

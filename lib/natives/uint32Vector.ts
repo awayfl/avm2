@@ -510,7 +510,6 @@ export class Uint32Vector extends BaseVector {
   }
 
   axGetNumericProperty(nm: number) {
-    release || assert(isNumeric(nm));
     var length = this._length;
     var idx = nm | 0;
     if (idx < 0 || idx >= length || idx != nm) {
@@ -520,7 +519,6 @@ export class Uint32Vector extends BaseVector {
   }
 
   axSetNumericProperty(nm: number, v: any) {
-    release || assert(isNumeric(nm));
     var length = this._length;
     var idx = nm | 0;
     if (idx < 0 || idx > length || idx != nm || (idx === length && this._fixed)) {

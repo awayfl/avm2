@@ -497,7 +497,6 @@ export class GenericVector extends BaseVector {
   }
 
   axGetNumericProperty(nm: number) {
-    release || assert(isNumeric(nm));
     var idx = nm | 0;
     if (idx < 0 || idx >= this._buffer.length || idx != nm) {
       this.sec.throwError("RangeError", Errors.OutOfRangeError, nm,
@@ -506,7 +505,6 @@ export class GenericVector extends BaseVector {
     return this._buffer[idx];
   }
   axSetNumericProperty(nm: number, v: any) {
-    release || assert(isNumeric(nm));
     var length = this._buffer.length;
     var idx = nm | 0;
     if (idx < 0 || idx > length || idx != nm || (idx === length && this._fixed)) {
