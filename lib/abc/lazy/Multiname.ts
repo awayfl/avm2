@@ -258,6 +258,14 @@ export class Multiname {
     }
   
     public static FromSimpleName(simpleName: string): Multiname {
+
+		//	hack when simple-name is a XMLList returned from "attribute" getter 
+		//	when working with xml
+		if((<any>simpleName)._children && (<any>simpleName)._children.length==1
+		&& (<any>simpleName)._children[0]._value){
+			simpleName= (<any>simpleName)._children[0]._value
+		}
+
       var nameIndex = simpleName.lastIndexOf(".");
       if (nameIndex <= 0) {
         nameIndex = simpleName.lastIndexOf(" ");
