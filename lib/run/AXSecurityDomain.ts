@@ -28,7 +28,7 @@ import { tryLinkNativeClass } from "../nat/tryLinkNativeClass";
 import { getNativeInitializer } from "../nat/getNativeInitializer";
 import { installClassLoaders } from "../nat/installClassLoaders";
 import { installNativeFunctions } from "../nat/installNativeFunctions";
-import { release, isIndex, IndentingWriter, defineNonEnumerableProperty, defineReadOnlyProperty, flashlog } from "@awayfl/swf-loader";
+import { release, isIndex, IndentingWriter, defineNonEnumerableProperty, defineReadOnlyProperty, flashlog, AVMStage } from "@awayfl/swf-loader";
 import { assert } from "@awayjs/graphics";
 import { checkValue } from "./checkValue";
 import { Scope } from "./Scope";
@@ -77,7 +77,7 @@ import { Namespace } from '../abc/lazy/Namespace';
  * Provides security isolation between application domains.
  */
 export class AXSecurityDomain{
-    public player:any;
+    public player:AVMStage;
 
   //   public static instance:any;
     public system: AXApplicationDomain;
