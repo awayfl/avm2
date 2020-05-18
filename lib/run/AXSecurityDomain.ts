@@ -409,7 +409,7 @@ export class AXSecurityDomain{
         if(binarySymbol)   {   
           binarySymbol.buffer=binarySymbol.data;                        
           fun = <any> function () {
-            console.log("create instance for binary data:", classInfo.instanceInfo.getClassName());  
+            release || console.log("create instance for binary data:", classInfo.instanceInfo.getClassName());  
             ByteArrayDataProvider.symbolForConstructor=binarySymbol;
             release || (traceMsg && flashlog.writeAS3Trace(methodInfo.toFlashlogString()));
             return interpret(methodInfo, scope, null).apply(this, arguments);
