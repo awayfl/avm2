@@ -110,7 +110,14 @@ export class b2World
 	}
 
 	/// Register a contact event listener
-	public SetContactListener(listener:b2ContactListener | ASClass) : void{		
+	public SetContactListener(listener:b2ContactListener | ASClass | null) : void {
+
+		// maybe nulled for reset 
+		if(!listener) {
+			this.m_contactListener = null;
+			return;
+		}
+
 		const v_listener = <b2ContactListener>listener;
 
 		// ASClass, cool! Inject real class names, because box2D should call it by real name
