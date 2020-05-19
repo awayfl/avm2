@@ -30,6 +30,7 @@ import { b2ContactResult } from "./Contacts/b2ContactResult";
 /// @warning The contact separation is the last computed value.
 /// @warning You cannot create/destroy Box2D entities inside these callbacks.
 export class b2ContactListener {
+	readonly __fast__ = true;
 
 	/// Called when a contact point is added. This includes the geometry
 	/// and the forces.

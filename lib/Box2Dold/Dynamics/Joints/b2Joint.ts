@@ -27,6 +27,8 @@ import { b2DistanceJointDef, b2MouseJointDef, b2PrismaticJointDef, b2RevoluteJoi
 /// various fashions. Some joints also feature limits and motors.
 export class b2Joint
 {
+	readonly __fast__ = true;
+
 	/// Get the type of the concrete joint.
 	public GetType():number /** int */{
 		return this.m_type;

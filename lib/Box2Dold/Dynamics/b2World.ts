@@ -45,10 +45,12 @@ import { b2Proxy } from "../Collision/b2Proxy";
 import { b2OBB } from "../Collision/b2OBB";
 import { b2ContactManager } from "./b2ContactManager";
 import { ASArray } from '../../nat/ASArray';
+import { ASClass } from '../../nat/ASClass';
 
 export class b2World
 {
-	
+	readonly __fast__ = true;
+
 	// Construct a world object.
 	/// @param worldAABB a bounding box that completely encompasses all your shapes.
 	/// @param gravity the world gravity vector.
@@ -108,8 +110,23 @@ export class b2World
 	}
 
 	/// Register a contact event listener
-	public SetContactListener(listener:b2ContactListener) : void{
-		this.m_contactListener = listener;
+	public SetContactListener(listener:b2ContactListener | ASClass) : void{		
+		const v_listener = <b2ContactListener>listener;
+
+		// ASClass, cool! Inject real class names, because box2D should call it by real name
+		if(typeof listener['traits'] !== 'undefined' && this.__fast__) {
+			// unwrapp to real class;
+			const names = Object.getOwnPropertyNames(b2ContactListener.prototype);
+			const mangle = '$Bg';
+
+			for(let name of names) {
+				if(!v_listener[name] && v_listener[mangle + name]) {
+					v_listener[name] = v_listener[mangle + name];
+				}
+			}
+		}
+
+		this.m_contactListener = v_listener;
 	}
 
 	/// Register a routine for debug drawing. The debug draw functions are called

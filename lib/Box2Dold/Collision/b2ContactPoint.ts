@@ -23,6 +23,8 @@ import { b2Vec2 } from "../Common/Math";
 /// This structure is used to report contact points.
 export class b2ContactPoint
 {
+	readonly __fast__ = true;
+
 	public shape1:b2Shape;						///< the first shape
 	public shape2:b2Shape;						///< the second shape
 	public position:b2Vec2 = new b2Vec2();		///< position in world coordinates
