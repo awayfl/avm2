@@ -417,14 +417,26 @@ export class b2PolygonShape extends b2Shape
 		this.m_vertexCount = poly.vertexCount;
 		//b2Settings.b2Assert(3 <= this.m_vertexCount && this.m_vertexCount <= b2_maxPolygonVertices);
 		
-		var i:number /** int */;
+		var i:number /** int */ = 0;
 		var i1:number /** int */ = i;
 		var i2:number /** int */ = i;
 		
+		// AWAY fix, beacuse it can be ASArray
+		var v_arr: Array<b2Vec2> = poly.vertices;
+
+		if(!v_arr) {
+			console.error('[B2D] Try create polygon shape from def', def);
+			return this;
+		}
+
+		if(typeof v_arr['traits'] !== 'undefined') {
+			v_arr  = <any>v_arr['value'] as Array<b2Vec2>;
+		} 
+
 		// Copy vertices.
 		for (i = 0; i < this.m_vertexCount; ++i)
 		{
-			this.m_vertices[i] = poly.vertices[i].Copy();
+			this.m_vertices[i] = v_arr[i].Copy();
 		}
 		
 		// Compute normals. Ensure the edges have non-zero length.
@@ -477,7 +489,7 @@ export class b2PolygonShape extends b2Shape
 		#endif*/
 		
 		// Compute the polygon centroid.
-		this.m_centroid = b2PolygonShape.ComputeCentroid(poly.vertices, poly.vertexCount);
+		this.m_centroid = b2PolygonShape.ComputeCentroid(v_arr, poly.vertexCount);
 		
 		// Compute the oriented bounding box.
 		b2PolygonShape.ComputeOBB(this.m_obb, this.m_vertices, this.m_vertexCount);
