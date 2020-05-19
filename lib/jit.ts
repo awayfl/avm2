@@ -18,9 +18,35 @@ import { axCoerceName } from "./run/axCoerceName"
 import { isNumeric, jsGlobal } from "@awayfl/swf-loader"
 import { ABCFile } from "./abc/lazy/ABCFile"
 import { ScriptInfo } from "./abc/lazy/ScriptInfo"
-import { b2Class } from "./btdold"
 import { AXGlobal } from "./run/AXGlobal"
 import { ExceptionInfo } from './abc/lazy/ExceptionInfo'
+
+// choose your destiny! (mk)
+// box2D v6
+import B2D from "./Box2Dold"
+
+// box2D unknown  =)
+// import B2D from "./Box2D"
+
+function b2Class(name: string, args: any[]) {
+
+	// import - is freezed object, class - is function. We can call it as regular class.
+	const Constructor = B2D[name];
+	
+	if(!Constructor) {
+		return null;
+	}
+
+	// faster that Object.create;
+	// class constructor optimized in v8 and WebKit
+
+	const obj = new Constructor(...args);
+	
+	// force fast mode;
+	obj.__fast__ = true;
+
+	return obj;
+}
 
 export enum Bytecode {
 	BKPT = 0x01,
