@@ -50,17 +50,17 @@ export class b2Body
 				{
 					//void* mem = allocator->Allocate(sizeof(b2CircleShape));
 					s = new b2CircleShape(def);
+					break;
 				}
 			
 			case b2Shape.e_polygonShape:
 				{
 					//void* mem = allocator->Allocate(sizeof(b2PolygonShape));
 					s = new b2PolygonShape(def);
+					break;
 				}
-			
-			default:
 		}
-		
+
 		s.m_next = this.m_shapeList;
 		this.m_shapeList = s;
 		++this.m_shapeCount;

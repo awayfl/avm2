@@ -44,6 +44,7 @@ import { b2Pair } from "../Collision/b2Pair";
 import { b2Proxy } from "../Collision/b2Proxy";
 import { b2OBB } from "../Collision/b2OBB";
 import { b2ContactManager } from "./b2ContactManager";
+import { ASArray } from '../../nat/ASArray';
 
 export class b2World
 {
@@ -467,16 +468,22 @@ export class b2World
 	/// @param shapes a user allocated shape pointer array of size maxCount (or greater).
 	/// @param maxCount the capacity of the shapes array.
 	/// @return the number of shapes found in aabb.
-	public Query(aabb:b2AABB, shapes:any[], maxCount:number /** int */) : number /** int */{
-		
+	public Query(aabb:b2AABB, shapes:any[] | ASArray, maxCount:number /** int */) : number /** int */{
 		//void** results = (void**)this.m_stackAllocator.Allocate(maxCount * sizeof(void*));
 		var results:any[] = new Array(maxCount);
 		
 		var count:number /** int */ = this.m_broadPhase.QueryAABB(aabb, results, maxCount);
 		
-		for (var i:number /** int */ = 0; i < count; ++i)
+		var v_arr = shapes;
+
+		// ASArray 
+		if(typeof (v_arr['traits']) !== 'undefined') {
+			v_arr = v_arr['value'];
+		}
+		
+		for (var i = 0; i < count; ++i)
 		{
-			shapes[i] = results[i];
+			v_arr[i] = results[i];
 		}
 		
 		//this.m_stackAllocator.Free(results);

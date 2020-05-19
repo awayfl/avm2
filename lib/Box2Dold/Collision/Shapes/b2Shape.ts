@@ -34,6 +34,7 @@ import { b2Body } from "../../Dynamics/b2Body";
 /// @warning you cannot reuse shapes.
 export class b2Shape
 {
+	readonly __fast__ = true;
 	/// Get the type of this shape. You can use this to down cast to the concrete shape.
 	/// @return the shape type.
 	public GetType() : number /** int */{
