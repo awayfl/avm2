@@ -1470,7 +1470,7 @@ export function compile(methodInfo: MethodInfo, sync = false): ICompilerProcess 
 					js.push(`${idnt}                ${stack1} = ${stack0}.axIsType(${stack1});`)
 					break
 				case Bytecode.ASTYPELATE:
-					js.push(`${idnt}                ${stack1} = ${stack1}.__fast__ ? ${stack1} : ${stack0}.axAsType(${stack1});`)
+					js.push(`${idnt}                ${stack1} =  (stack1 && ${stack1}.__fast__) ? ${stack1} : ${stack0}.axAsType(${stack1});`)
 					break
 
 				case Bytecode.CALL: {
