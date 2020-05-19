@@ -36,22 +36,22 @@ export class b2ContactListener {
 	/// and the forces.
 	public Add(point:b2ContactPoint):void {
 		//trace("Collision between "+point.shape1.GetBody().GetUserData().name+" and "+point.shape2.GetBody().GetUserData().name);
-		point.shape1.GetBody().GetUserData().alpha=0.5
-		point.shape2.GetBody().GetUserData().alpha=0.5
+		// point.shape1.GetBody().GetUserData().alpha=0.5
+		// point.shape2.GetBody().GetUserData().alpha=0.5
 	}
 
 	/// Called when a contact point persists. This includes the geometry
 	/// and the forces.
 	public Persist(point:b2ContactPoint):void {
-		point.shape1.GetBody().GetUserData().alpha=0.5
-		point.shape2.GetBody().GetUserData().alpha=0.5
+		// point.shape1.GetBody().GetUserData().alpha=0.5
+		// point.shape2.GetBody().GetUserData().alpha=0.5
 	}
 
 	/// Called when a contact point is removed. This includes the last
 	/// computed geometry and forces.
 	public Remove(point:b2ContactPoint):void {
-		point.shape1.GetBody().GetUserData().alpha=1
-		point.shape2.GetBody().GetUserData().alpha=1
+		// point.shape1.GetBody().GetUserData().alpha=1
+		// point.shape2.GetBody().GetUserData().alpha=1
 	}
 
 	/// Called after a contact point is solved.
