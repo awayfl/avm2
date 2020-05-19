@@ -1,4 +1,4 @@
 
 export function axAsType(x: any): any {
-    return this.axIsType(x) ? x : null;
+    return ((x && x.__fast__) || this.axIsType(x)) ? x : null;
   }
