@@ -32,6 +32,8 @@ import { b2Body } from "../b2Body";
 
 export class b2Contact
 {
+	readonly __fast__ = true;
+
 	public GetManifolds():b2Manifold[]{return null};
 	
 	/// Get the number of manifolds. This is 0 or 1 between convex shapes.

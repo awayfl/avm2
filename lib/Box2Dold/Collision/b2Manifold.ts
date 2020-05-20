@@ -23,6 +23,8 @@ import { b2Vec2 } from "../Common/Math";
 // A manifold for two touching convex shapes.
 export class b2Manifold
 {
+	readonly __fast__ = true;
+
 	constructor(){
 		this.points = new Array(b2Settings.b2_maxManifoldPoints);
 		for (var i:number /** int */ = 0; i < b2Settings.b2_maxManifoldPoints; i++){

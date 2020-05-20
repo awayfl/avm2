@@ -20,6 +20,8 @@ import { b2WorldManifold } from "../../Collision/b2WorldManifold";
 */
 export class b2Contact
 {
+	readonly __fast__ = true;
+
 	/**
 	 * Get the contact manifold. Do not modify the manifold unless you understand the
 	 * internals of Box2D

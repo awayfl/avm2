@@ -22,6 +22,8 @@ import { b2Settings } from "../Common/b2Settings";
  */
 export class b2Manifold
 {
+	readonly __fast__ = true;
+
 	constructor()
 	{
 		this.m_points = new Array<b2ManifoldPoint>(b2Settings.b2_maxManifoldPoints);

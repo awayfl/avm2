@@ -24,6 +24,25 @@ import { b2AABB } from '../Collision/b2AABB';
 import { b2ContactFilter } from './b2ContactFilter';
 import { b2ControllerEdge } from './Controllers/b2ControllerEdge';
 import { ASMethodClosure } from '../../nat/ASMethodClosure';
+import { ASClass } from '../../nat/ASClass';
+
+// unbox methods from ASClass to real class prototupe
+function unBoxMethods (object: ASClass | any, prototype: any) {
+	if(!object || typeof object['traits'] === 'undefined') {
+		return object;
+	}
+
+	const names = Object.getOwnPropertyNames(prototype);
+	const mangle = '$Bg';
+
+	for(let name of names) {
+		if(!object[name] && object[mangle + name]) {
+			object[name] = object[mangle + name];
+		}
+	}
+
+	return object;
+}
 
 /**
 * The world class manages all physics entities, dynamic simulation,
@@ -76,22 +95,23 @@ export class b2World
 	* Register a destruction listener.
 	*/
 	public SetDestructionListener(listener:b2DestructionListener) : void{
-		this.m_destructionListener = listener;
+
+		this.m_destructionListener = unBoxMethods(listener, b2DestructionListener.prototype);
 	}
 
 	/**
 	* Register a contact filter to provide specific control over collision.
 	* Otherwise the default filter is used (b2_defaultFilter).
 	*/
-	public SetContactFilter(filter:b2ContactFilter) : void{
-		this.m_contactManager.m_contactFilter = filter;
+	public SetContactFilter(filter:b2ContactFilter | ASClass | null) : void{
+		this.m_contactManager.m_contactFilter = unBoxMethods(filter, b2ContactFilter.prototype);
 	}
 
 	/**
 	* Register a contact event listener
 	*/
-	public SetContactListener(listener:b2ContactListener) : void{
-		this.m_contactManager.m_contactListener = listener;
+	public SetContactListener(listener:b2ContactListener | ASClass | null ) : void {
+		this.m_contactManager.m_contactListener = unBoxMethods(listener, b2ContactListener.prototype);
 	}
 
 	/**
