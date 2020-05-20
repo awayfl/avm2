@@ -336,6 +336,9 @@ class Instruction {
 
 // allow set to plain object in setproperty when it not AXClass
 const UNSAFE_SET = true;
+// allow unsafe calls and property gets from objects
+const UNSAFE_JIT = false;
+
 const USE_EVAL = false;
 
 let SCRIPT_ID = 0;
@@ -1533,7 +1536,7 @@ export function compile(methodInfo: MethodInfo, sync = false): ICompilerProcess 
 						js.push(`${idnt}                ${stackF(param(0))} = context.getdefinitionbyname(${scope}, ${obj}, [${pp.join(", ")}]);`)
 					}
 					else {
-						js.push(`${idnt}                if (${obj}.__fast__) {`)
+						js.push(`${idnt}                if (${obj}.__fast__ || ${ UNSAFE_JIT && `typeof ${obj}['traits'] === 'undefined'`}) {`)
 						js.push(`${idnt}                    ${stackF(param(0))} = ${obj}['${mn.name}'].apply(${obj}, [${pp.join(", ")}]);`)
 						js.push(`${idnt}                } else {`)
 						js.push(`${idnt}                // ${mn}`)
@@ -1560,7 +1563,7 @@ export function compile(methodInfo: MethodInfo, sync = false): ICompilerProcess 
 						pp.push(stackF(param(0) - j))
 
 					let obj = pp.shift();
-					js.push(`${idnt}                if (${obj}.__fast__) {`)
+					js.push(`${idnt}                if (${obj}.__fast__ || ${ UNSAFE_JIT && `${obj}['traits'] === 'undefined'`}) {`)
 					js.push(`${idnt}                    ${obj}['${mn.name}'].apply(${obj}, [${pp.join(", ")}]);`)
 					js.push(`${idnt}                } else {`)
 					js.push(`${idnt}                    temp = sec.box(${obj});`)
@@ -1674,7 +1677,7 @@ export function compile(methodInfo: MethodInfo, sync = false): ICompilerProcess 
 				case Bytecode.GETPROPERTY:
 					var mn = abc.getMultiname(param(0));
 					js.push(`${idnt}                // ${mn}`)
-					js.push(`${idnt}                if (${stack0}.__fast__ || typeof ${stack0}.axGetProperty !== 'function') {`)
+					js.push(`${idnt}                if (${stack0}.__fast__ || ${ UNSAFE_JIT && `typeof ${stack0}['traits'] === 'undefined'`} ) {`)
 					js.push(`${idnt}                    ${stack0} = ${stack0}['${mn.name}'];`)
 					js.push(`${idnt}                } else {`)
 					js.push(`${idnt}                    temp = sec.box(${stack0});`)
@@ -1701,7 +1704,7 @@ export function compile(methodInfo: MethodInfo, sync = false): ICompilerProcess 
 					js.push(`${idnt}                if (${stack1}.__fast__) {`)
 					js.push(`${idnt}                    ${stack1}['${mn.name}'] = ${stack0};`)
 					js.push(`${idnt}                } else {`)
-					js.push(`${idnt}                context.setproperty(${getname(param(0))}, ${stack0}, ${stack1});`)
+					js.push(`${idnt}                    context.setproperty(${getname(param(0))}, ${stack0}, ${stack1});`)
 					js.push(`${idnt}                }`)
 					break
 				case Bytecode.SETPROPERTY_DYN:
