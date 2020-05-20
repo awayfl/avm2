@@ -1674,7 +1674,7 @@ export function compile(methodInfo: MethodInfo, sync = false): ICompilerProcess 
 				case Bytecode.GETPROPERTY:
 					var mn = abc.getMultiname(param(0));
 					js.push(`${idnt}                // ${mn}`)
-					js.push(`${idnt}                if (${stack0}.__fast__) {`)
+					js.push(`${idnt}                if (${stack0}.__fast__ || typeof ${stack0}.axGetProperty !== 'function') {`)
 					js.push(`${idnt}                    ${stack0} = ${stack0}['${mn.name}'];`)
 					js.push(`${idnt}                } else {`)
 					js.push(`${idnt}                    temp = sec.box(${stack0});`)
