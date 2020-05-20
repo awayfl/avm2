@@ -27,6 +27,8 @@ import { ExceptionInfo } from './abc/lazy/ExceptionInfo'
 
 // box2D unknown  =)
 import B2D from "./Box2D"
+import { ASClass } from './nat/ASClass'
+
 
 function b2Class(name: string, args: any[]) {
 
@@ -332,6 +334,8 @@ class Instruction {
 	}
 }
 
+// allow set to plain object in setproperty when it not AXClass
+const UNSAFE_SET = true;
 const USE_EVAL = false;
 
 let SCRIPT_ID = 0;
@@ -1887,11 +1891,20 @@ export class Context {
 		return b['$Bg' + mn.name] || b.axGetProperty(mn)
 	}
 
-	setproperty(mn, value, obj) {
-		if (typeof mn === "number")
-			return this.sec.box(obj).axSetNumericProperty(mn, value)
+	setproperty(mn: Multiname, value: any, obj: ASClass & {__fast__: true}) {
+		// unsfae SET fro plain Objects
+		if(obj.__fast__ || (typeof obj.axSetProperty === 'undefined' && UNSAFE_SET)) {
+			obj[mn.name] = value;
+			return;
+		}
 
-		this.sec.box(obj).axSetProperty(mn, value, Bytecode.INITPROPERTY)
+		const tmp = this.sec.box(obj);
+
+		if (typeof mn === "number"){
+			return tmp.axSetNumericProperty(mn, value)
+		}
+
+		tmp.axSetProperty(mn, value, Bytecode.INITPROPERTY)
 	}
 
 	deleteproperty(name, obj) {
