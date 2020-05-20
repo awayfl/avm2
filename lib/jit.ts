@@ -23,12 +23,12 @@ import { ExceptionInfo } from './abc/lazy/ExceptionInfo'
 
 // choose your destiny! (mk)
 // box2D v6
+// Cave Chaos, Flipside
 // import B2D from "./Box2Dold"
 
 // box2D unknown  =)
+// Cave Chaos 2
 import B2D from "./Box2D"
-import { ASClass } from './nat/ASClass'
-
 
 function b2Class(name: string, args: any[]) {
 
@@ -335,7 +335,7 @@ class Instruction {
 }
 
 // allow set to plain object in setproperty when it not AXClass
-const UNSAFE_SET = true;
+const UNSAFE_SET = false;
 // allow unsafe calls and property gets from objects
 const UNSAFE_JIT = false;
 
