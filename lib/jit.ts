@@ -1536,7 +1536,7 @@ export function compile(methodInfo: MethodInfo, sync = false): ICompilerProcess 
 						js.push(`${idnt}                ${stackF(param(0))} = context.getdefinitionbyname(${scope}, ${obj}, [${pp.join(", ")}]);`)
 					}
 					else {
-						js.push(`${idnt}                if (${obj}.__fast__ || ${ UNSAFE_JIT && `typeof ${obj}['traits'] === 'undefined'`}) {`)
+						js.push(`${idnt}                if (${obj}.__fast__ || ${ UNSAFE_JIT && `typeof ${obj}['axInitializer'] === 'undefined'`}) {`)
 						js.push(`${idnt}                    ${stackF(param(0))} = ${obj}['${mn.name}'].apply(${obj}, [${pp.join(", ")}]);`)
 						js.push(`${idnt}                } else {`)
 						js.push(`${idnt}                // ${mn}`)
@@ -1563,7 +1563,7 @@ export function compile(methodInfo: MethodInfo, sync = false): ICompilerProcess 
 						pp.push(stackF(param(0) - j))
 
 					let obj = pp.shift();
-					js.push(`${idnt}                if (${obj}.__fast__ || ${ UNSAFE_JIT && `${obj}['traits'] === 'undefined'`}) {`)
+					js.push(`${idnt}                if (${obj}.__fast__ || ${ UNSAFE_JIT && `typeof ${obj}['axInitializer'] === 'undefined'`}) {`)
 					js.push(`${idnt}                    ${obj}['${mn.name}'].apply(${obj}, [${pp.join(", ")}]);`)
 					js.push(`${idnt}                } else {`)
 					js.push(`${idnt}                    temp = sec.box(${obj});`)
@@ -1677,7 +1677,7 @@ export function compile(methodInfo: MethodInfo, sync = false): ICompilerProcess 
 				case Bytecode.GETPROPERTY:
 					var mn = abc.getMultiname(param(0));
 					js.push(`${idnt}                // ${mn}`)
-					js.push(`${idnt}                if (${stack0}.__fast__ || ${ UNSAFE_JIT && `typeof ${stack0}['traits'] === 'undefined'`} ) {`)
+					js.push(`${idnt}                if (${stack0}.__fast__ || ${ UNSAFE_JIT && `typeof ${stack0}['axInitializer'] === 'undefined'`} ) {`)
 					js.push(`${idnt}                    ${stack0} = ${stack0}['${mn.name}'];`)
 					js.push(`${idnt}                } else {`)
 					js.push(`${idnt}                    temp = sec.box(${stack0});`)
@@ -1894,9 +1894,9 @@ export class Context {
 		return b['$Bg' + mn.name] || b.axGetProperty(mn)
 	}
 
-	setproperty(mn: Multiname, value: any, obj: ASClass & {__fast__: true}) {
+	setproperty(mn: Multiname, value: any, obj: AXClass & {__fast__: true}) {
 		// unsfae SET fro plain Objects
-		if(obj.__fast__ || (typeof obj.axSetProperty === 'undefined' && UNSAFE_SET)) {
+		if(obj.__fast__ || (typeof obj.axInitializer === 'undefined' && UNSAFE_SET)) {
 			obj[mn.name] = value;
 			return;
 		}
