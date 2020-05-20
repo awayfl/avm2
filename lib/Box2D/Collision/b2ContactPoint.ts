@@ -7,6 +7,8 @@ import { b2ContactID } from "./b2ContactID";
 */
 export class b2ContactPoint
 {
+	readonly __fast__ = true;
+
 	/** The first shape */
 	public shape1:b2Shape;
 	/** The second shape */

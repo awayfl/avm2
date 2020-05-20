@@ -5,6 +5,7 @@ import { b2ContactID } from './b2ContactID';
 */
 export class Features
 {
+    readonly __fast__ = true;
     /**
     * The edge that defines the outward contact normal.
     */

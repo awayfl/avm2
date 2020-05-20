@@ -5,6 +5,8 @@ import { Features } from "./Features";
 */
 export class b2ContactID
 {
+    readonly __fast__ = true;
+
     constructor(){
         this.features._m_id = this;
         
