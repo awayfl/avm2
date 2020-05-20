@@ -7,6 +7,7 @@ import { b2RayCastInput } from './b2RayCastInput';
 */
 export class b2AABB
 {
+    readonly __fast__ = true;
     /**
     * Verify that the bounds are sorted.
     */
