@@ -23,10 +23,10 @@ import { ExceptionInfo } from './abc/lazy/ExceptionInfo'
 
 // choose your destiny! (mk)
 // box2D v6
-import B2D from "./Box2Dold"
+// import B2D from "./Box2Dold"
 
 // box2D unknown  =)
-// import B2D from "./Box2D"
+import B2D from "./Box2D"
 
 function b2Class(name: string, args: any[]) {
 

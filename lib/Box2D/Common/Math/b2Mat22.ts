@@ -5,6 +5,8 @@ import { b2Vec2 } from '../Math';
 */
 export class b2Mat22
 {
+    readonly __fast__ = true;
+
     constructor()
     {
         this.col1.x = this.col2.y = 1.0;

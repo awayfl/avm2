@@ -6,6 +6,7 @@ import { b2Vec2, b2Mat22 } from '../Math';
 */
 export class b2Transform
 {
+    readonly __fast__ = true;
     /**
     * The default constructor does nothing (for performance).
     */

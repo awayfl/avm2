@@ -15,6 +15,8 @@ import { b2ContactID } from "./b2ContactID";
  */
 export class b2ManifoldPoint
 {
+	readonly __fast__ = true;
+
 	constructor()
 	{
 		this.Reset();

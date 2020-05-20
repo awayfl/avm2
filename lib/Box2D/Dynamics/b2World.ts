@@ -23,6 +23,7 @@ import { IBroadPhase } from '../Collision/IBroadPhase';
 import { b2AABB } from '../Collision/b2AABB';
 import { b2ContactFilter } from './b2ContactFilter';
 import { b2ControllerEdge } from './Controllers/b2ControllerEdge';
+import { ASMethodClosure } from '../../nat/ASMethodClosure';
 
 /**
 * The world class manages all physics entities, dynamic simulation,
@@ -747,13 +748,19 @@ export class b2World
 	 * Return true to continue to the next fixture.
 	 * @param aabb the query box.
 	 */
-	public QueryAABB(callback:Function, aabb:b2AABB):void
+	public QueryAABB(callback:Function | ASMethodClosure, aabb:b2AABB):void
 	{
-		var broadPhase:IBroadPhase = this.m_contactManager.m_broadPhase;
+		const broadPhase:IBroadPhase = this.m_contactManager.m_broadPhase;
+
 		function WorldQueryWrapper(proxy:any):boolean
 		{
-			return callback(broadPhase.GetUserData(proxy));
+			if(typeof callback === 'function') {
+				return callback(broadPhase.GetUserData(proxy));
+			}else {
+				return callback.axApply(null, [broadPhase.GetUserData(proxy)]);
+			}
 		}
+
 		broadPhase.Query(WorldQueryWrapper, aabb);
 	}
 	/**
