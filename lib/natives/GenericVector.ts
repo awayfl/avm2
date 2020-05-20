@@ -401,9 +401,13 @@ export class GenericVector extends BaseVector {
   concat() {
     // TODO: need to type check the arguments, but isType doesn't exist.
     var buffers = [];
+    
     for (var i = 0; i < arguments.length; i++) {
-      buffers.push(this._coerce(arguments[i])._buffer);
+      //buffers.push(this._coerce(arguments[i])._buffer);
+      // coerce doesn't works normaly yet
+      buffers.push(arguments[i]._buffer);
     }
+
     var buffer = this._buffer.concat.apply(this._buffer, buffers);
     var result = (<any>this).axClass.axConstruct([]);
     result._buffer = buffer;
