@@ -41,9 +41,10 @@ function b2Class(name: string, args: any[]) {
 
 	// faster that Object.create;
 	// class constructor optimized in v8 and WebKit
+	// s ... rollup issues =(
+	const obj = Object.create(Constructor.prototype)
+	Constructor.apply(obj, args);
 
-	const obj = new Constructor(...args);
-	
 	// force fast mode;
 	obj.__fast__ = true;
 
