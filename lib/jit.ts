@@ -20,15 +20,9 @@ import { ABCFile } from "./abc/lazy/ABCFile"
 import { ScriptInfo } from "./abc/lazy/ScriptInfo"
 import { AXGlobal } from "./run/AXGlobal"
 import { ExceptionInfo } from './abc/lazy/ExceptionInfo'
+import { BOX2D_PREFERENCE } from "./external";
 
-// choose your destiny! (mk)
-// box2D v6
-// Cave Chaos, Flipside
-// import B2D from "./Box2Dold"
-
-// box2D unknown  =)
-// Cave Chaos 2
-import B2D from "./Box2D"
+const B2D = BOX2D_PREFERENCE.prefer;
 
 function b2Class(name: string, args: any[]) {
 
