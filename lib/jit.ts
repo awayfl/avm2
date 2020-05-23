@@ -34,7 +34,7 @@ function b2Class(name: string, args: any[]) {
 
 	// import - is freezed object, class - is function. We can call it as regular class.
 	const Constructor = B2D[name];
-	
+
 	if(!Constructor) {
 		return null;
 	}
