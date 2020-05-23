@@ -31,6 +31,8 @@ export const BOX2D_PREFERENCE = {
    * Return prefered runtime of Box2D or empty object, if nothing was prefered
    */
   get prefer() {
+	console.log('B2D Version - ', this.version);
+
     if (this.version === PREF_BOX2D_VERSION.CUSTOM) {
       if (!this.custom)
         throw new Error("Custom Box2D should be assigned to `custom` field");

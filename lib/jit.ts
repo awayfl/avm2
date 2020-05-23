@@ -22,9 +22,15 @@ import { AXGlobal } from "./run/AXGlobal"
 import { ExceptionInfo } from './abc/lazy/ExceptionInfo'
 import { BOX2D_PREFERENCE } from "./external";
 
-const B2D = BOX2D_PREFERENCE.prefer;
-
+let B2D = undefined;
 function b2Class(name: string, args: any[]) {
+	if(!B2D) {
+		B2D = BOX2D_PREFERENCE.prefer;
+	}
+
+	if(!B2D) {
+		return null;
+	}
 
 	// import - is freezed object, class - is function. We can call it as regular class.
 	const Constructor = B2D[name];
