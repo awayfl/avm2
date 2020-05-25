@@ -1362,8 +1362,10 @@ export class ASQName extends ASObject implements XMLType {
     }
     if (base_uri === "") {
       return this.name.name;
-    }
-    return base_uri + "::" + this.name.name;
+	}
+	// causes issues in nitrome-games: 
+	// return base_uri + "::" + this.name.name;
+    return this.name.name; 
   }
 
   valueOf() {
