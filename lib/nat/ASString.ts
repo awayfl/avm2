@@ -145,7 +145,10 @@ export class ASString extends ASObject {
       return this.value.substring(start, end);
     }
     substr(from: number, length?: number) {
-      return this.value.substr(from, length);
+		if(length==-1){
+			length=this.value.length-from-1;
+		}
+      	return this.value.substr(from, length);
     }
     toLocaleLowerCase() {
       return this.value.toLowerCase();
