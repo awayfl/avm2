@@ -1868,7 +1868,7 @@ export function compile(methodInfo: MethodInfo, sync = false): ICompilerProcess 
 		if(l.die) {
 			locals.push(`     // local${l.index} is assigned before read, skip init`)
 		}
-		locals.push(`    let local${l.index} = ${((l.isArgumentList && !l.die) ? "context.createArrayUnsafe(Array.from(arguments))" : "undefined")};`)
+		locals.push(`    let local${l.index} = ${((l.isArgumentList && !l.die) ? "context.sec.createArrayUnsafe(Array.from(arguments))" : "undefined")};`)
 	}
 
 	js0[LOCALS_POS] = locals.join("\n");
