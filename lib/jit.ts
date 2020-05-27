@@ -1132,7 +1132,6 @@ export function compile(methodInfo: MethodInfo, sync = false): ICompilerProcess 
 	const funcName = (methodInfo.getName()).replace(/([^a-z0-9]+)/gi, "_");
 	const underrun = "[stack underrun]"
 
-
 	js0.push("return function compiled_" + funcName + "() {")
 
 	for (let i: number = 0; i < params.length; i++)
@@ -1157,9 +1156,23 @@ export function compile(methodInfo: MethodInfo, sync = false): ICompilerProcess 
 					break
 			}
 	}
-	for (let i: number = params.length + 1; i <= maxlocal; i++)
-		js0.push(`    let local${i} = ${((i == params.length + 1) ? "context.sec.createArrayUnsafe(Array.from(arguments))" : "undefined")};`);
 
+	const LOCALS_POS = js0.length;
+	// hack 
+	js0.push("__PLACE__FOR__OPTIONAL__LOCALS__");
+
+	const optionalLocalVars: Array<{index: number, die: boolean, read: number, write: 0, isArgumentList: boolean}> = [];
+
+	for (let i: number = params.length + 1; i <= maxlocal; i++) {
+		optionalLocalVars[i] = {
+			index: i,
+			isArgumentList: i === params.length + 1,
+			read: 0,
+			write: 0,
+			die: false,
+		};
+		//js0.push(`    let local${i} = ${((i == params.length + 1) ? "context.createArrayUnsafe(Array.from(arguments))" : "undefined")};`);
+	}
 
 	for (let i: number = 0; i <= maxstack; i++)
 		js0.push(`    let stack${i} = undefined;`)
@@ -1237,7 +1250,7 @@ export function compile(methodInfo: MethodInfo, sync = false): ICompilerProcess 
 			js.push("                    // unreachable")
 		}
 		else {
-
+			let localIndex = 0;
 			switch (z.name) {
 				case Bytecode.LABEL:
 					break
@@ -1253,10 +1266,23 @@ export function compile(methodInfo: MethodInfo, sync = false): ICompilerProcess 
 				case Bytecode.THROW:
 					break
 				case Bytecode.GETLOCAL:
-					js.push(`${idnt}                ${stackN} = ${local(param(0))};`)
+					localIndex = param(0);
+					optionalLocalVars[localIndex] && (optionalLocalVars[localIndex].read ++);
+
+					js.push(`${idnt}                ${stackN} = ${local(localIndex)};`)
 					break
 				case Bytecode.SETLOCAL:
-					js.push(`${idnt}                ${local(param(0))} = ${stack0};`)
+					localIndex = param(0);
+					
+					if(optionalLocalVars[localIndex]){
+						optionalLocalVars[localIndex].write ++;
+
+						if(!optionalLocalVars[localIndex].read) {
+							optionalLocalVars[localIndex].die = true;
+						}
+					}
+
+					js.push(`${idnt}                ${local(localIndex)} = ${stack0};`)
 					break
 
 				case Bytecode.GETSLOT:
@@ -1831,6 +1857,21 @@ export function compile(methodInfo: MethodInfo, sync = false): ICompilerProcess 
 	const prefix = ("" + (SCRIPT_ID++)).padLeft("0", 4);
 
 	js.push(`//# sourceURL=http://jit/${prefix}_${funcName || 'unknown'}.js`)
+
+	const locals = [];
+
+	for(let l of optionalLocalVars) {
+		if(!l) {
+			continue;
+		}
+
+		if(l.die) {
+			locals.push(`     // local${l.index} is assigned before read, skip init`)
+		}
+		locals.push(`    let local${l.index} = ${((l.isArgumentList && !l.die) ? "context.createArrayUnsafe(Array.from(arguments))" : "undefined")};`)
+	}
+
+	js0[LOCALS_POS] = locals.join("\n");
 
 	let w = js0.join("\n") + "\n" + js.join("\n");
 
