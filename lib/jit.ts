@@ -1708,12 +1708,9 @@ export function compile(methodInfo: MethodInfo, sync = false): ICompilerProcess 
 					js.push(`${idnt}                    ${stack0} = ${stack0}['${mn.name}'];`)
 					js.push(`${idnt}                } else {`)
 					js.push(`${idnt}                    temp = sec.box(${stack0});`)
-					js.push(`${idnt}                    ${stack0} = temp.axGetProperty(${getname(param(0))});`)
-					js.push(`${idnt}                    if (${stack0} === undefined) {`)
-					js.push(`${idnt}                        ${stack0} = temp['$Bg${mn.name}'];`)
-					js.push(`${idnt}                    }`)
-					js.push(`${idnt}                    if (typeof ${stack0} === 'function') {`)
-					js.push(`${idnt}                        ${stack0} = temp.axGetMethod('$Bg${mn.name}');`)
+					js.push(`${idnt}                    ${stack0} = temp['$Bg${mn.name}'];`)
+					js.push(`${idnt}                    if (${stack0} === undefined || typeof ${stack0} === 'function') {`)
+					js.push(`${idnt}                        ${stack0} = temp.axGetProperty(${getname(param(0))});`)
 					js.push(`${idnt}                    }`)
 					js.push(`${idnt}                }`)
 					break
@@ -1781,11 +1778,8 @@ export function compile(methodInfo: MethodInfo, sync = false): ICompilerProcess 
 					js.push(`${idnt}                // ${mn}`)
 					js.push(`${idnt}                temp = ${scope}.findScopeProperty(${getname(param(0))}, true, false);`)
 					js.push(`${idnt}                ${stackN} = temp['$Bg${mn.name}'];`)
-					js.push(`${idnt}                if (${stackN} === undefined) {`)
+					js.push(`${idnt}                if (${stackN} === undefined || typeof ${stackN} === 'function') {`)
 					js.push(`${idnt}                    ${stackN} = temp.axGetProperty(${getname(param(0))});`)
-					js.push(`${idnt}                }`)
-					js.push(`${idnt}                if (typeof ${stackN} === 'function') {`)
-					js.push(`${idnt}                    ${stackN} = temp.axGetMethod('$Bg${mn.name}');`)
 					js.push(`${idnt}                }`)
 					break
 				case Bytecode.RETURNVALUE:
@@ -1933,7 +1927,12 @@ export class Context {
 		if (typeof mn === "number")
 			return b.axGetNumericProperty(mn)
 
-		return b['$Bg' + mn.name] || b.axGetProperty(mn)
+		let temp = b['$Bg' + mn.name];
+
+		if (temp != undefined && typeof temp !== 'function')
+			return temp;
+
+		return b.axGetProperty(mn)
 	}
 
 	setproperty(mn: Multiname, value: any, obj: AXClass & {__fast__: true}) {
