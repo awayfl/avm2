@@ -106,7 +106,7 @@ export function axConstruct(argArray?: any[]) {
 			asset = appDom?.getAwayJSAudio(instName);
 		}
 		
-		if (asset && (<AssetBase>asset).isAsset(WaveAudio)) {
+		if (asset && (<AssetBase>asset).isAsset && (<AssetBase>asset).isAsset(WaveAudio)) {
 			object.adaptee=asset;
 		}
 		else{
@@ -127,7 +127,7 @@ export function axConstruct(argArray?: any[]) {
 			instName=(<Multiname>_this.classInfo.instanceInfo.name).uri+"."+instName;
 			asset = appDom?.getDefinition(instName);
 		}
-		if (asset && (<AssetBase>asset).isAsset(SceneImage2D) || asset && (<AssetBase>asset).isAsset(BitmapImage2D)) {
+		if (asset && (<AssetBase>asset).isAsset && ((<AssetBase>asset).isAsset(SceneImage2D) || (<AssetBase>asset).isAsset(BitmapImage2D))) {
 			object.adaptee = asset;
 		}
 		else {
