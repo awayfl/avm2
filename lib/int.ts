@@ -145,23 +145,17 @@ export function interpret(methodInfo: MethodInfo, savedScope: Scope, callee: AXF
 			throw e;
 		}
 	}
-	return function(){
-
-		if (methodInfo.compiled == null && methodInfo.error == null && methodInfo.getBody() != null) {
-			let r = compile(methodInfo)
-			if (typeof r === "string") {
-				methodInfo.error = r
-			} else {
-				methodInfo.compiled = r.compiled;
-				methodInfo.names = r.names
-			}
-		}
-		if(methodInfo.compiled)
-			return methodInfo.compiled(new Context(methodInfo, savedScope, methodInfo.names)).apply(this, arguments);
-		else
-			return _interpret(methodInfo, savedScope, callee).apply(this, arguments);
 	
-	}
+    if (methodInfo.compiled == null && methodInfo.error == null && methodInfo.getBody() != null) {
+        let r = compile(methodInfo)
+        if (typeof r === "string") {
+            methodInfo.error = r
+        } else {
+          methodInfo.compiled = r.compiled;
+          methodInfo.names = r.names
+        }
+    }
+    return methodInfo.compiled ? methodInfo.compiled(new Context(methodInfo, savedScope, methodInfo.names)) : _interpret(methodInfo, savedScope, callee)
 }
 
 class InterpreterFrame {

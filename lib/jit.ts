@@ -1858,12 +1858,11 @@ export function compile(methodInfo: MethodInfo, sync = false): ICompilerProcess 
 		if(!l) {
 			continue;
 		}
+
 		if(l.die) {
 			locals.push(`     // local${l.index} is assigned before read, skip init`)
 		}
-		locals.push(`    let local${l.index} =  undefined`);
-		if(l.index==1 && !l.die)
-			locals.push(`    if(arguments && arguments.length) { local${l.index} = context.sec.createArrayUnsafe(Array.from(arguments));}`);
+		locals.push(`    let local${l.index} = ${((l.isArgumentList && !l.die) ? "context.sec.createArrayUnsafe(Array.from(arguments))" : "undefined")};`)
 	}
 
 	js0[LOCALS_POS] = locals.join("\n");
