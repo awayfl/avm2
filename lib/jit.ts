@@ -787,7 +787,12 @@ export function compile(methodInfo: MethodInfo, sync = false): ICompilerProcess 
 				q.push(new Instruction(oldi, z + dyn, [index], 1 + d))
 				break
 			case Bytecode.NEWFUNCTION:
-				q.push(new Instruction(oldi, z, [u30()], 1))
+				//let funcID=u30();
+				//if(code[i]!=Bytecode.POP)
+					q.push(new Instruction(oldi, z, [u30()], 1));
+				//else{
+				//	i++;
+				//}
 				break
 			case Bytecode.NEWCLASS:
 				q.push(new Instruction(oldi, z, [u30()], 0))
@@ -1622,8 +1627,10 @@ export function compile(methodInfo: MethodInfo, sync = false): ICompilerProcess 
 					js.push(`${idnt}                ${stackN} = sec.createFunction(context.abc.getMethodInfo(${param(0)}), ${scope}, true);`)
 					break
 				case Bytecode.NEWCLASS:
-					js.push(`${idnt}                // ${abc.classes[param(0)]}`)
-					js.push(`${idnt}                ${stack0} = sec.createClass(context.abc.classes[${param(0)}], ${stack0}, ${scope});`)
+					//if(abc.classes[param(0)]){
+						js.push(`${idnt}                // ${abc.classes[param(0)]}`)
+						js.push(`${idnt}                ${stack0} = sec.createClass(context.abc.classes[${param(0)}], ${stack0}, ${scope});`)
+					//}
 					break
 				case Bytecode.NEWARRAY: {
 					let pp = []
@@ -1862,7 +1869,10 @@ export function compile(methodInfo: MethodInfo, sync = false): ICompilerProcess 
 		if(l.die) {
 			locals.push(`     // local${l.index} is assigned before read, skip init`)
 		}
-		locals.push(`    let local${l.index} = ${((l.isArgumentList && !l.die) ? "context.sec.createArrayUnsafe(Array.from(arguments))" : "undefined")};`)
+		// todo: this is not 100% correct yet:
+		locals.push(`    let local${l.index} =  undefined`);
+		if(l.index==1 && !l.die)
+			locals.push(`    if(arguments && arguments.length) { local${l.index} = context.sec.createArrayUnsafe(Array.from(arguments));}`);
 	}
 
 	js0[LOCALS_POS] = locals.join("\n");
