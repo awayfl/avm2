@@ -21,6 +21,7 @@ import { ScriptInfo } from "./abc/lazy/ScriptInfo"
 import { AXGlobal } from "./run/AXGlobal"
 import { ExceptionInfo } from './abc/lazy/ExceptionInfo'
 import { BOX2D_PREFERENCE } from "./external";
+import { IDisplayObjectAdapter, MovieClip, FrameScriptManager } from '@awayjs/scene'
 
 let B2D = undefined;
 function b2Class(name: string, args: any[]) {
@@ -1946,6 +1947,21 @@ export class Context {
 	}
 
 	setproperty(mn: Multiname, value: any, obj: AXClass & {__fast__: true}) {
+		if((<any>obj).executeConstructor){			
+			let myFunc = (<any>obj).executeConstructor;
+			(<any>obj).executeConstructor = null;
+			myFunc();
+			// in avm2, framescripts get added to timeline in the constructor of the mc
+			// so when the mc was added to parent, no framescripts exists and therefore none are queued now
+			// we need to execute the script manually. 
+			if ((<any>obj).adaptee && (<any>obj).adaptee.isAsset(MovieClip)) {
+				var script =  (<any>obj).adaptee.timeline.get_script_for_frame( (<any>obj).adaptee,  (<any>obj).adaptee.currentFrameIndex);
+				if (script) {
+					FrameScriptManager.add_script_to_queue( (<any>obj).adaptee, script);
+				}
+			}
+		}
+
 		// unsfae SET fro plain Objects
 		if(obj.__fast__ || (typeof obj.axInitializer === 'undefined' && UNSAFE_SET)) {
 			obj[mn.name] = value;
