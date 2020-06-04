@@ -80,7 +80,6 @@ export function axConstruct(argArray?: any[]) {
 		//console.log("create mc via axConstruct");
 		object.adaptee = newMC;
 		newMC.reset();
-		FrameScriptManager.execute_as3_constructors();
 		//FrameScriptManager.execute_queue();
 		//(<any>object).dispatchStaticEvent(Event.FRAME_CONSTRUCTED)
 		OrphanManager.addOrphan(object);
@@ -142,8 +141,9 @@ export function axConstruct(argArray?: any[]) {
 
    
 	if((<any>object).getQueuedEvents){
+		// todo: i think we should never have ´queuedEvents here. verify and remove if right
 		var events=(<any>object).getQueuedEvents();
-		object.axInitializer.apply(object, argArray);
+		object.axInitializer.apply(object,argArray);
 		if(object.initAdapter){
 			object.executeConstructor=()=>{};
 			object.initAdapter();
@@ -155,7 +155,7 @@ export function axConstruct(argArray?: any[]) {
 		}
 	}
 	else{            
-		object.axInitializer.apply(object, argArray);
+		object.axInitializer.apply(object,argArray);
 		if(object.initAdapter){
 			object.executeConstructor=()=>{};
 			object.initAdapter();
