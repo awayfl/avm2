@@ -1865,7 +1865,7 @@ export function compile(methodInfo: MethodInfo, sync = false): ICompilerProcess 
 		}
 		// todo: this is not 100% correct yet:
 		locals.push(`    let local${l.index} =  undefined`);
-		if(l.index==1 && !l.die)
+		if(l.index==params.length+1 && !l.die)
 			locals.push(`    if(arguments && arguments.length) { local${l.index} = context.sec.createArrayUnsafe(Array.from(arguments));}`);
 	}
 
