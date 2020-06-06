@@ -139,27 +139,14 @@ export function axConstruct(argArray?: any[]) {
 		}	
 	}
 
-   
-	if((<any>object).getQueuedEvents){
-		// todo: i think we should never have ´queuedEvents here. verify and remove if right
-		var events=(<any>object).getQueuedEvents();
-		object.axInitializer.apply(object,argArray);
-		if(object.initAdapter){
-			object.executeConstructor=()=>{};
-			object.initAdapter();
-		}
-		if(events){
-			for(var i=0; i<events.length; i++){
-				(<any>object).dispatchEvent(events[i]);
-			}
-		}
+	if(object.adaptee && object.adaptee.timeline){
+		object.adaptee.timeline.resetScripts();
 	}
-	else{            
-		object.axInitializer.apply(object,argArray);
-		if(object.initAdapter){
-			object.executeConstructor=()=>{};
-			object.initAdapter();
-		}
+	object.axInitializer.apply(object,argArray);
+	if(object.initAdapter){
+		object.executeConstructor=()=>{};
+		object.initAdapter();
 	}
+	
 	return object;
 }
