@@ -1865,8 +1865,10 @@ export function compile(methodInfo: MethodInfo, sync = false): ICompilerProcess 
 		}
 		// todo: this is not 100% correct yet:
 		locals.push(`    let local${l.index} =  undefined`);
-		if(l.index==params.length+1 && !l.die)
-			locals.push(`    if(arguments && arguments.length) { local${l.index} = context.sec.createArrayUnsafe(Array.from(arguments));}`);
+		if(l.index==params.length+1 && !l.die){
+			locals.push(`    if(arguments && arguments.length) { local${l.index} = context.sec.createArrayUnsafe(Array.from(arguments).slice(${params.length})); }`);
+			locals.push(`    else { local${l.index} = context.emptyArray; }`);
+		}
 	}
 
 	js0[LOCALS_POS] = locals.join("\n");
@@ -1906,6 +1908,7 @@ export class Context {
 	private readonly axCoerceString: Function = axCoerceString;
 	private readonly axCheckFilter: Function = axCheckFilter;
 	private readonly internNamespace: Function = internNamespace;
+	public readonly emptyArray: any;
 
 	constructor(mi: MethodInfo, savedScope: Scope, names: Multiname[]) {
 		this.mi = mi;
@@ -1914,6 +1917,8 @@ export class Context {
 		this.abc = mi.abc;
 		this.sec = mi.abc.applicationDomain.sec;
 		this.names = names;
+		this.emptyArray=Object.create(this.sec.AXArray.tPrototype);
+		this.emptyArray.value = [];
 	}
 
 	call(value, obj, pp): any {
