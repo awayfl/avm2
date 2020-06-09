@@ -142,6 +142,7 @@ export function axConstruct(argArray?: any[]) {
 	if(object.adaptee && object.adaptee.timeline){
 		object.adaptee.timeline.resetScripts();
 	}
+	FrameScriptManager.execute_as3_constructors();
 	object.axInitializer.apply(object,argArray);
 	if(object.initAdapter){
 		object.executeConstructor=()=>{};
