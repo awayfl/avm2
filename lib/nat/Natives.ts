@@ -23,7 +23,7 @@ export var Natives = {
           console.log("%c Trace from SWF:", "color: DodgerBlue", args[0]);
         }
         else{
-          console.log("%c Trace from SWF:", "color: DodgerBlue", args);
+          console.log("%c Trace from SWF:", "color: DodgerBlue", args.join(" "));
         }
         //jsGlobal.print.apply(null, args);
       },
