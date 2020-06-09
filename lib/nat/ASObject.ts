@@ -240,6 +240,13 @@ export class ASObject implements IMetaobjectProtocol {
             mangledName = '$Bg' + name;
         }
 
+		//	hack when value is a XMLList returned from "attribute" getter 
+		//	when working with xml
+		if(value && value._children && value._children.length==1
+		&& value._children[0]._value){
+			value = parseInt(value._children[0]._value);
+		}
+		
         this[mangledName] = value;
         if (freeze) {
             Object.defineProperty(this, mangledName, { writable: false });
