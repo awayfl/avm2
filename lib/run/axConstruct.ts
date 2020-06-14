@@ -36,11 +36,11 @@ export class OrphanManager {
 		}
 		OrphanManager.orphans = newOrphans;
 	}
-	static updateOrphans(events) {
+	static updateOrphans() {
 		for (var i = 0; i < OrphanManager.orphans.length; i++) {
 			
 			//if((<AwayMovieClip>OrphanManager.orphans[i].adaptee).isAsset(AwayMovieClip)){
-				OrphanManager.orphans[i].adaptee.update(events);
+				OrphanManager.orphans[i].adaptee.update();
 			// }
 			// else{
 			// 	(<any>OrphanManager.orphans[i]).advanceFrame(events);
