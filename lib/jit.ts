@@ -805,7 +805,7 @@ export function compile(methodInfo: MethodInfo, sync = false): ICompilerProcess 
 				q.push(new Instruction(oldi, z, [], 1))
 				break
 			case Bytecode.NEWCATCH:
-				q.push(new Instruction(oldi, z, [u30()], 2))
+				q.push(new Instruction(oldi, z, [u30()], 1))
 				break
 
 
