@@ -1054,7 +1054,7 @@ export function compile(methodInfo: MethodInfo, sync = false): ICompilerProcess 
 		for (var i = 0; i < catchBlocks.length; i++) {
 			var typeName = catchBlocks[i].getType();
 			if (!typeName) {
-				js.push(`                ${indent}{ p = ${catchBlocks[i].target}; continue; };`);
+				js.push(`                ${indent}{ return branch_${catchBlocks[i].target}(); };`);
 				//if(!catchBlocks[i].varName)
 				//createFinally.push(`{ p = ${catchBlocks[i].target}; continue; };`);
 				continue;
@@ -1068,7 +1068,7 @@ export function compile(methodInfo: MethodInfo, sync = false): ICompilerProcess 
 				}
 				js.push(`                ${indent}var errorClass=context.sec.application.getClass(name${n});`);
 				js.push(`                ${indent}if(errorClass && errorClass.axIsType(e))`);
-				js.push(`                ${indent}    { p = ${catchBlocks[i].target}; continue; };`);
+				js.push(`                ${indent}    { return branch_${catchBlocks[i].target}(); };`);
 			}
 		}
 		// if error was not catched by now, we throw it
@@ -1201,25 +1201,32 @@ export function compile(methodInfo: MethodInfo, sync = false): ICompilerProcess 
 
 
 	js0.push("    let sec = context.sec;")
-
-
-	js.push("    let p = 0;")
-	js.push("    while (true) {")
-	js.push("        switch (p) {")
+	js.push(`\n\n`);
 
 	let currentCatchBlocks: ExceptionInfo[];
+	let lastBranchIndex = -1;
 
 	for (let i: number = 0; i < q.length; i++) {
 		let z = q[i]
 
-
-		if (targets.indexOf(z.position) >= 0) {
+		const branchIndex = targets.indexOf(z.position);
+		if (branchIndex >= 0) {
 
 			// if we are in any try-catch-blocks, we must close them
 			if (openTryCatchBlockGroups) closeAllTryCatch();
 
-			js.push(`            case ${z.position}:`)
+			// js.push(`            case ${z.position}:`)
+			
+			// close branchIndex - 1 conduction.
+			if(z.position > 0) {
+				js.push(`               branch = branch_${z.position};`);
+				js.push(`    // close branch_${targets[lastBranchIndex]}`);
+				js.push(`    }\n`);
+			}
 
+			js.push(`    function branch_${z.position} () {`);
+
+			lastBranchIndex = branchIndex;
 			// now we reopen all the try-catch again 
 			if (openTryCatchBlockGroups) openAllTryCatch();
 
@@ -1374,42 +1381,44 @@ export function compile(methodInfo: MethodInfo, sync = false): ICompilerProcess 
 					js.push(`${idnt}                ${stackN} = undefined;`)
 					break
 				case Bytecode.IFEQ:
-					js.push(`${idnt}                if (${stack0} == ${stack1}) { p = ${param(0)}; continue; };`)
+					js.push(`${idnt}                if (${stack0} == ${stack1}) { branch = branch_${param(0)}; return; };`)
 					break
 				case Bytecode.IFNE:
-					js.push(`${idnt}                if (${stack0} != ${stack1}) { p = ${param(0)}; continue; };`)
+					js.push(`${idnt}                if (${stack0} != ${stack1}) { branch = branch_${param(0)}; return; };`)
 					break
 				case Bytecode.IFSTRICTEQ:
-					js.push(`${idnt}                if (${stack0} === ${stack1}) { p = ${param(0)}; continue; };`)
+					js.push(`${idnt}                if (${stack0} === ${stack1}) { branch = branch_${param(0)}; return; };`)
 					break
 				case Bytecode.IFSTRICTNE:
-					js.push(`${idnt}                if (${stack0} !== ${stack1}) { p = ${param(0)}; continue; };`)
+					js.push(`${idnt}                if (${stack0} !== ${stack1}) { branch = branch_${param(0)}; return; };`)
 					break
 				case Bytecode.IFGT:
-					js.push(`${idnt}                if (${stack0} < ${stack1}) { p = ${param(0)}; continue; };`)
+					js.push(`${idnt}                if (${stack0} < ${stack1}) { branch = branch_${param(0)}; return; };`)
 					break
 				case Bytecode.IFGE:
-					js.push(`${idnt}                if (${stack0} <= ${stack1}) { p = ${param(0)}; continue; };`)
+					js.push(`${idnt}                if (${stack0} <= ${stack1}) { branch = branch_${param(0)}; return; };`)
 					break
 				case Bytecode.IFLT:
-					js.push(`${idnt}                if (${stack0} > ${stack1}) { p = ${param(0)}; continue; };`)
+					js.push(`${idnt}                if (${stack0} > ${stack1}) { branch = branch_${param(0)}; return; };`)
 					break
 				case Bytecode.IFLE:
-					js.push(`${idnt}                if (${stack0} >= ${stack1}) { p = ${param(0)}; continue; };`)
+					js.push(`${idnt}                if (${stack0} >= ${stack1}) { branch = branch_${param(0)}; return; };`)
 					break
 				case Bytecode.IFFALSE:
-					js.push(`${idnt}                if (!${stack0}) { p = ${param(0)}; continue; };`)
+					js.push(`${idnt}                if (!${stack0}) { branch = branch_${param(0)}; return; };`)
 					break
 				case Bytecode.IFTRUE:
-					js.push(`${idnt}                if (${stack0}) { p = ${param(0)}; continue; };`)
+					js.push(`${idnt}                if (${stack0}) { branch = branch_${param(0)}; return; };`)
 					break
 				case Bytecode.LOOKUPSWITCH:
 					var jj = z.params.concat()
 					var dj = jj.shift()
-					js.push(`${idnt}                if (${stack0} >= 0 && ${stack0} < ${jj.length}) { p = [${jj.join(", ")}][${stack0}]; continue; } else { p = ${dj}; continue; };`)
+					js.push(`${idnt}                if (${stack0} >= 0 && ${stack0} < ${jj.length}) {`)
+					js.push(`${idnt}                    branch = [${jj.map(e => "branch_" + e).join(", ")}][${stack0}]; return;`)
+					js.push(`${idnt}                } else { branch = branch_${dj}; retrun; }`);
 					break
 				case Bytecode.JUMP:
-					js.push(`${idnt}                { p = ${param(0)}; continue; };`)
+					js.push(`${idnt}                { branch = branch_${param(0)}; return; };`)
 					break
 				case Bytecode.INCREMENT:
 					js.push(`${idnt}                ${stack0}++;`)
@@ -1842,8 +1851,17 @@ export function compile(methodInfo: MethodInfo, sync = false): ICompilerProcess 
 		}
 	}
 
-	js.push("        }")
-	js.push("    }")
+	js.push("    }\n")
+	js.push("    // branch machine\n")
+	js.push("    let branch = branch_0;")
+	js.push("    let result;")
+	js.push("    while (true) {")
+	js.push("        const curren = branch;")
+	js.push("        branch = null;")
+	js.push("        result = curren();")
+	js.push("        if(!branch) { return result;}")
+	js.push("     }\n")
+
 	js.push("}")
 
 	// Debugging magic 
