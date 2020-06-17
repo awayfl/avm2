@@ -13,6 +13,7 @@ export class ASMethodClosure extends ASFunction {
       defineNonEnumerableProperty(proto, '$Bgcall', asProto.call);
       defineNonEnumerableProperty(proto, '$Bgapply', asProto.apply);
     }
+
     static Create(receiver: AXObject, method: AXCallable) {
       var closure: ASMethodClosure = Object.create(this.sec.AXMethodClosure.tPrototype);
       closure.receiver = <any>receiver;
@@ -39,7 +40,14 @@ export class ASMethodClosure extends ASFunction {
     }
   
     call(ignoredThisArg: any) {
-      return this.value.apply(this.receiver, sliceArguments(arguments, 1));
+      const args = arguments;
+      const len = args.length;
+
+      if(len > 1 && len <= 6 ) {
+        return this.value.call(this.receiver, args[1], args[2], args[3], args[4], args[5])
+      } else {
+        return this.value.apply(this.receiver, sliceArguments(arguments, 1));
+      }
     }
   
     apply(ignoredThisArg: any, argArray?: ASArray): any {
