@@ -2032,10 +2032,19 @@ export class Context {
               this.rn.namespaces = name.namespaces;
               return this.rn;
             }
-            if (typeof name === "number" || isNumeric(axCoerceName(name))) {
-                this.rn.numeric = true
-                this.rn.numericValue = +(axCoerceName(name))
-            }
+          	// appriory number
+			if (typeof name === 'number') {
+				this.rn.numeric = true;
+				this.rn.numericValue = name;
+			} else {
+				const coerce = axCoerceName(name);
+
+				if(isNumeric(coerce)) {
+					this.rn.numeric = true;
+					this.rn.numericValue = +coerce;	
+				}
+			}
+
             this.rn.name = name;
             this.rn.id = -1;
           } else {
