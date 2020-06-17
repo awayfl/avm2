@@ -455,25 +455,25 @@ export class AXSecurityDomain{
   
     box(v: any) {
         if (v == undefined)
-            return v
+            return v;
 
         if (v.constructor === Array)
-            return this.AXArray.axBox(v)
+            return this.AXArray.axBox(v);
 
-        const t = typeof v
+        const t = typeof v;
 
-        if (t === "number")
-            return this.AXNumber.axBox(v)
+        switch(t) {
+          case 'number':
+            return this.AXNumber.axBox(v);
+          case 'boolean':
+            return this.AXBoolean.axBox(v);
+          case 'string':
+            return this.AXString.axBox(v);
+        }
 
-        if (t === "boolean")
-            return this.AXBoolean.axBox(v)
+        release || assert(AXBasePrototype.isPrototypeOf(v));
 
-        if (t === "string")
-            return this.AXString.axBox(v)
-
-        release || assert(AXBasePrototype.isPrototypeOf(v))
-
-        return v
+        return v;
     }
   
     isPrimitive(v: any) {
