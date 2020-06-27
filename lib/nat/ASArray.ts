@@ -444,7 +444,7 @@ export class ASArray extends ASObject {
     axGetProperty(mn: Multiname): any {
       var name = mn.name;
       if (typeof name === 'number' || isNumeric(name = axCoerceName(name))) {
-        return this.value[name];
+        return this.value[name] ?? this[name]; // quick fix
       }
       return super.axGetProperty(mn);
     }
