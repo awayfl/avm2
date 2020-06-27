@@ -22,8 +22,6 @@ export class Scope {
     constructor(parent: Scope, object: AXObject, isWith: boolean = false) {
       Scope.ID ++;
 
-      //@ts-ignore
-      window.SCOPES = Scope.ID;
       this.init(parent, object, isWith);
     }
 
