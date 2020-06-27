@@ -17,30 +17,37 @@ export class Scope {
         return "" + this.parent + " => " + this.object + " " + this.isWith
     }
 
+    static ID = 0;
     constructor(parent: Scope, object: AXObject, isWith: boolean = false) {
+      Scope.ID ++;
+
+      //@ts-ignore
+      window.SCOPES = Scope.ID;
+      this.init(parent, object, isWith);
+    }
+
+    init(parent: Scope, object: AXObject, isWith: boolean = false) {
       this.parent = parent;
       this.object = object;
       this.global = parent ? parent.global : this;
       this.isWith = isWith;
       this.cache = [];
       this.defaultNamespace = null;
+      
+      object["__scope__"] = this;
     }
-  
+
     extend(object: AXObject) {
         if (object === this.object)
             return this
 
         let c = object["__scope__"]
         
-        if (c)
-            if (c.parent == this)
+        if (c && c.parent == this){
                 return c
+        }
 
-        let s = new Scope(this, object, false)
-
-        object["__scope__"] = s
-        
-        return s
+        return new Scope(this, object, false)
     }
     
     public findDepth(object: any): number {
