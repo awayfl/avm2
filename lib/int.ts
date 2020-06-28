@@ -148,8 +148,8 @@ export function interpret(methodInfo: MethodInfo, savedScope: Scope, callee: AXF
 	
     if (methodInfo.compiled == null && methodInfo.error == null && methodInfo.getBody() != null) {
         let r = compile(methodInfo)
-        if (typeof r === "string") {
-            methodInfo.error = r
+        if (r.error) {
+            methodInfo.error = r.error;
         } else {
           methodInfo.compiled = r.compiled;
           methodInfo.names = r.names
@@ -276,8 +276,9 @@ class InterpreterFrame {
 }
 
 function _interpret(methodInfo: MethodInfo, savedScope: Scope, callee: AXFunction) {
-  if (methodInfo.error != null)
-      console.log("interpret: (" + methodInfo.error + ")")
+  if (methodInfo.error != null) {
+      console.error("interpret: (" + methodInfo.error + ")")
+  }
 
   return function () {
 

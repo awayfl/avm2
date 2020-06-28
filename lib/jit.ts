@@ -52,9 +52,11 @@ function b2Class(name: string, args: any[]) {
 
 export let BytecodeName = Bytecode
 
+const DEFAULT_STACK_INDEX = -1024;
+
 class Instruction {
-	public stack: number = -1024
-	public scope: number = -1024
+	public stack: number = DEFAULT_STACK_INDEX
+	public scope: number = DEFAULT_STACK_INDEX
 	public catchBlock: ExceptionInfo;
 	public catchStart: boolean = false;
 	public catchEnd: boolean = false;
@@ -72,20 +74,26 @@ const UNSAFE_SET = false;
 // allow unsafe calls and property gets from objects
 const UNSAFE_JIT = false;
 
+// allow use negate stack pointer (avoid stack underrun)
+const UNSAFE_STACK = false;
+
 const USE_EVAL = false;
 
 let SCRIPT_ID = 0;
 
 export interface ICompilerProcess {
+	error?: string;
+	source?: string;
 	compiling?: Promise<Function> | undefined;
-	compiled: Function;
-	names: Multiname[];
+	compiled?: Function;
+	names?: Multiname[];
 }
 
-export function compile(methodInfo: MethodInfo, sync = false): ICompilerProcess | string {
+export function compile(methodInfo: MethodInfo, sync = false): ICompilerProcess {
 
 	let abc = methodInfo.abc
 	let code = methodInfo.getBody().code
+	let isStackUnderrun = false;
 
 	var body = methodInfo.getBody();
 
@@ -661,8 +669,8 @@ export function compile(methodInfo: MethodInfo, sync = false): ICompilerProcess 
 				break
 
 			default:
-				console.log(`UNKNOWN BYTECODE ${code[i - 1].toString(16)} ${BytecodeName[code[i - 1]]} at ${oldi} (method:`, methodInfo.index());
-				return `UNKNOWN BYTECODE ${code[i - 1].toString(16)} ${BytecodeName[code[i - 1]]} at ${oldi}`;
+				//console.log(`UNKNOWN BYTECODE ${code[i - 1].toString(16)} ${BytecodeName[code[i - 1]]} at ${oldi} (method:`, methodInfo.index());
+				return { error: `UNKNOWN BYTECODE ${code[i - 1].toString(16)} ${BytecodeName[code[i - 1]]} at ${oldi}` };
 		}
 
 	}
@@ -841,9 +849,20 @@ export function compile(methodInfo: MethodInfo, sync = false): ICompilerProcess 
 			targets.push(q[i].refs[j])
 
 	let maxstack = 0
-	for (let i: number = 0; i < q.length; i++)
+	let minstack = 0;
+
+	for (let i: number = 0; i < q.length; i++){
 		if (q[i].stack > maxstack)
 			maxstack = q[i].stack
+		if(q[i].stack < minstack && q[i].stack !== DEFAULT_STACK_INDEX)
+			minstack = q[i].stack;
+	}
+
+	if(!UNSAFE_STACK) {
+		minstack = 0;
+	}
+
+	//console.log(minstack, maxstack);
 
 	let maxlocal = 0
 	for (let i: number = 0; i < q.length; i++)
@@ -909,8 +928,8 @@ export function compile(methodInfo: MethodInfo, sync = false): ICompilerProcess 
 		//js0.push(`    let local${i} = ${((i == params.length + 1) ? "context.createArrayUnsafe(Array.from(arguments))" : "undefined")};`);
 	}
 
-	for (let i: number = 0; i <= maxstack; i++)
-		js0.push(`    let stack${i} = undefined;`)
+	for (let i = minstack; i <= maxstack; i++)
+		js0.push(`    let stack${i - minstack} = undefined;`)
 
 	for (let i: number = 0; i <= maxscope; i++)
 		jsBeforeMethod.push(`let scope${i} = undefined;`)
@@ -968,7 +987,7 @@ export function compile(methodInfo: MethodInfo, sync = false): ICompilerProcess 
 
 		js.push(`${idnt}                //${BytecodeName[z.name]} ${z.params.join(" / ")}`);// + " pos: " + z.position+ " scope:"+z.scope+ " stack:"+z.stack)
 
-		let stackF = (n: number) => ((z.stack - 1 - n) >= 0) ? (`stack${(z.stack - 1 - n)}`) : underrun
+		let stackF = (n: number) => ((z.stack - 1 - n) >= 0) ? (`stack${(z.stack - 1 - n)}`) : `/*${underrun} ${z.stack - 1 - n}*/ stack0`;
 		let stack0 = stackF(0)
 		let stack1 = stackF(1)
 		let stack2 = stackF(2)
@@ -1559,8 +1578,8 @@ export function compile(methodInfo: MethodInfo, sync = false): ICompilerProcess 
 					
 				default:
 					js.push(`${idnt}                //unknown instruction ${BytecodeName[q[i].name]}`)
-					console.log(`unknown instruction ${BytecodeName[q[i].name]} (method N${methodInfo.index()})`)
-					return "unhandled instruction " + z
+					//console.log(`unknown instruction ${BytecodeName[q[i].name]} (method N${methodInfo.index()})`)
+					return { error: "unhandled instruction " + z }
 			}
 		}
 
@@ -1608,11 +1627,8 @@ export function compile(methodInfo: MethodInfo, sync = false): ICompilerProcess 
 	js0[LOCALS_POS] = locals.join("\n");
 
 	let w = jsBeforeMethod.join("\n") + "\n\n" +  js0.join("\n") + "\n" + js.join("\n");
-
-	if (w.indexOf(underrun) >= 0) {
-		return "STACK UNDERRUN"
-	}
-
+	
+	const hasError = w.indexOf(underrun) > -1;
 	const scriptPrefix = "// (#" + methodInfo.index() + ") --- " + methodInfo + "\n";
 
 	let compiled;
@@ -1625,9 +1641,15 @@ export function compile(methodInfo: MethodInfo, sync = false): ICompilerProcess 
 		compiled = new Function("context", w);
 	}
 
+	let underrunLine = -1;
+
+	if(hasError) {
+		underrunLine = w.split("\n").findIndex(v => v.indexOf(underrun) >= 0) + 3;
+	}
 	return {
 		names: names,
-		compiled
+		compiled,
+		error : hasError ? `STACK UNDERRUN at http://jit/${prefix}_${funcName || 'unknown'}.js:${underrunLine}` : undefined
 	};
 }
 
