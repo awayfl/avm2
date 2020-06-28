@@ -674,11 +674,8 @@ export function compile(methodInfo: MethodInfo, sync = false): ICompilerProcess 
 		}
 
 	}
-
 	let js0 = [];
 	let js = [];
-	let jsBeforeMethod = [];
-
 	/*
 	for (let i: number = 0; i < q.length; i++) {
 		let z=q[i];
@@ -932,7 +929,7 @@ export function compile(methodInfo: MethodInfo, sync = false): ICompilerProcess 
 		js0.push(`    let stack${i - minstack} = undefined;`)
 
 	for (let i: number = 0; i <= maxscope; i++)
-		jsBeforeMethod.push(`let scope${i} = undefined;`)
+		js0.push(`    let scope${i} = undefined;`)
 
 	if (temp)
 		js0.push("    let temp = undefined;")
@@ -1050,7 +1047,7 @@ export function compile(methodInfo: MethodInfo, sync = false): ICompilerProcess 
 					js.push(`${idnt}                ${stackN} = context.savedScope.global.object;`)
 					break
 				case Bytecode.PUSHSCOPE:
-					js.push(`${idnt}                ${scopeN} = ${scopeN} ? ${scopeN}.init(${scope}, sec.box(${stack0})) : ${scope}.extend(sec.box(${stack0}));`)
+					js.push(`${idnt}                ${scopeN} = ${scope}.extend(sec.box(${stack0}));`)
 					break
 				case Bytecode.PUSHWITH:
 					js.push(`${idnt}                ${scopeN} = context.pushwith(${scope}, ${stack0});`)
@@ -1626,9 +1623,9 @@ export function compile(methodInfo: MethodInfo, sync = false): ICompilerProcess 
 
 	js0[LOCALS_POS] = locals.join("\n");
 
-	let w = jsBeforeMethod.join("\n") + "\n\n" +  js0.join("\n") + "\n" + js.join("\n");
-	
+	let w = js0.join("\n") + "\n" + js.join("\n");
 	const hasError = w.indexOf(underrun) > -1;
+	
 	const scriptPrefix = "// (#" + methodInfo.index() + ") --- " + methodInfo + "\n";
 
 	let compiled;

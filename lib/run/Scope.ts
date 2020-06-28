@@ -10,10 +10,9 @@ export class Scope {
     global: Scope;
     object: AXObject;
     isWith: boolean;
-    cache: NumberMap<AXObject>;
+    cache: AXObject[];
     defaultNamespace: Namespace;
-    flushable: boolean = false;
-
+  
     public toString(): string {
         return "" + this.parent + " => " + this.object + " " + this.isWith
     }
@@ -26,33 +25,14 @@ export class Scope {
     }
 
     init(parent: Scope, object: AXObject, isWith: boolean = false) {
-      let c = object["__scope__"];        
-      if (c && c.parent == parent){
-              return c;
-      }
-
       this.parent = parent;
       this.object = object;
       this.global = parent ? parent.global : this;
       this.isWith = isWith;
-      this.cache = {};
+      this.cache = [];
       this.defaultNamespace = null;
       
       object["__scope__"] = this;
-      return this;
-    }
-
-    flush() {
-      if(!this.flushable) {
-        return;
-      }
-
-      // kill hard ref of object, to allow GC
-      //this.parent = null;
-      //this.object = null;
-      //this.global = this;
-      // not remove cache, bacause scope can be stored in object
-      // this.cache = undefined;
     }
 
     extend(object: AXObject) {
@@ -65,9 +45,7 @@ export class Scope {
                 return c
         }
 
-        const s = new Scope(this, object, false);
-        s.flushable = true;
-        return s;
+        return new Scope(this, object, false)
     }
     
     public findDepth(object: any): number {
