@@ -53,3 +53,5 @@ export { AVM2Handler } from "./lib/AVM2Handler";
 export { AVM2LoadLibrariesFlags } from "./lib/AVM2LoadLibrariesFlags";
 
 export {PREF_BOX2D_VERSION, BOX2D_PREFERENCE} from "./lib/external";
+
+export { Natives } from "./lib/nat/Natives";
