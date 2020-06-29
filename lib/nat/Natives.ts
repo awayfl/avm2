@@ -18,14 +18,20 @@ import { describeType as describeTypeIntern} from '../natives/describeType';
 
 export var Natives = {
     print: function(sec: AXSecurityDomain, expression: any, arg1?: any, arg2?: any, arg3?: any, arg4?: any) {
-        var args = Array.prototype.slice.call(arguments, 1);
-        if(args.length==1){
-          console.log("%c Trace from SWF:", "color: DodgerBlue", args[0]);
-        }
-        else{
-          console.log("%c Trace from SWF:", "color: DodgerBlue", args.join(" "));
-        }
-        //jsGlobal.print.apply(null, args);
+		let message;
+		if(arguments.length==2){
+			message=arguments[1];
+		}
+		else{
+			for(let i=1; i<arguments.length;i++){
+				message+=arguments[i];
+				if(i!=arguments.length-1){
+					message+=" ";
+				}
+
+			}
+		}
+		console.log("%c Trace from SWF:", "color: DodgerBlue", message);
       },
     debugBreak: function(v: any) {
         /* tslint:disable */
