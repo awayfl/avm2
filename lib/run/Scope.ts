@@ -10,7 +10,7 @@ export class Scope {
     global: Scope;
     object: AXObject;
     isWith: boolean;
-    cache: AXObject[];
+    cache: NumberMap<AXObject>;
     defaultNamespace: Namespace;
   
     public toString(): string {
@@ -29,7 +29,7 @@ export class Scope {
       this.object = object;
       this.global = parent ? parent.global : this;
       this.isWith = isWith;
-      this.cache = [];
+      this.cache = {};
       this.defaultNamespace = null;
       
       object["__scope__"] = this;
