@@ -77,7 +77,11 @@ const UNSAFE_JIT = false;
 // allow use negate stack pointer (avoid stack underrun)
 const UNSAFE_STACK = false;
 
+// allow skip boxing for object
+const UNSAFE_NOT_BOX_OBJ = true;
+
 const USE_EVAL = false;
+
 
 let SCRIPT_ID = 0;
 
@@ -958,8 +962,8 @@ export function compile(methodInfo: MethodInfo, sync = false): ICompilerProcess 
 	js.push("        switch (p) {")
 
 	let currentCatchBlocks: ExceptionInfo[];
-
 	for (let i: number = 0; i < q.length; i++) {
+		let lastZ = q[i - 1];
 		let z = q[i]
 
 
@@ -1047,7 +1051,13 @@ export function compile(methodInfo: MethodInfo, sync = false): ICompilerProcess 
 					js.push(`${idnt}                ${stackN} = context.savedScope.global.object;`)
 					break
 				case Bytecode.PUSHSCOPE:
-					js.push(`${idnt}                ${scopeN} = ${scope}.extend(sec.box(${stack0}));`)
+					// js.push(`${idnt}                ${scopeN} = ${scope}.extend(sec.box(${stack0}));`)
+					if(UNSAFE_NOT_BOX_OBJ){
+						js.push(`${idnt}                ${scopeN} = ${scope}.extend(${stack0});`)
+					} else {
+						js.push(`${idnt}                ${scopeN} = ${scope}.extend(sec.box(${stack0}));`)
+					}
+
 					break
 				case Bytecode.PUSHWITH:
 					js.push(`${idnt}                ${scopeN} = context.pushwith(${scope}, ${stack0});`)
@@ -1318,7 +1328,13 @@ export function compile(methodInfo: MethodInfo, sync = false): ICompilerProcess 
 						js.push(`${idnt}                    ${stackF(param(0))} = ${obj}['${mn.name}'].apply(${obj}, [${pp.join(", ")}]);`)
 						js.push(`${idnt}                } else {`)
 						js.push(`${idnt}                // ${mn}`)
-						js.push(`${idnt}                    temp = sec.box(${obj});`)
+
+						if(UNSAFE_NOT_BOX_OBJ){
+							js.push(`${idnt}                    temp = typeof ${obj} === 'object' ? ${obj} : sec.box(${obj});`)
+						} else {
+							js.push(`${idnt}                    temp = sec.box(${obj});`)
+						}
+
 						js.push(`${idnt}                    ${stackF(param(0))} = (typeof temp['$Bg${mn.name}'] === 'function')? temp['$Bg${mn.name}'](${pp.join(", ")}) : temp.axCallProperty(${getname(param(1))}, [${pp.join(", ")}], false);`)
 						js.push(`${idnt}                }`)
 					}
@@ -1329,7 +1345,14 @@ export function compile(methodInfo: MethodInfo, sync = false): ICompilerProcess 
 					for (let j: number = 0; j <= param(0); j++)
 						pp.push(stackF(param(0) - j))
 
-					js.push(`${idnt}                    temp = sec.box(${pp.shift()});`)
+					const obj = pp.shift();
+					if(UNSAFE_NOT_BOX_OBJ){
+						js.push(`${idnt}                    temp = typeof ${obj} === 'object' ? ${obj} : sec.box(${obj});`)
+					} else {
+						js.push(`${idnt}                    temp = sec.box(${obj});`)
+					}
+					//js.push(`${idnt}                    temp = sec.box(${pp.shift()});`)
+
 					js.push(`${idnt}                ${stackF(param(0))} = (typeof temp['$Bg${mn.name}'] === 'function')? temp['$Bg${mn.name}'](${pp.join(", ")}) : temp.axCallProperty(${getname(param(1))}, [${pp.join(", ")}], true);`)
 				}
 					break
@@ -1344,7 +1367,13 @@ export function compile(methodInfo: MethodInfo, sync = false): ICompilerProcess 
 					js.push(`${idnt}                if (${obj}.__fast__ || ${ UNSAFE_JIT && `typeof ${obj}['axInitializer'] === 'undefined'`}) {`)
 					js.push(`${idnt}                    ${obj}['${mn.name}'].apply(${obj}, [${pp.join(", ")}]);`)
 					js.push(`${idnt}                } else {`)
-					js.push(`${idnt}                    temp = sec.box(${obj});`)
+					
+					if(UNSAFE_NOT_BOX_OBJ){
+						js.push(`${idnt}                    temp = typeof ${obj} === 'object' ? ${obj} : sec.box(${obj});`)
+					} else {
+						js.push(`${idnt}                    temp = sec.box(${obj});`)
+					}
+
 					js.push(`${idnt}                    (typeof temp['$Bg${mn.name}'] === 'function')? temp['$Bg${mn.name}'](${pp.join(", ")}) : temp.axCallProperty(${getname(param(1))}, [${pp.join(", ")}], false);`)
 					js.push(`${idnt}                }`)
 				}
@@ -1468,9 +1497,9 @@ export function compile(methodInfo: MethodInfo, sync = false): ICompilerProcess 
 				case Bytecode.GETPROPERTY_DYN:
 					var mn = abc.getMultiname(param(0));
 					if (mn.isRuntimeName() && mn.isRuntimeNamespace()) {
-						js.push(`${idnt}                    ${stack2} = context.getpropertydyn(context.runtimename(${getname(param(0))}, ${stack0}, ${stack1}), ${stack2});`)
+						js.push(`${idnt}                ${stack2} = context.getpropertydyn(context.runtimename(${getname(param(0))}, ${stack0}, ${stack1}), ${stack2});`)
 					} else {
-						js.push(`${idnt}                    ${stack1} = context.getpropertydyn(context.runtimename(${getname(param(0))}, ${stack0}), ${stack1});`)
+						js.push(`${idnt}                ${stack1} = context.getpropertydyn(context.runtimename(${getname(param(0))}, ${stack0}), ${stack1});`)
 					}
 					break
 				case Bytecode.SETPROPERTY:
@@ -1540,6 +1569,11 @@ export function compile(methodInfo: MethodInfo, sync = false): ICompilerProcess 
 					js.push(`${idnt}                return;`)
 					break
 				case Bytecode.COERCE:
+					if(lastZ && lastZ.name === Bytecode.PUSHNULL){
+						js.push(`//${idnt}              Skip coerce for nullable`);
+						js.push(`//${idnt}              ${stack0} = ${scope}.getScopeProperty(${getname(param(0))}, true, false).axCoerce(${stack0});`)		
+						break;						
+					}
 					js.push(`${idnt}                ${stack0} = ${scope}.getScopeProperty(${getname(param(0))}, true, false).axCoerce(${stack0});`)
 					break
 				case Bytecode.COERCE_A:
