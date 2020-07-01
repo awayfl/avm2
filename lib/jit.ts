@@ -949,9 +949,17 @@ export function compile(methodInfo: MethodInfo, sync = false): ICompilerProcess 
 	}
 
 	let o_lastBoxedStack: string = undefined;
+	let o_lastKilledBoxedStack: string = undefined;
 
-	const o_KillBoxedStack = (name: string) => {
-		(o_lastBoxedStack === name) && (o_lastBoxedStack = undefined);
+	const o_KillStack = (name: string, onlyBoxing = false) => {
+		if(o_lastBoxedStack === name) {
+			o_lastBoxedStack = undefined;
+			o_lastKilledBoxedStack = name;
+		}
+
+		if(o_lastScopedStackAlias === name && !onlyBoxing) {
+			o_lastScopedStackAlias = undefined;
+		}
 	}
 
 	if (UNSAFE_OPTIMISE_GET_SCOPED) {
@@ -1071,7 +1079,7 @@ export function compile(methodInfo: MethodInfo, sync = false): ICompilerProcess 
 					localIndex = param(0);
 					optionalLocalVars[localIndex] && (optionalLocalVars[localIndex].read ++);
 					
-					o_KillBoxedStack(stackN);
+					o_KillStack(stackN);
 
 					js.push(`${idnt}                ${stackN} = ${local(localIndex)};`)
 					break
@@ -1090,13 +1098,15 @@ export function compile(methodInfo: MethodInfo, sync = false): ICompilerProcess 
 					break
 
 				case Bytecode.GETSLOT:
+
 					if(UNSAFE_OPTIMISE_BOX) {
 						if(o_lastBoxedStack !== stack0) {
-							o_lastBoxedStack = stack0;
-							js.push(`${idnt}                o_boxed = sec.box(${stack0});`)
+							js.push(`${idnt}                ${stack0} = sec.box(${stack0}).axGetSlot(${param(0)});`)
+						} else {
+							js.push(`${idnt}                ${stack0} = /*sec.box(${stack0})*/o_boxed.axGetSlot(${param(0)});`)
 						}
-
-						js.push(`${idnt}                ${stack0} = /*sec.box(${stack0})*/o_boxed.axGetSlot(${param(0)});`)
+						// yep, get slot kill boxing because overwrite stack
+						o_KillStack(stack0);
 						break;
 					}
 					js.push(`${idnt}                ${stack0} = sec.box(${stack0}).axGetSlot(${param(0)});`)
@@ -1109,19 +1119,13 @@ export function compile(methodInfo: MethodInfo, sync = false): ICompilerProcess 
 						}
 
 						js.push(`${idnt}                /*sec.box(${stack1})*/o_boxed.axSetSlot(${param(0)}, ${stack0});`)
-
-						if(o_lastScopedStackAlias === o_lastBoxedStack) {
-							// we use alias on box, that same as alias on scoped object alias
-							// remove alias annotation from source
-							o_KillLastInstructions(Bytecode.GETSCOPEOBJECT);
-						}
 						break;
 					}
 					js.push(`${idnt}                sec.box(${stack1}).axSetSlot(${param(0)}, ${stack0});`)
 					break
 
 				case Bytecode.GETGLOBALSCOPE:
-					o_KillBoxedStack(stackN);
+					o_KillStack(stackN);
 
 					js.push(`${idnt}                ${stackN} = context.savedScope.global.object;`)
 					break
@@ -1142,13 +1146,31 @@ export function compile(methodInfo: MethodInfo, sync = false): ICompilerProcess 
 					js.push(`${idnt}                ${scope} = undefined;`)
 					break
 				case Bytecode.GETSCOPEOBJECT:
+					o_KillStack(stackN);
+
 					if(UNSAFE_OPTIMISE_GET_SCOPED) {
 						if(o_lastUsedScope === `scope${param(0)}`) {
-							js.push(`${idnt}                ${stackN} = o_scoped;//scope${param(0)}.object;`)
-							o_lastScopedStackAlias = stackN;
+							if(o_lastScopedStackAlias === stackN){
+								js.push(`//${idnt}              Scoped object not changed between getting, skip assign`)
+								js.push(`//${idnt}              ${stackN} = scope${param(0)}.object;`)
+							} else {
+								// try restore boxing
+								// o_scoped can store location on already boxed object
+								if(o_lastScopedStackAlias === o_lastKilledBoxedStack) {
+									o_lastBoxedStack = o_lastScopedStackAlias;
+									o_lastKilledBoxedStack = undefined;
+									
+									js.push(`//${idnt}              Boxing was restored from scoped object`)
+									js.push(`${idnt}                ${stackN} = o_boxed = o_scoped;//scope${param(0)}.object;`)
+								} else {
+									js.push(`${idnt}                ${stackN} = o_scoped;//scope${param(0)}.object;`)
+								}
+								//o_lastScopedStackAlias = stackN;
+							}
 						} else {
 							js.push(`${idnt}                ${stackN} = o_scoped = scope${param(0)}.object;`)
 							o_lastUsedScope = `scope${param(0)}`;
+							o_lastScopedStackAlias = stackN;
 						}
 						break;
 					}
@@ -1156,32 +1178,32 @@ export function compile(methodInfo: MethodInfo, sync = false): ICompilerProcess 
 					break
 
 				case Bytecode.NEXTNAME:
-					o_KillBoxedStack(stack1);
+					o_KillStack(stack1);
 
 					js.push(`${idnt}                ${stack1} = sec.box(${stack1}).axNextName(${stack0});`)
 					break
 				case Bytecode.NEXTVALUE:
-					o_KillBoxedStack(stack1);
+					o_KillStack(stack1);
 					js.push(`${idnt}                ${stack1} = sec.box(${stack1}).axNextValue(${stack0});`)
 					break
 				case Bytecode.HASNEXT:
-					o_KillBoxedStack(stack1);
+					o_KillStack(stack1);
 					js.push(`${idnt}                ${stack1} = sec.box(${stack1}).axNextNameIndex(${stack0});`)
 					break
 				case Bytecode.HASNEXT2:
-					o_KillBoxedStack(stackN);
+					o_KillStack(stackN);
 					js.push(`${idnt}                temp = context.hasnext2(${local(param(0))}, ${local(param(1))});`)
 					js.push(`${idnt}                ${local(param(0))} = temp[0];`)
 					js.push(`${idnt}                ${local(param(1))} = temp[1];`)
 					js.push(`${idnt}                ${stackN} = ${local(param(1))} > 0;`)
 					break
 				case Bytecode.IN:
-					o_KillBoxedStack(stack1);
+					o_KillStack(stack1);
 					js.push(`${idnt}                ${stack1} = (${stack1} && ${stack1}.axClass === sec.AXQName) ? obj.axHasProperty(${stack1}.name) : ${stack0}.axHasPublicProperty(${stack1});`)
 					break
 
 				case Bytecode.DUP:
-					o_KillBoxedStack(stackN);
+					o_KillStack(stackN);
 					js.push(`${idnt}                ${stackN} = ${stack0};`)
 					break
 				case Bytecode.POP:
@@ -1202,47 +1224,47 @@ export function compile(methodInfo: MethodInfo, sync = false): ICompilerProcess 
 					js.push(`${idnt}                temp = undefined;`)
 					break
 				case Bytecode.PUSHTRUE:
-					o_KillBoxedStack(stackN);
+					o_KillStack(stackN);
 					js.push(`${idnt}                ${stackN} = true;`)
 					break
 				case Bytecode.PUSHFALSE:
-					o_KillBoxedStack(stackN);
+					o_KillStack(stackN);
 					js.push(`${idnt}                ${stackN} = false;`)
 					break
 				case Bytecode.PUSHBYTE:
-					o_KillBoxedStack(stackN);
+					o_KillStack(stackN);
 					js.push(`${idnt}                ${stackN} = ${param(0)};`)
 					break
 				case Bytecode.PUSHSHORT:
-					o_KillBoxedStack(stackN);
+					o_KillStack(stackN);
 					js.push(`${idnt}                ${stackN} = ${param(0)};`)
 					break
 				case Bytecode.PUSHINT:
-					o_KillBoxedStack(stackN);
+					o_KillStack(stackN);
 					js.push(`${idnt}                ${stackN} = ${abc.ints[param(0)]};`)
 					break
 				case Bytecode.PUSHUINT:
-					o_KillBoxedStack(stackN);
+					o_KillStack(stackN);
 					js.push(`${idnt}                ${stackN} = ${abc.uints[param(0)]};`)
 					break
 				case Bytecode.PUSHDOUBLE:
-					o_KillBoxedStack(stackN);
+					o_KillStack(stackN);
 					js.push(`${idnt}                ${stackN} = ${abc.doubles[param(0)]};`)
 					break
 				case Bytecode.PUSHSTRING:
-					o_KillBoxedStack(stackN);
+					o_KillStack(stackN);
 					js.push(`${idnt}                ${stackN} = context.abc.getString(${param(0)});`)
 					break
 				case Bytecode.PUSHNAN:
-					o_KillBoxedStack(stackN);
+					o_KillStack(stackN);
 					js.push(`${idnt}                ${stackN} = NaN;`)
 					break
 				case Bytecode.PUSHNULL:
-					o_KillBoxedStack(stackN);
+					o_KillStack(stackN);
 					js.push(`${idnt}                ${stackN} = null;`)
 					break
 				case Bytecode.PUSHUNDEFINED:
-					o_KillBoxedStack(stackN);
+					o_KillStack(stackN);
 					js.push(`${idnt}                ${stackN} = undefined;`)
 					break
 				case Bytecode.IFEQ:
@@ -1397,15 +1419,15 @@ export function compile(methodInfo: MethodInfo, sync = false): ICompilerProcess 
 					js.push(`${idnt}                return typeof ${stack0};`)
 					break;
 				case Bytecode.INSTANCEOF:
-					o_KillBoxedStack(stack1);
+					o_KillStack(stack1);
 					js.push(`${idnt}                ${stack1} = ${stack0}.axIsInstanceOf(${stack1});`)
 					break
 				case Bytecode.ISTYPELATE:
-					o_KillBoxedStack(stack1);
+					o_KillStack(stack1);
 					js.push(`${idnt}                ${stack1} = ${stack0}.axIsType(${stack1});`)
 					break
 				case Bytecode.ASTYPELATE:
-					o_KillBoxedStack(stack1);
+					o_KillStack(stack1);
 					js.push(`${idnt}                ${stack1} = ${stack0}.axAsType(${stack1});`)
 					break
 
@@ -1415,7 +1437,7 @@ export function compile(methodInfo: MethodInfo, sync = false): ICompilerProcess 
 					for (let j: number = 1; j <= param(0); j++)
 						pp.push(stackF(param(0) - j))
 
-					o_KillBoxedStack(stackF(param(0) + 1));
+					o_KillStack(stackF(param(0) + 1));
 					js.push(`${idnt}                ${stackF(param(0) + 1)} = context.call(${stackF(param(0) + 1)}, ${stackF(param(0))}, [${pp.join(", ")}]);`)
 				}
 					break
@@ -1425,7 +1447,7 @@ export function compile(methodInfo: MethodInfo, sync = false): ICompilerProcess 
 					for (let j: number = 1; j <= param(0); j++)
 						pp.push(stackF(param(0) - j))
 
-					o_KillBoxedStack(stackF(param(0)));
+					o_KillStack(stackF(param(0)));
 					js.push(`${idnt}                ${stackF(param(0))} = context.construct(${stackF(param(0))}, [${pp.join(", ")}]);`)
 				}
 					break
@@ -1436,7 +1458,7 @@ export function compile(methodInfo: MethodInfo, sync = false): ICompilerProcess 
 					for (let j: number = 0; j <= param(0); j++)
 						pp.push(stackF(param(0) - j))
 
-					o_KillBoxedStack(stackF(param(0)));
+					o_KillStack(stackF(param(0)));
 
 					let obj = pp.shift();
 					if (abc.getMultiname(param(1)).name == "getDefinitionByName") {
@@ -1472,7 +1494,7 @@ export function compile(methodInfo: MethodInfo, sync = false): ICompilerProcess 
 					}
 					//js.push(`${idnt}                    temp = sec.box(${pp.shift()});`)
 		
-					o_KillBoxedStack(stackF(param(0)));
+					o_KillStack(stackF(param(0)));
 					js.push(`${idnt}                ${stackF(param(0))} = (typeof temp['$Bg${mn.name}'] === 'function')? temp['$Bg${mn.name}'](${pp.join(", ")}) : temp.axCallProperty(${getname(param(1))}, [${pp.join(", ")}], true);`)
 				}
 					break
@@ -1504,29 +1526,29 @@ export function compile(methodInfo: MethodInfo, sync = false): ICompilerProcess 
 					for (let j: number = 1; j <= param(0); j++)
 						pp.push(stackF(param(0) - j))
 
-					o_KillBoxedStack(stackF(param(0)));
+					o_KillStack(stackF(param(0)));
 					js.push(`${idnt}                ${stackF(param(0))} = sec.applyType(${stackF(param(0))}, [${pp.join(", ")}]);`)
 				}
 					break
 
 
 				case Bytecode.FINDPROPSTRICT:
-					o_KillBoxedStack(stackN);
+					o_KillStack(stackN);
 					js.push(`${idnt}                // ${abc.getMultiname(param(0))}`)
 					js.push(`${idnt}                ${stackN} = ${scope}.findScopeProperty(${getname(param(0))}, true, false);`)
 					break
 				case Bytecode.FINDPROPERTY:
-					o_KillBoxedStack(stackN);
+					o_KillStack(stackN);
 					js.push(`${idnt}                // ${abc.getMultiname(param(0))}`)
 					js.push(`${idnt}                ${stackN} = ${scope}.findScopeProperty(${getname(param(0))}, false, false);`)
 					break
 				case Bytecode.NEWFUNCTION:
-					o_KillBoxedStack(stackN);
+					o_KillStack(stackN);
 					js.push(`${idnt}                // ${abc.getMethodInfo(param(0))}`)
 					js.push(`${idnt}                ${stackN} = sec.createFunction(context.abc.getMethodInfo(${param(0)}), ${scope}, true);`)
 					break
 				case Bytecode.NEWCLASS:
-					o_KillBoxedStack(stackN);
+					o_KillStack(stackN);
 					js.push(`${idnt}                // ${abc.classes[param(0)]}`)
 					js.push(`${idnt}                ${stack0} = sec.createClass(context.abc.classes[${param(0)}], ${stack0}, ${scope});`)
 					break
@@ -1536,7 +1558,7 @@ export function compile(methodInfo: MethodInfo, sync = false): ICompilerProcess 
 					for (let j: number = 1; j <= param(0); j++)
 						pp.push(stackF(param(0) - j))
 
-					o_KillBoxedStack(stackF(param(0) - 1));
+					o_KillStack(stackF(param(0) - 1));
 					js.push(`${idnt}                ${stackF(param(0) - 1)} = sec.AXArray.axBox([${pp.join(", ")}]);`)
 				}
 					break
@@ -1547,17 +1569,17 @@ export function compile(methodInfo: MethodInfo, sync = false): ICompilerProcess 
 						js.push(`${idnt}                temp.axSetPublicProperty(${stackF(2 * param(0) - 2 * j + 1)}, ${stackF(2 * param(0) - 2 * j)});`)
 					}
 
-					o_KillBoxedStack(stackF(2 * param(0) - 1));
+					o_KillStack(stackF(2 * param(0) - 1));
 					js.push(`${idnt}                ${stackF(2 * param(0) - 1)} = temp;`)
 					js.push(`${idnt}                temp = undefined;`)
 
 					break
 				case Bytecode.NEWACTIVATION:
-					o_KillBoxedStack(stackN);
+					o_KillStack(stackN);
 					js.push(`${idnt}                ${stackN} = sec.createActivation(context.mi, ${scope});`)
 					break
 				case Bytecode.NEWCATCH:
-					o_KillBoxedStack(stackN);
+					o_KillStack(stackN);
 					js.push(`${idnt}                ${stackN} = sec.createCatch(context.mi.getBody().catchBlocks[${param(0)}], ${scope});`)
 					break
 				case Bytecode.CONSTRUCTSUPER: {
@@ -1575,7 +1597,7 @@ export function compile(methodInfo: MethodInfo, sync = false): ICompilerProcess 
 					for (let j: number = 1; j <= param(0); j++)
 						pp.push(stackF(param(0) - j))
 
-					o_KillBoxedStack(stackF(param(0)));
+					o_KillStack(stackF(param(0)));
 					js.push(`${idnt}                ${stackF(param(0))} = sec.box(${stackF(param(0))}).axCallSuper(${getname(param(1))}, context.savedScope, [${pp.join(", ")}]);`)
 				}
 					break
@@ -1587,10 +1609,10 @@ export function compile(methodInfo: MethodInfo, sync = false): ICompilerProcess 
 
 					var mn = abc.getMultiname(param(1));
 					if (mn.isRuntimeName() && mn.isRuntimeNamespace()) {
-						o_KillBoxedStack(stackF(param(0) + 2));
+						o_KillStack(stackF(param(0) + 2));
 						js.push(`${idnt}                    ${stackF(param(0) + 2)} = sec.box(${stackF(param(0) + 2)}).axGetSuper(context.runtimename(${getname(param(1))}, ${stackF(param(0))}, ${stackF(param(0) + 1)}), context.savedScope, [${pp.join(", ")}]);`)
 					} else {
-						o_KillBoxedStack(stackF(param(0) + 1));
+						o_KillStack(stackF(param(0) + 1));
 						js.push(`${idnt}                    ${stackF(param(0) + 1)} = sec.box(${stackF(param(0) + 1)}).axGetSuper(context.runtimename(${getname(param(1))}, ${stackF(param(0))}), context.savedScope, [${pp.join(", ")}]);`)
 					}
 				}
@@ -1610,13 +1632,13 @@ export function compile(methodInfo: MethodInfo, sync = false): ICompilerProcess 
 					for (let j: number = 1; j <= param(0); j++)
 						pp.push(stackF(param(0) - j))
 					
-					o_KillBoxedStack(stackF(param(0)));
+					o_KillStack(stackF(param(0)));
 					js.push(`${idnt}                ${stackF(param(0))} = context.constructprop(${getname(param(1))}, ${stackF(param(0))}, [${pp.join(", ")}]);`)
 				}
 					break
 				case Bytecode.GETPROPERTY:
 					var mn = abc.getMultiname(param(0));
-					o_KillBoxedStack(stack0);
+					o_KillStack(stack0);
 					js.push(`${idnt}                // ${mn}`)
 					js.push(`${idnt}                if (${stack0}.__fast__ || ${ UNSAFE_JIT && `typeof ${stack0}['axInitializer'] === 'undefined'`} ) {`)
 					js.push(`${idnt}                    ${stack0} = ${stack0}['${mn.name}'];`)
@@ -1637,10 +1659,10 @@ export function compile(methodInfo: MethodInfo, sync = false): ICompilerProcess 
 				case Bytecode.GETPROPERTY_DYN:
 					var mn = abc.getMultiname(param(0));
 					if (mn.isRuntimeName() && mn.isRuntimeNamespace()) {
-						o_KillBoxedStack(stack2);
+						o_KillStack(stack2);
 						js.push(`${idnt}                ${stack2} = context.getpropertydyn(context.runtimename(${getname(param(0))}, ${stack0}, ${stack1}), ${stack2});`)
 					} else {
-						o_KillBoxedStack(stack1);
+						o_KillStack(stack1);
 						js.push(`${idnt}                ${stack1} = context.getpropertydyn(context.runtimename(${getname(param(0))}, ${stack0}), ${stack1});`)
 					}
 					break
@@ -1662,31 +1684,31 @@ export function compile(methodInfo: MethodInfo, sync = false): ICompilerProcess 
 					}
 					break
 				case Bytecode.DELETEPROPERTY:
-					o_KillBoxedStack(stack0);
+					o_KillStack(stack0);
 					js.push(`${idnt}                // ${abc.getMultiname(param(0))}`)
 					js.push(`${idnt}                ${stack0} = context.deleteproperty(${getname(param(0))}, ${stack0});`)
 					break
 				case Bytecode.DELETEPROPERTY_DYN:
                     var mn = abc.getMultiname(param(0));
 					if (mn.isRuntimeName() && mn.isRuntimeNamespace()) {
-						o_KillBoxedStack(stack2);
+						o_KillStack(stack2);
 						js.push(`${idnt}                    ${stack2} = context.deleteproperty(context.runtimename(${getname(param(0))}, ${stack0}, ${stack1}), ${stack2});`)
 					} else {
-						o_KillBoxedStack(stack1);
+						o_KillStack(stack1);
 						js.push(`${idnt}                    ${stack1} = context.deleteproperty(context.runtimename(${getname(param(0))}, ${stack0}), ${stack1});`)
 					}
 					break
 				case Bytecode.GETSUPER:
-					o_KillBoxedStack(stack0);
+					o_KillStack(stack0);
 					js.push(`${idnt}                ${stack0} = sec.box(${stack0}).axGetSuper(${getname(param(0))}, context.savedScope);`)
 					break
 				case Bytecode.GETSUPER_DYN:
 					var mn = abc.getMultiname(param(0));
 					if (mn.isRuntimeName() && mn.isRuntimeNamespace()) {
-						o_KillBoxedStack(stack2);
+						o_KillStack(stack2);
 						js.push(`${idnt}                    ${stack2} = sec.box(${stack2}).axGetSuper(context.runtimename(${getname(param(0))}, ${stack0}, ${stack1}), context.savedScope);`)
 					} else {
-						o_KillBoxedStack(stack1);
+						o_KillStack(stack1);
 						js.push(`${idnt}                    ${stack1} = sec.box(${stack1}).axGetSuper(context.runtimename(${getname(param(0))}, ${stack0}), context.savedScope);`)
 					}
 					break
@@ -1702,7 +1724,7 @@ export function compile(methodInfo: MethodInfo, sync = false): ICompilerProcess 
 					}
 					break
 				case Bytecode.GETLEX:
-					o_KillBoxedStack(stackN);
+					o_KillStack(stackN);
 					var mn = abc.getMultiname(param(0))
 					js.push(`${idnt}                // ${mn}`)
 					js.push(`${idnt}                temp = ${scope}.findScopeProperty(${getname(param(0))}, true, false);`)
@@ -1718,7 +1740,7 @@ export function compile(methodInfo: MethodInfo, sync = false): ICompilerProcess 
 					js.push(`${idnt}                return;`)
 					break
 				case Bytecode.COERCE:
-					o_KillBoxedStack(stack0);
+					o_KillStack(stack0);
 					if(lastZ && lastZ.name === Bytecode.PUSHNULL){
 						js.push(`//${idnt}              Skip coerce for nullable`);
 						js.push(`//${idnt}              ${stack0} = ${scope}.getScopeProperty(${getname(param(0))}, true, false).axCoerce(${stack0});`)		
@@ -1736,7 +1758,7 @@ export function compile(methodInfo: MethodInfo, sync = false): ICompilerProcess 
 						break;						
 					}
 
-					o_KillBoxedStack(stack0);
+					o_KillStack(stack0);
 					js.push(`${idnt}                ${stack0} = context.axCoerceString(${stack0});`)
 					break
 				case Bytecode.CONVERT_I:
@@ -1752,14 +1774,14 @@ export function compile(methodInfo: MethodInfo, sync = false): ICompilerProcess 
 					js.push(`${idnt}                ${stack0} >>>= 0;`)
 					break
 				case Bytecode.CONVERT_S:
-					o_KillBoxedStack(stack0);
+					o_KillStack(stack0);
 					js.push(`${idnt}                if (typeof ${stack0} !== 'string') ${stack0} = ${stack0} + '';`)
 					break
 				case Bytecode.CONVERT_O:
 					js.push(`${idnt}                ;`)
 					break
 				case Bytecode.CHECKFILTER:
-					o_KillBoxedStack(stack0);
+					o_KillStack(stack0);
 					js.push(`${idnt}                ${stack0} = context.axCheckFilter(sec, ${stack0});`)
 					break
 				case Bytecode.KILL:
