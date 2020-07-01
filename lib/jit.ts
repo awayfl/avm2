@@ -1489,7 +1489,13 @@ export function compile(methodInfo: MethodInfo, sync = false): ICompilerProcess 
 					js.push(`${idnt}                if (${stack0}.__fast__ || ${ UNSAFE_JIT && `typeof ${stack0}['axInitializer'] === 'undefined'`} ) {`)
 					js.push(`${idnt}                    ${stack0} = ${stack0}['${mn.name}'];`)
 					js.push(`${idnt}                } else {`)
-					js.push(`${idnt}                    temp = sec.box(${stack0});`)
+					
+					if(UNSAFE_NOT_BOX_OBJ) {
+						js.push(`${idnt}                    temp = typeof ${stack0} === 'object' ? ${stack0} : sec.box(${stack0});`)
+					} else {
+						js.push(`${idnt}                    temp = sec.box(${stack0});`)				
+					}
+
 					js.push(`${idnt}                    ${stack0} = temp['$Bg${mn.name}'];`)
 					js.push(`${idnt}                    if (${stack0} === undefined || typeof ${stack0} === 'function') {`)
 					js.push(`${idnt}                        ${stack0} = temp.axGetProperty(${getname(param(0))});`)
