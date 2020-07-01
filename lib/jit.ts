@@ -80,6 +80,11 @@ const UNSAFE_STACK = false;
 // allow skip boxing for object
 const UNSAFE_NOT_BOX_OBJ = true;
 
+// optimising boxing to store boxes obj in variable to prevent reboxing
+const UNSAFE_OPTIMISE_BOX = true;
+// optimising get scoping object for prevent lookuping
+const UNSAFE_OPTIMISE_GET_SCOPED = true;
+
 const USE_EVAL = false;
 
 
@@ -938,6 +943,18 @@ export function compile(methodInfo: MethodInfo, sync = false): ICompilerProcess 
 
 	if (temp)
 		js0.push("    let temp = undefined;")
+	
+	if (UNSAFE_OPTIMISE_BOX) {
+		js0.push("    let o_boxed = undefined;")
+	}
+
+	let o_lastBoxedStack: string = undefined;
+
+	if (UNSAFE_OPTIMISE_GET_SCOPED) {
+		js0.push("    let o_scoped = undefined;")
+	}
+
+	let o_lastUsedScope: number = -1;
 
 	js0.push("    let tr = undefined;")
 
@@ -956,7 +973,6 @@ export function compile(methodInfo: MethodInfo, sync = false): ICompilerProcess 
 
 
 	js0.push("    let sec = context.sec;")
-
 
 	js.push("    let p = 0;")
 	js.push("    while (true) {")
@@ -1024,7 +1040,6 @@ export function compile(methodInfo: MethodInfo, sync = false): ICompilerProcess 
 				case Bytecode.GETLOCAL:
 					localIndex = param(0);
 					optionalLocalVars[localIndex] && (optionalLocalVars[localIndex].read ++);
-
 					js.push(`${idnt}                ${stackN} = ${local(localIndex)};`)
 					break
 				case Bytecode.SETLOCAL:
@@ -1042,9 +1057,27 @@ export function compile(methodInfo: MethodInfo, sync = false): ICompilerProcess 
 					break
 
 				case Bytecode.GETSLOT:
+					if(UNSAFE_OPTIMISE_BOX) {
+						if(o_lastBoxedStack !== stack0) {
+							o_lastBoxedStack = stack0;
+							js.push(`${idnt}                o_boxed = sec.box(${stack0});`)
+						}
+
+						js.push(`${idnt}                ${stack0} = /*sec.box(${stack0})*/o_boxed.axGetSlot(${param(0)});`)
+						break;
+					}
 					js.push(`${idnt}                ${stack0} = sec.box(${stack0}).axGetSlot(${param(0)});`)
 					break
 				case Bytecode.SETSLOT:
+					if(UNSAFE_OPTIMISE_BOX) {
+						if(o_lastBoxedStack !== stack1) {
+							o_lastBoxedStack = stack1;
+							js.push(`${idnt}                o_boxed = sec.box(${stack1});`)
+						}
+
+						js.push(`${idnt}                /*sec.box(${stack1})*/o_boxed.axSetSlot(${param(0)}, ${stack0});`)
+						break;
+					}
 					js.push(`${idnt}                sec.box(${stack1}).axSetSlot(${param(0)}, ${stack0});`)
 					break
 
@@ -1068,6 +1101,15 @@ export function compile(methodInfo: MethodInfo, sync = false): ICompilerProcess 
 					js.push(`${idnt}                ${scope} = undefined;`)
 					break
 				case Bytecode.GETSCOPEOBJECT:
+					if(UNSAFE_OPTIMISE_GET_SCOPED) {
+						if(o_lastUsedScope === param(0)) {
+							js.push(`${idnt}                ${stackN} = o_scoped;//scope${param(0)}.object;`)
+						} else {
+							js.push(`${idnt}                ${stackN} = o_scoped = scope${param(0)}.object;`)
+							o_lastUsedScope = param(0);
+						}
+						break;
+					}
 					js.push(`${idnt}                ${stackN} = scope${param(0)}.object;`)
 					break
 
