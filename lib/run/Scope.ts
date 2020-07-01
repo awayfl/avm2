@@ -21,6 +21,8 @@ export class Scope {
     constructor(parent: Scope, object: AXObject, isWith: boolean = false) {
       Scope.ID ++;
 
+      //@ts-ignore
+      window.SCOPES = Scope.ID;
       this.init(parent, object, isWith);
     }
 
@@ -31,21 +33,27 @@ export class Scope {
       this.isWith = isWith;
       this.cache = {};
       this.defaultNamespace = null;
-      
-      object["__scope__"] = this;
     }
 
-    extend(object: AXObject) {
+    extend(object: AXObject, id: number = 0) {
         if (object === this.object)
             return this
 
-        let c = object["__scope__"]
+        let c = object["__scopes__"]
         
-        if (c && c.parent == this){
-                return c
+        if (c && c[id] && c[id].parent == this) {
+                return c[id];
         }
 
-        return new Scope(this, object, false)
+        let scope = new Scope(this, object, false);
+        
+        if(!object["__scopes__"]) {
+          object["__scopes__"] = {};
+        }
+
+        object["__scopes__"][id] = scope;
+
+        return scope;
     }
     
     public findDepth(object: any): number {

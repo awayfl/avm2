@@ -84,6 +84,7 @@ const USE_EVAL = false;
 
 
 let SCRIPT_ID = 0;
+let SCOPE_ID = 0;
 
 export interface ICompilerProcess {
 	error?: string;
@@ -1051,11 +1052,12 @@ export function compile(methodInfo: MethodInfo, sync = false): ICompilerProcess 
 					js.push(`${idnt}                ${stackN} = context.savedScope.global.object;`)
 					break
 				case Bytecode.PUSHSCOPE:
+					SCOPE_ID ++;
 					// js.push(`${idnt}                ${scopeN} = ${scope}.extend(sec.box(${stack0}));`)
 					if(UNSAFE_NOT_BOX_OBJ){
-						js.push(`${idnt}                ${scopeN} = ${scope}.extend(${stack0});`)
+						js.push(`${idnt}                ${scopeN} = ${scope}.extend(${stack0}, ${SCOPE_ID});`)
 					} else {
-						js.push(`${idnt}                ${scopeN} = ${scope}.extend(sec.box(${stack0}));`)
+						js.push(`${idnt}                ${scopeN} = ${scope}.extend(sec.box(${stack0}), , ${SCOPE_ID});`)
 					}
 
 					break
