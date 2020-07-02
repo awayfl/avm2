@@ -1135,7 +1135,7 @@ export function compile(methodInfo: MethodInfo, sync = false): ICompilerProcess 
 					if(UNSAFE_NOT_BOX_OBJ){
 						js.push(`${idnt}                ${scopeN} = ${scope}.extend(${stack0}, ${SCOPE_ID});`)
 					} else {
-						js.push(`${idnt}                ${scopeN} = ${scope}.extend(sec.box(${stack0}), , ${SCOPE_ID});`)
+						js.push(`${idnt}                ${scopeN} = ${scope}.extend(sec.box(${stack0}), ${SCOPE_ID});`)
 					}
 
 					break
@@ -1471,7 +1471,7 @@ export function compile(methodInfo: MethodInfo, sync = false): ICompilerProcess 
 						js.push(`${idnt}                // ${mn}`)
 
 						if(UNSAFE_NOT_BOX_OBJ){
-							js.push(`${idnt}                    temp = typeof ${obj} === 'object' ? ${obj} : sec.box(${obj});`)
+							js.push(`${idnt}                    temp = typeof ${obj} === 'object' && (${obj}.constructor != Array) ? ${obj} : sec.box(${obj});`)
 						} else {
 							js.push(`${idnt}                    temp = sec.box(${obj});`)
 						}
@@ -1488,7 +1488,7 @@ export function compile(methodInfo: MethodInfo, sync = false): ICompilerProcess 
 
 					const obj = pp.shift();
 					if(UNSAFE_NOT_BOX_OBJ){
-						js.push(`${idnt}                    temp = typeof ${obj} === 'object' ? ${obj} : sec.box(${obj});`)
+						js.push(`${idnt}                    temp = typeof ${obj} === 'object' && (${obj}.constructor != Array) ? ${obj} : sec.box(${obj});`)
 					} else {
 						js.push(`${idnt}                    temp = sec.box(${obj});`)
 					}
@@ -1511,7 +1511,7 @@ export function compile(methodInfo: MethodInfo, sync = false): ICompilerProcess 
 					js.push(`${idnt}                } else {`)
 					
 					if(UNSAFE_NOT_BOX_OBJ){
-						js.push(`${idnt}                    temp = typeof ${obj} === 'object' ? ${obj} : sec.box(${obj});`)
+						js.push(`${idnt}                    temp = typeof ${obj} === 'object' && (${obj}.constructor != Array) ? ${obj} : sec.box(${obj});`)
 					} else {
 						js.push(`${idnt}                    temp = sec.box(${obj});`)
 					}
@@ -1645,7 +1645,7 @@ export function compile(methodInfo: MethodInfo, sync = false): ICompilerProcess 
 					js.push(`${idnt}                } else {`)
 					
 					if(UNSAFE_NOT_BOX_OBJ) {
-						js.push(`${idnt}                    temp = typeof ${stack0} === 'object' ? ${stack0} : sec.box(${stack0});`)
+						js.push(`${idnt}                    temp = typeof ${stack0} === 'object' && (${stack0}.constructor != Array) ? ${stack0} : sec.box(${stack0});`)
 					} else {
 						js.push(`${idnt}                    temp = sec.box(${stack0});`)				
 					}
