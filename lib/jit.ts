@@ -1609,6 +1609,14 @@ export function compile(methodInfo: MethodInfo, sync = false): ICompilerProcess 
 
 		}
 	}
+	if(openTryCatchBlockGroups.length>0){		
+		var lastCatchBlocks = openTryCatchBlockGroups.pop();
+		if (lastCatchBlocks) {
+			js.push(`            ${idnt}}`)
+			createCatchConditions(lastCatchBlocks, idnt);
+			idnt = idnt.slice(0, idnt.length - 4);
+		}
+	}
 
 	js.push("        }")
 	js.push("    }")
