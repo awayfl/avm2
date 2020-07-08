@@ -745,38 +745,56 @@ export function compile(methodInfo: MethodInfo, sync = false): ICompilerProcess 
 		// collect try-catch blocks sorted by their end-position	
 		mapTryCatchBlocksByEnd = {};
 		for (let i: number = 0; i < body.catchBlocks.length; i++) {
+			const block = body.catchBlocks[i];
 			
 			let stack = 0;
-			let start = 0;
-			let end = 0;
-			//let scope=0;
+			let start = -1;
+			let end = -1;
+		    let scope = 0;
+
 			for (let c: number = 0; c < q.length; c++) {
-				if (q[c].position >= body.catchBlocks[i].start) {
-					stack = q[c].stack + q[c].delta;
-					start=q[c].position;
+				const pos = q[c].position;
+				
+				if ( pos > block.start) {
+					start = pos;
+					break;
+				}
+				
+				// propogade it
+				stack = q[c].stack;
+				scope = q[c].scope;
+			}
+
+			for (let c: number = q.length - 1; c >=0; c--) {
+				const pos = q[c].position;
+
+				if (pos <= block.end) {
+					end = pos;
 					break;
 				}
 			}
-			for (let c: number = q.length-1; c >=0; c--) {
-				if (q[c].position <= body.catchBlocks[i].end) {
-					end=q[c].position;
-					break;
-				}
-			}
+
 			if (!mapTryCatchBlocksByStart[start])
 				mapTryCatchBlocksByStart[start] = [];
-			mapTryCatchBlocksByStart[start].push(body.catchBlocks[i]);
+			mapTryCatchBlocksByStart[start].push(block);
 
 			if (!mapTryCatchBlocksByEnd[end])
 				mapTryCatchBlocksByEnd[end] = [];
-			mapTryCatchBlocksByEnd[end].push(body.catchBlocks[i]);
+			mapTryCatchBlocksByEnd[end].push(block);
 
 			// make sure that the target-instruction for the catch is propagated and set as target
 			// using the stack value of the start-instruction does seem to do the trick
+			// and this broadcast bug, if breakpoints is exist
 
-			propagate(body.catchBlocks[i].target, stack)
-			propagateScope(body.catchBlocks[i].target, 0)
-			targets.push(body.catchBlocks[i].target)
+			
+			// IMPORTANT! Catch block push error on top of stack
+			// this is why stack should start from 1 instead of 0
+
+			propagate(block.target, stack + 1);
+
+			// IMPORTANT! SCOPE SHOULD BE PROPOGADED TOO
+			propagateScope(block.target, scope);
+			targets.push(block.target)
 		}
 	}
 	//	creates a catch condition for a list of ExceptionInfo
@@ -789,7 +807,7 @@ export function compile(methodInfo: MethodInfo, sync = false): ICompilerProcess 
 		js.push(`                ${indent}// we convert it to a ASError, so that avm2 can still catch it`);
 		js.push(`                ${indent}if (e instanceof TypeError)`);
 		js.push(`                ${indent}    e=context.sec.createError("TypeError", {code:1065, message:e.message})`);
-		js.push(`                ${indent}stack0=e;`);
+		js.push(`                ${indent}stack0 = e;`);
 		for (var i = 0; i < catchBlocks.length; i++) {
 			var typeName = catchBlocks[i].getType();
 			if (!typeName) {
