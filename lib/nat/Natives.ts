@@ -23,6 +23,7 @@ export var Natives = {
 			message=arguments[1];
 		}
 		else{
+			message = "";
 			for(let i=1; i<arguments.length;i++){
 				message+=arguments[i];
 				if(i!=arguments.length-1){
