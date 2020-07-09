@@ -55,6 +55,6 @@ export class ASMethodClosure extends ASFunction {
     }
   
     apply(ignoredThisArg: any, argArray?: any): any {
-      return this.value.apply(this.receiver, argArray ? argArray.value : undefined);
+      return this.value.apply(this.receiver, (argArray && argArray.value) ? argArray.value : argArray);
     }
   }
