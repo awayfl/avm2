@@ -19,6 +19,10 @@ export class ASMethodClosure extends ASFunction {
       closure.receiver = <any>receiver;
       closure.value = method;
       closure.methodInfo = method.methodInfo;
+
+      closure.axCall = closure.call;
+      closure.axApply = closure.apply;
+
       return closure;
     }
   
@@ -43,14 +47,14 @@ export class ASMethodClosure extends ASFunction {
       const args = arguments;
       const len = args.length;
 
-      if(len > 1 && len <= 6 ) {
+      if(len <= 6 ) {
         return this.value.call(this.receiver, args[1], args[2], args[3], args[4], args[5])
       } else {
         return this.value.apply(this.receiver, sliceArguments(arguments, 1));
       }
     }
   
-    apply(ignoredThisArg: any, argArray?: ASArray): any {
+    apply(ignoredThisArg: any, argArray?: any): any {
       return this.value.apply(this.receiver, argArray ? argArray.value : undefined);
     }
   }
