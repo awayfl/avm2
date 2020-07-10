@@ -1282,15 +1282,7 @@ export function compile(methodInfo: MethodInfo, sync = false): ICompilerProcess 
 					js.push(`${idnt}                ${stack0} = -${stack0};`)
 					break
 				case Bytecode.TYPEOF:
-					js.push(`${idnt}                if (${stack0}) {`)
-					js.push(`${idnt}                    if (${stack0}.value) {`)
-					js.push(`${idnt}                        return typeof ${stack0}.value;`)
-					js.push(`${idnt}                    }`)
-					js.push(`${idnt}                    if (sec.AXXML.dPrototype.isPrototypeOf(${stack0}) || sec.AXXMLList.dPrototype.isPrototypeOf(${stack0})) {`)
-					js.push(`${idnt}                        return 'xml';`)
-					js.push(`${idnt}                    }`)
-					js.push(`${idnt}                }`)
-					js.push(`${idnt}                return typeof ${stack0};`)
+					js.push(`${idnt}                ${stack0} = typeof ${stack0} === 'undefined' ? 'undefined' : context.typeof(${stack0});`)
 					break;
 				case Bytecode.INSTANCEOF:
 					js.push(`${idnt}                ${stack1} = ${stack0}.axIsInstanceOf(${stack1});`)
@@ -1698,6 +1690,39 @@ export class Context {
 		this.names = names;
 		this.emptyArray=Object.create(this.sec.AXArray.tPrototype);
 		this.emptyArray.value = [];
+	}
+
+	typeof(object: any): string {
+		const type = typeof object;
+		const sec = this.sec;
+
+		switch(type) {
+			case 'boolean':
+				return 'Boolean';
+			case 'object':
+				if(object === null) {
+					return 'object';
+				}
+
+				if(sec.AXXMLList.dPrototype.isPrototypeOf(object) || sec.AXXML.dPrototype.isPrototypeOf(object)) {
+					return 'xml';
+				}
+
+				if(sec.AXNumber.dPrototype.isPrototypeOf(object)) {
+					return 'number';
+				}
+
+				if(sec.AXBoolean.dPrototype.isPrototypeOf(object)) {
+					// what???. 
+					return 'Boolean';
+				}
+
+				if(sec.AXString.dPrototype.isPrototypeOf(object)) {
+					return 'string';
+				}
+		}
+
+		return type;
 	}
 
 	call(value, obj, pp): any {
