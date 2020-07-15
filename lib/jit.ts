@@ -1334,6 +1334,7 @@ export function compile(methodInfo: MethodInfo, sync = false): ICompilerProcess 
 					}
 					break
 				case Bytecode.CALLPROPLEX: {
+					var mn = abc.getMultiname(param(1));
 					let pp = []
 
 					for (let j: number = 0; j <= param(0); j++)
