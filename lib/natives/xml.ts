@@ -2798,13 +2798,14 @@ export class ASXML extends ASObject implements XMLType {
       }
       return false;
     }
-    for (var i = 0; i < this._children.length; i++) {
+    for (var i = 0; this._children && i < this._children.length; i++) {
       var v = this._children[i];
       if ((anyName || v._kind === ASXMLKind.Element && v._name.name === name.name) &&
           (anyNamespace || v._kind === ASXMLKind.Element && v._name.matches(name))) {
         return true;
       }
     }
+    return false;
   }
 
   deleteProperty(mn: Multiname) {
