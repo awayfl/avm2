@@ -1302,16 +1302,14 @@ export function compile(methodInfo: MethodInfo, sync = false): ICompilerProcess 
 					js.push(`${idnt}                ${stack1} = ${stack0}.axIsInstanceOf(${stack1});`)
 					break
 				case Bytecode.ISTYPE:
-					js.push(`${idnt}                tr = ${scope}.getScopeProperty(${getname(param(0))}, true, false);`)
-					js.push(`${idnt}                ${stack0} = tr.axIsType(${stack0});`)
-					
+					js.push(`${idnt}                ${stack0} = ${scope}.getScopeProperty(${getname(param(0))}, true, false).axIsType(${stack0});`)
+
 					break
 			case Bytecode.ISTYPELATE:
 					js.push(`${idnt}                ${stack1} = ${stack0}.axIsType(${stack1});`)
 					break
 				case Bytecode.ASTYPE:
-					js.push(`${idnt}                tr = ${scope}.getScopeProperty(${getname(param(0))}, true, false)`)
-					js.push(`${idnt}                ${stack0} = tr.axAsType(${stack0});`)
+					js.push(`${idnt}                ${stack0} = ${scope}.getScopeProperty(${getname(param(0))}, true, false).axAsType(${stack0});`)
 					break;
 
 				case Bytecode.ASTYPELATE:
