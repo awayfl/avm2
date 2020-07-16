@@ -480,15 +480,20 @@ export function compile(methodInfo: MethodInfo, sync = false): ICompilerProcess 
 			case Bytecode.INSTANCEOF:
 				q.push(new Instruction(oldi, z, [], -1))
 				break
-
+			case Bytecode.ISTYPE:				
+				var [index, dyn, d] = mn()
+				q.push(new Instruction(oldi, z, [index], 0 + d))
+				break
 			case Bytecode.ISTYPELATE:
 				q.push(new Instruction(oldi, z, [], -1))
 				break
 			case Bytecode.ASTYPELATE:
 				q.push(new Instruction(oldi, z, [], -1))
 				break
-
-
+			case Bytecode.ASTYPE:				
+				var [index, dyn, d] = mn()
+				q.push(new Instruction(oldi, z, [index], 0 + d))
+				break
 			case Bytecode.CALL:
 				var argnum = u30()
 				q.push(new Instruction(oldi, z, [argnum], -argnum - 1))
@@ -668,6 +673,15 @@ export function compile(methodInfo: MethodInfo, sync = false): ICompilerProcess 
 				q.push(new Instruction(oldi, z + dyn, [index], 1 + d))
 				break
 
+			//http://docs.redtamarin.com/0.4.1T124/avm2/intrinsics/memory/package.html#si32()
+			case Bytecode.SI8:
+			case Bytecode.SI16:
+			case Bytecode.SI32:
+			case Bytecode.SF32:
+			case Bytecode.SF64:
+				q.push(new Instruction(oldi, z, [], -2))
+				break;
+			
 			default:
 				//console.log(`UNKNOWN BYTECODE ${code[i - 1].toString(16)} ${BytecodeName[code[i - 1]]} at ${oldi} (method:`, methodInfo.index());
 				return { error: `UNKNOWN BYTECODE ${code[i - 1].toString(16)} ${BytecodeName[code[i - 1]]} at ${oldi}` };
@@ -1287,9 +1301,19 @@ export function compile(methodInfo: MethodInfo, sync = false): ICompilerProcess 
 				case Bytecode.INSTANCEOF:
 					js.push(`${idnt}                ${stack1} = ${stack0}.axIsInstanceOf(${stack1});`)
 					break
-				case Bytecode.ISTYPELATE:
+				case Bytecode.ISTYPE:
+					js.push(`${idnt}                tr = ${scope}.getScopeProperty(${getname(param(0))}, true, false);`)
+					js.push(`${idnt}                ${stack0} = tr.axIsType(${stack0});`)
+					
+					break
+			case Bytecode.ISTYPELATE:
 					js.push(`${idnt}                ${stack1} = ${stack0}.axIsType(${stack1});`)
 					break
+				case Bytecode.ASTYPE:
+					js.push(`${idnt}                tr = ${scope}.getScopeProperty(${getname(param(0))}, true, false)`)
+					js.push(`${idnt}                ${stack0} = tr.axAsType(${stack0});`)
+					break;
+
 				case Bytecode.ASTYPELATE:
 					js.push(`${idnt}                ${stack1} = ${stack0}.axAsType(${stack1});`)
 					break
@@ -1583,7 +1607,32 @@ export function compile(methodInfo: MethodInfo, sync = false): ICompilerProcess 
 				case Bytecode.KILL:
 					js.push(`${idnt}                ${local(param(0))} = undefined;`)
 					break
-					
+				
+				//http://docs.redtamarin.com/0.4.1T124/avm2/intrinsics/memory/package.html#si32()
+				case Bytecode.SI8:
+					console.warn(`[JIT] Access to Domain Memory not implemented. Intsr: ${Bytecode[z.name]}');`);
+					js.push(`${idnt}                // possible implementation:`);
+					js.push(`${idnt}                // sec.domainMemeory.setInt8(${stack0}, ${stack1})`);
+					break;
+				case Bytecode.SI16:
+					console.warn(`[JIT] Access to Domain Memory not implemented. Intsr: ${Bytecode[z.name]}');`);
+					js.push(`${idnt}                // possible implementation:`);
+					js.push(`${idnt}                // sec.domainMemeory.setInt16(${stack0}, ${stack1}, true);`);
+				case Bytecode.SI32:
+					console.warn(`[JIT] Access to Domain Memory not implemented. Intsr: ${Bytecode[z.name]}');`);
+					js.push(`${idnt}                // possible implementation:`);
+					js.push(`${idnt}                // sec.domainMemeory.setInt32(${stack0}, ${stack1}, true);`);
+				case Bytecode.SF32:
+					console.warn(`[JIT] Access to Domain Memory not implemented. Intsr: ${Bytecode[z.name]}');`);
+					js.push(`${idnt}                // possible implementation:`);
+					js.push(`${idnt}                // sec.domainMemeory.setFloat32(${stack0}, ${stack1}, true);`);
+
+				case Bytecode.SF64:
+					console.warn(`[JIT] Access to Domain Memory not implemented. Intsr: ${Bytecode[z.name]}');`);
+					js.push(`${idnt}                // possible implementation:`);
+					js.push(`${idnt}                // sec.domainMemeory.setFloat64(${stack0}, ${stack1}, true);`);
+					break;
+				
 				default:
 					js.push(`${idnt}                //unknown instruction ${BytecodeName[q[i].name]}`)
 					//console.log(`unknown instruction ${BytecodeName[q[i].name]} (method N${methodInfo.index()})`)
