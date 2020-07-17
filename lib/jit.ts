@@ -68,6 +68,13 @@ class Instruction {
 	}
 }
 
+export const enum OPT_FLAGS {
+	USE_ES_PARAMS = 0x1, // use es7 style of compiled function to avoid use arguments
+	USE_EVAL = 0x2,  // use eval instead of new Function
+}
+
+const DEFAULT_OPT = OPT_FLAGS.USE_EVAL | OPT_FLAGS.USE_ES_PARAMS;
+
 // allow set to plain object in setproperty when it not AXClass
 const UNSAFE_SET = false;
 // allow unsafe calls and property gets from objects
@@ -75,8 +82,6 @@ const UNSAFE_JIT = false;
 
 // allow use negate stack pointer (avoid stack underrun)
 const UNSAFE_STACK = false;
-
-const USE_EVAL = false;
 
 let SCRIPT_ID = 0;
 
@@ -88,7 +93,7 @@ export interface ICompilerProcess {
 	names?: Multiname[];
 }
 
-export function compile(methodInfo: MethodInfo, sync = false): ICompilerProcess {
+export function compile(methodInfo: MethodInfo, optimise: OPT_FLAGS = DEFAULT_OPT): ICompilerProcess {
 
 	let abc = methodInfo.abc
 	let code = methodInfo.getBody().code
@@ -926,31 +931,72 @@ export function compile(methodInfo: MethodInfo, sync = false): ICompilerProcess 
 	let params = methodInfo.parameters
 
 	const funcName = (methodInfo.getName()).replace(/([^a-z0-9]+)/gi, "_");
-	const underrun = "[stack underrun]"
+	const underrun = "[stack underrun]";
+	let paramsShift = 0;
 
-	js0.push("return function compiled_" + funcName + "() {")
+	if(optimise & OPT_FLAGS.USE_ES_PARAMS) {
+		const args = [];		
+		
+		for (let i = 0; i < params.length; i++) {
+			let p = params[i];
+			let arg = "local" + (i + 1);
 
-	for (let i: number = 0; i < params.length; i++)
-		if (params[i].hasOptionalValue()) {
-			js0.push("    let argnum = arguments.length;")
-			break
+			if (p.hasOptionalValue()){
+				switch (p.optionalValueKind) {
+					case CONSTANT.Utf8:
+						arg += ` = '${abc.getString(p.optionalValueIndex)}'`;
+						break
+					default:
+						arg += ` = ${p.getOptionalValue()}`
+				}
+			}
+
+			args.push(arg);
 		}
 
-	js0.push("    let local0 = this === context.jsGlobal ? context.savedScope.global.object : this;")
+		if(methodInfo.needsRest()) {
+			args.push("...args");
+		}
 
-	for (let i: number = 0; i < params.length; i++) {
-		let p = params[i]
-		js0.push(`    let local${(i + 1)} = arguments[${i}];`)
+		js0.push(`return function compiled_${funcName}(${args.join(', ')}) {`);
+		js0.push("    let local0 = this === context.jsGlobal ? context.savedScope.global.object : this;")
 
-		if (params[i].hasOptionalValue())
-			switch (p.optionalValueKind) {
-				case CONSTANT.Utf8:
-					js0.push(`    if (argnum <= ${i}) local${(i + 1)} = context.abc.getString(${p.optionalValueIndex});`)
-					break
-				default:
-					js0.push(`    if (argnum <= ${i}) local${(i + 1)} = ${p.getOptionalValue()};`)
-					break
+		if(methodInfo.needsRest()) {
+			js0.push(`    let local${params.length + 1} = context.sec.createArrayUnsafe(args);`);
+			paramsShift += 1;
+		}
+
+		if(methodInfo.needsArguments()) {
+			js0.push(`    let local${params.length + 1} = context.sec.createArrayUnsafe(Array.from(arguments));`);
+			paramsShift += 1;
+		}
+	} 
+	else 
+	{	
+		js0.push("return function compiled_" + funcName + "() {")
+
+		for (let i: number = 0; i < params.length; i++)
+			if (params[i].hasOptionalValue()) {
+				js0.push("    let argnum = arguments.length;")
+				break
 			}
+
+		js0.push("    let local0 = this === context.jsGlobal ? context.savedScope.global.object : this;")
+
+		for (let i: number = 0; i < params.length; i++) {
+			let p = params[i]
+			js0.push(`    let local${(i + 1)} = arguments[${i}];`)
+
+			if (params[i].hasOptionalValue())
+				switch (p.optionalValueKind) {
+					case CONSTANT.Utf8:
+						js0.push(`    if (argnum <= ${i}) local${(i + 1)} = context.abc.getString(${p.optionalValueIndex});`)
+						break
+					default:
+						js0.push(`    if (argnum <= ${i}) local${(i + 1)} = ${p.getOptionalValue()};`)
+						break
+				}
+		}
 	}
 
 	const LOCALS_POS = js0.length;
@@ -959,7 +1005,7 @@ export function compile(methodInfo: MethodInfo, sync = false): ICompilerProcess 
 
 	const optionalLocalVars: Array<{index: number, die: boolean, read: number, write: 0, isArgumentList: boolean}> = [];
 
-	for (let i: number = params.length + 1; i <= maxlocal; i++) {
+	for (let i: number = params.length + 1 + paramsShift; i <= maxlocal; i++) {
 		optionalLocalVars[i] = {
 			index: i,
 			isArgumentList: i === params.length + 1,
@@ -970,10 +1016,10 @@ export function compile(methodInfo: MethodInfo, sync = false): ICompilerProcess 
 		//js0.push(`    let local${i} = ${((i == params.length + 1) ? "context.createArrayUnsafe(Array.from(arguments))" : "undefined")};`);
 	}
 
-	for (let i = minstack; i <= maxstack; i++)
+	for (let i = minstack; i < maxstack; i++)
 		js0.push(`    let stack${i - minstack} = undefined;`)
 
-	for (let i: number = 0; i <= maxscope; i++)
+	for (let i: number = 0; i < maxscope; i++)
 		js0.push(`    let scope${i} = undefined;`)
 
 	if (temp)
@@ -1719,9 +1765,11 @@ export function compile(methodInfo: MethodInfo, sync = false): ICompilerProcess 
 		}
 		// todo: this is not 100% correct yet:
 		locals.push(`    let local${l.index} =  undefined`);
-		if(l.index==params.length+1 && !l.die){
-			locals.push(`    if(arguments && arguments.length) { local${l.index} = context.sec.createArrayUnsafe(Array.from(arguments).slice(${params.length})); }`);
-			locals.push(`    else { local${l.index} = context.emptyArray; }`);
+		if(!(optimise & OPT_FLAGS.USE_ES_PARAMS)) {
+			if(l.index==params.length+1 && !l.die){
+				locals.push(`    if(arguments && arguments.length) { local${l.index} = context.sec.createArrayUnsafe(Array.from(arguments).slice(${params.length})); }`);
+				locals.push(`    else { local${l.index} = context.emptyArray; }`);
+			}
 		}
 	}
 
@@ -1733,7 +1781,7 @@ export function compile(methodInfo: MethodInfo, sync = false): ICompilerProcess 
 	const scriptPrefix = "// (#" + methodInfo.index() + ") --- " + methodInfo + "\n";
 
 	let compiled;
-	if (USE_EVAL) {
+	if (optimise & OPT_FLAGS.USE_EVAL) {
 		w = scriptPrefix + "(function(context) {\n" + w + "\n})";
 		compiled = eval(w);
 
