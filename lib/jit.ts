@@ -70,11 +70,11 @@ class Instruction {
 
 export const enum OPT_FLAGS {
 	USE_ES_PARAMS = 0x1, // use es7 style of compiled function to avoid use arguments
-	USE_NEW_FUCTION = 0x2,  // use eval instead of new Function
-
+	USE_NEW_FUCTION = 0x2, // use eval instead of new Function
+	SKIP_NULL_COERCE = 0x4, // skip coerce for nulled constant objects
 }
 
-const DEFAULT_OPT = OPT_FLAGS.USE_NEW_FUCTION | OPT_FLAGS.USE_ES_PARAMS;
+const DEFAULT_OPT = OPT_FLAGS.USE_NEW_FUCTION | OPT_FLAGS.USE_ES_PARAMS | OPT_FLAGS.SKIP_NULL_COERCE;
 
 // allow set to plain object in setproperty when it not AXClass
 const UNSAFE_SET = false;
@@ -1055,10 +1055,11 @@ export function compile(methodInfo: MethodInfo, optimise: OPT_FLAGS = DEFAULT_OP
 	js.push("        switch (p) {")
 
 	let currentCatchBlocks: ExceptionInfo[];
-
+	let lastZ: Instruction;
+	let z: Instruction;
 	for (let i: number = 0; i < q.length; i++) {
-		let z = q[i]
-
+		z && (lastZ = z);
+		z = q[i];
 
 		if (targets.indexOf(z.position) >= 0) {
 
@@ -1639,12 +1640,20 @@ export function compile(methodInfo: MethodInfo, optimise: OPT_FLAGS = DEFAULT_OP
 					js.push(`${idnt}                return;`)
 					break
 				case Bytecode.COERCE:
+					if(optimise & OPT_FLAGS.SKIP_NULL_COERCE && (lastZ.name === Bytecode.PUSHNULL || lastZ.name === Bytecode.PUSHUNDEFINED)) {
+						js.push(`${idnt}                // SKIP_NULL_COERCE`);
+						break;
+					}
 					js.push(`${idnt}                ${stack0} = ${scope}.getScopeProperty(${getname(param(0))}, true, false).axCoerce(${stack0});`)
 					break
 				case Bytecode.COERCE_A:
 					js.push(`${idnt}                ;`)
 					break
 				case Bytecode.COERCE_S:
+					if(optimise & OPT_FLAGS.SKIP_NULL_COERCE && (lastZ.name === Bytecode.PUSHNULL || lastZ.name === Bytecode.PUSHUNDEFINED)) {
+						js.push(`${idnt}                // SKIP_NULL_COERCE`);
+						break;
+					}
 					js.push(`${idnt}                ${stack0} = context.axCoerceString(${stack0});`)
 					break
 				case Bytecode.CONVERT_I:
