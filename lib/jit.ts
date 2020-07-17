@@ -70,10 +70,11 @@ class Instruction {
 
 export const enum OPT_FLAGS {
 	USE_ES_PARAMS = 0x1, // use es7 style of compiled function to avoid use arguments
-	USE_EVAL = 0x2,  // use eval instead of new Function
+	USE_NEW_FUCTION = 0x2,  // use eval instead of new Function
+
 }
 
-const DEFAULT_OPT = OPT_FLAGS.USE_EVAL | OPT_FLAGS.USE_ES_PARAMS;
+const DEFAULT_OPT = OPT_FLAGS.USE_NEW_FUCTION | OPT_FLAGS.USE_ES_PARAMS;
 
 // allow set to plain object in setproperty when it not AXClass
 const UNSAFE_SET = false;
@@ -1781,7 +1782,7 @@ export function compile(methodInfo: MethodInfo, optimise: OPT_FLAGS = DEFAULT_OP
 	const scriptPrefix = "// (#" + methodInfo.index() + ") --- " + methodInfo + "\n";
 
 	let compiled;
-	if (optimise & OPT_FLAGS.USE_EVAL) {
+	if (!(optimise & OPT_FLAGS.USE_NEW_FUCTION)) {
 		w = scriptPrefix + "(function(context) {\n" + w + "\n})";
 		compiled = eval(w);
 
