@@ -76,12 +76,12 @@ export function axConstruct(argArray?: any[]) {
 	}
 
 	if (timeline) {
+		FrameScriptManager._constructor_queueLevel++;
 		var newMC = new MovieClip(timeline);
-		//console.log("create mc via axConstruct");
 		object.adaptee = newMC;
+
 		newMC.reset();
-		//FrameScriptManager.execute_queue();
-		//(<any>object).dispatchStaticEvent(Event.FRAME_CONSTRUCTED)
+		FrameScriptManager.execute_as3_constructors();
 		OrphanManager.addOrphan(object);
 	}
 
@@ -142,7 +142,6 @@ export function axConstruct(argArray?: any[]) {
 	if(object.adaptee && object.adaptee.timeline){
 		object.adaptee.timeline.resetScripts();
 	}
-	FrameScriptManager.execute_as3_constructors();
 	object.axInitializer.apply(object,argArray);
 	if(object.initAdapter){
 		object.executeConstructor=()=>{};
