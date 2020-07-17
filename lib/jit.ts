@@ -945,7 +945,7 @@ export function compile(methodInfo: MethodInfo, optimise: OPT_FLAGS = DEFAULT_OP
 			if (p.hasOptionalValue()){
 				switch (p.optionalValueKind) {
 					case CONSTANT.Utf8:
-						arg += ` = '${abc.getString(p.optionalValueIndex)}'`;
+						arg += ` = ${JSON.stringify(abc.getString(p.optionalValueIndex))}`;
 						break
 					default:
 						arg += ` = ${p.getOptionalValue()}`
@@ -1210,7 +1210,7 @@ export function compile(methodInfo: MethodInfo, optimise: OPT_FLAGS = DEFAULT_OP
 					js.push(`${idnt}                ${stackN} = ${abc.doubles[param(0)]};`)
 					break
 				case Bytecode.PUSHSTRING:
-					js.push(`${idnt}                ${stackN} = context.abc.getString(${param(0)});`)
+					js.push(`${idnt}                ${stackN} = ${JSON.stringify(abc.getString(param(0)))};`)
 					break
 				case Bytecode.PUSHNAN:
 					js.push(`${idnt}                ${stackN} = NaN;`)
