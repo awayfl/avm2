@@ -16,7 +16,6 @@ import { axCoerceName } from "./run/axCoerceName"
 import { isNumeric, jsGlobal } from "@awayfl/swf-loader"
 import { ABCFile } from "./abc/lazy/ABCFile"
 import { ScriptInfo } from "./abc/lazy/ScriptInfo"
-import { AXGlobal } from "./run/AXGlobal"
 import { ExceptionInfo } from './abc/lazy/ExceptionInfo'
 import { BOX2D_PREFERENCE } from "./external";
 import { Bytecode } from './Bytecode'
@@ -1228,6 +1227,7 @@ export function compile(methodInfo: MethodInfo, sync = false): ICompilerProcess 
 				case Bytecode.DECLOCAL_I:
 					js.push(`${idnt}                ${local(param(0))} |= 0;`)
 					js.push(`${idnt}                ${local(param(0))}++;`)
+					break;
 				case Bytecode.NEGATE_I:
 					js.push(`${idnt}                ${stack0} = -(${stack0} | 0);`)
 					break
@@ -1616,52 +1616,52 @@ export function compile(methodInfo: MethodInfo, sync = false): ICompilerProcess 
 				
 				//http://docs.redtamarin.com/0.4.1T124/avm2/intrinsics/memory/package.html#si32()
 				case Bytecode.SI8:
-					console.warn(`[JIT] Access to Domain Memory not implemented. Intsr: ${Bytecode[z.name]}');`);
+					//console.warn(`[JIT] Access to Domain Memory not implemented. Intsr: ${Bytecode[z.name]}');`);
 					js.push(`${idnt}                // possible implementation:`);
-					js.push(`${idnt}                // sec.domainMemory.setInt8(${stack0}, ${stack1})`);
+					js.push(`${idnt}                context.domainMemory.setInt8(${stack0}, ${stack1})`);
 					break;
 				case Bytecode.SI16:
-					console.warn(`[JIT] Access to Domain Memory not implemented. Intsr: ${Bytecode[z.name]}');`);
+					//console.warn(`[JIT] Access to Domain Memory not implemented. Intsr: ${Bytecode[z.name]}');`);
 					js.push(`${idnt}                // possible implementation:`);
-					js.push(`${idnt}                // sec.domainMemory.setInt16(${stack0}, ${stack1}, true);`);
+					js.push(`${idnt}                context.domainMemory.setInt16(${stack0}, ${stack1}, true);`);
 				case Bytecode.SI32:
-					console.warn(`[JIT] Access to Domain Memory not implemented. Intsr: ${Bytecode[z.name]}');`);
+					//console.warn(`[JIT] Access to Domain Memory not implemented. Intsr: ${Bytecode[z.name]}');`);
 					js.push(`${idnt}                // possible implementation:`);
-					js.push(`${idnt}                // sec.domainMemory.setInt32(${stack0}, ${stack1}, true);`);
+					js.push(`${idnt}                context.domainMemory.setInt32(${stack0}, ${stack1}, true);`);
 				case Bytecode.SF32:
-					console.warn(`[JIT] Access to Domain Memory not implemented. Intsr: ${Bytecode[z.name]}');`);
+					//console.warn(`[JIT] Access to Domain Memory not implemented. Intsr: ${Bytecode[z.name]}');`);
 					js.push(`${idnt}                // possible implementation:`);
-					js.push(`${idnt}                // sec.domainMemory.setFloat32(${stack0}, ${stack1}, true);`);
+					js.push(`${idnt}                context.domainMemory.setFloat32(${stack0}, ${stack1}, true);`);
 
 				case Bytecode.SF64:
-					console.warn(`[JIT] Access to Domain Memory not implemented. Intsr: ${Bytecode[z.name]}');`);
+					//console.warn(`[JIT] Access to Domain Memory not implemented. Intsr: ${Bytecode[z.name]}');`);
 					js.push(`${idnt}                // possible implementation:`);
-					js.push(`${idnt}                // sec.domainMemory.setFloat64(${stack0}, ${stack1}, true);`);
+					js.push(`${idnt}                // context.domainMemory.setFloat64(${stack0}, ${stack1}, true);`);
 					break;
 
 				//http://docs.redtamarin.com/0.4.1T124/avm2/intrinsics/memory/package.html#li32()
 				case Bytecode.LI8:
-					console.warn(`[JIT] Access to Domain Memory not implemented. Intsr: ${Bytecode[z.name]}');`);
+					//console.warn(`[JIT] Access to Domain Memory not implemented. Intsr: ${Bytecode[z.name]}');`);
 					js.push(`${idnt}                // possible implementation:`);
-					js.push(`${idnt}                // ${stack0} = sec.domainMemory.getInt8(${stack0})`);
+					js.push(`${idnt}                ${stack0} = context.domainMemory.getInt8(${stack0})`);
 					break;
 				case Bytecode.LI16:
-					console.warn(`[JIT] Access to Domain Memory not implemented. Intsr: ${Bytecode[z.name]}');`);
+					//console.warn(`[JIT] Access to Domain Memory not implemented. Intsr: ${Bytecode[z.name]}');`);
 					js.push(`${idnt}                // possible implementation:`);
-					js.push(`${idnt}                // ${stack0} = sec.domainMemory.getInt16(${stack0}, true);`);
+					js.push(`${idnt}                ${stack0} = context.domainMemory.getInt16(${stack0}, true);`);
 				case Bytecode.LI32:
-					console.warn(`[JIT] Access to Domain Memory not implemented. Intsr: ${Bytecode[z.name]}');`);
+					//console.warn(`[JIT] Access to Domain Memory not implemented. Intsr: ${Bytecode[z.name]}');`);
 					js.push(`${idnt}                // possible implementation:`);
-					js.push(`${idnt}                // ${stack0} = sec.domainMemory.getInt32(${stack0}, true);`);
+					js.push(`${idnt}                ${stack0} = context.domainMemory.getInt32(${stack0}, true);`);
 				case Bytecode.LF32:
-					console.warn(`[JIT] Access to Domain Memory not implemented. Intsr: ${Bytecode[z.name]}');`);
+					//console.warn(`[JIT] Access to Domain Memory not implemented. Intsr: ${Bytecode[z.name]}');`);
 					js.push(`${idnt}                // possible implementation:`);
-					js.push(`${idnt}                // ${stack0} = sec.domainMemory.getFloat32(${stack0}, true);`);
+					js.push(`${idnt}                ${stack0} = context.domainMemory.getFloat32(${stack0}, true);`);
 
 				case Bytecode.LF64:
-					console.warn(`[JIT] Access to Domain Memory not implemented. Intsr: ${Bytecode[z.name]}');`);
+					//console.warn(`[JIT] Access to Domain Memory not implemented. Intsr: ${Bytecode[z.name]}');`);
 					js.push(`${idnt}                // possible implementation:`);
-					js.push(`${idnt}                // ${stack0} = sec.domainMemory.getFloat64(${stack0}, true);`);
+					js.push(`${idnt}                ${stack0} = context.domainMemory.getFloat64(${stack0}, true);`);
 					break;
 				
 				default:
@@ -1760,6 +1760,9 @@ export class Context {
 	private readonly axCoerceString: Function = axCoerceString;
 	private readonly axCheckFilter: Function = axCheckFilter;
 	private readonly internNamespace: Function = internNamespace;
+	private domain: any;
+	private domainMemoryView: DataView;
+
 	public readonly emptyArray: any;
 
 	constructor(mi: MethodInfo, savedScope: Scope, names: Multiname[]) {
@@ -1773,8 +1776,14 @@ export class Context {
 		this.emptyArray.value = [];
 	}
 
-	get domainMemory() {
-		return null;
+	get domainMemory(): DataView {
+		if(!this.domain) {
+			this.domain = (<any>this.sec).flash.system.ApplicationDomain.axClass.currentDomain;
+		}
+		if(!this.domainMemoryView && this.domain.domainMemory) {
+			this.domainMemoryView = new DataView(this.domain.domainMemory.buffer)
+		}
+		return this.domainMemoryView;
 	}
 
 	typeof(object: any): string {
