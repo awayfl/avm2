@@ -72,9 +72,10 @@ export const enum OPT_FLAGS {
 	USE_ES_PARAMS = 0x1, // use es7 style of compiled function to avoid use arguments
 	USE_NEW_FUCTION = 0x2, // use eval instead of new Function
 	SKIP_NULL_COERCE = 0x4, // skip coerce for nulled constant objects
+	SKIP_DOMAIN_MEM = 0x8 // skip compilation of domain memory instructions
 }
 
-const DEFAULT_OPT = OPT_FLAGS.USE_NEW_FUCTION | OPT_FLAGS.USE_ES_PARAMS | OPT_FLAGS.SKIP_NULL_COERCE;
+const DEFAULT_OPT = OPT_FLAGS.USE_NEW_FUCTION | OPT_FLAGS.USE_ES_PARAMS | OPT_FLAGS.SKIP_NULL_COERCE | OPT_FLAGS.SKIP_DOMAIN_MEM;
 
 // allow set to plain object in setproperty when it not AXClass
 const UNSAFE_SET = false;
@@ -1680,55 +1681,61 @@ export function compile(methodInfo: MethodInfo, optimise: OPT_FLAGS = DEFAULT_OP
 				case Bytecode.KILL:
 					js.push(`${idnt}                ${local(param(0))} = undefined;`)
 					break
-				
-				//http://docs.redtamarin.com/0.4.1T124/avm2/intrinsics/memory/package.html#si32()
-				case Bytecode.SI8:
-					js.push(`${idnt}                domainMemory = domainMemory || context.domainMemory;`);
-					js.push(`${idnt}                domainMemory.setInt8(${stack0}, ${stack1})`);
-					break;
-				case Bytecode.SI16:
-					js.push(`${idnt}                domainMemory = domainMemory || context.domainMemory;`);
-					js.push(`${idnt}                domainMemory.setInt16(${stack0}, ${stack1}, true);`);
-					break;
-				case Bytecode.SI32:
-					js.push(`${idnt}                domainMemory = domainMemory || context.domainMemory;`);
-					js.push(`${idnt}                domainMemory.setInt32(${stack0}, ${stack1}, true);`);
-					break;
-				case Bytecode.SF32:
-					js.push(`${idnt}                domainMemory = domainMemory || context.domainMemory;`);
-					js.push(`${idnt}                domainMemory.setFloat32(${stack0}, ${stack1}, true);`);
-					break;
-				case Bytecode.SF64:
-					js.push(`${idnt}                domainMemory = domainMemory || context.domainMemory;`);
-					js.push(`${idnt}                domainMemory.setFloat64(${stack0}, ${stack1}, true);`);
-					break;
-
-				//http://docs.redtamarin.com/0.4.1T124/avm2/intrinsics/memory/package.html#li32()
-				case Bytecode.LI8:
-					js.push(`${idnt}                domainMemory = domainMemory || context.domainMemory;`);
-					js.push(`${idnt}                ${stack0} = domainMemory.getInt8(${stack0})`);
-					break;
-				case Bytecode.LI16:
-					js.push(`${idnt}                domainMemory = domainMemory || context.domainMemory;`);
-					js.push(`${idnt}                ${stack0} = getInt16(${stack0}, true);`);
-					break;
-				case Bytecode.LI32:
-					js.push(`${idnt}                domainMemory = domainMemory || context.domainMemory;`);
-					js.push(`${idnt}                ${stack0} = domainMemory.getInt32(${stack0}, true);`);
-					break;
-				case Bytecode.LF32:
-					js.push(`${idnt}                domainMemory = domainMemory || context.domainMemory;`);
-					js.push(`${idnt}                ${stack0} = domainMemory.getFloat32(${stack0}, true);`);
-					break;
-				case Bytecode.LF64:
-					js.push(`${idnt}                domainMemory = domainMemory || context.domainMemory;`);
-					js.push(`${idnt}                ${stack0} = domainMemory.getFloat64(${stack0}, true);`);
-					break;
-				
+	
 				default:
-					js.push(`${idnt}                //unknown instruction ${BytecodeName[q[i].name]}`)
-					//console.log(`unknown instruction ${BytecodeName[q[i].name]} (method N${methodInfo.index()})`)
-					return { error: "unhandled instruction " + z }
+					if(!(optimise & OPT_FLAGS.SKIP_DOMAIN_MEM)) {
+						switch(z.name){
+								//http://docs.redtamarin.com/0.4.1T124/avm2/intrinsics/memory/package.html#si32()
+							case Bytecode.SI8:
+								js.push(`${idnt}                domainMemory = domainMemory || context.domainMemory;`);
+								js.push(`${idnt}                domainMemory.setInt8(${stack0}, ${stack1})`);
+								break;
+							case Bytecode.SI16:
+								js.push(`${idnt}                domainMemory = domainMemory || context.domainMemory;`);
+								js.push(`${idnt}                domainMemory.setInt16(${stack0}, ${stack1}, true);`);
+								break;
+							case Bytecode.SI32:
+								js.push(`${idnt}                domainMemory = domainMemory || context.domainMemory;`);
+								js.push(`${idnt}                domainMemory.setInt32(${stack0}, ${stack1}, true);`);
+								break;
+							case Bytecode.SF32:
+								js.push(`${idnt}                domainMemory = domainMemory || context.domainMemory;`);
+								js.push(`${idnt}                domainMemory.setFloat32(${stack0}, ${stack1}, true);`);
+								break;
+							case Bytecode.SF64:
+								js.push(`${idnt}                domainMemory = domainMemory || context.domainMemory;`);
+								js.push(`${idnt}                domainMemory.setFloat64(${stack0}, ${stack1}, true);`);
+								break;
+
+							//http://docs.redtamarin.com/0.4.1T124/avm2/intrinsics/memory/package.html#li32()
+							case Bytecode.LI8:
+								js.push(`${idnt}                domainMemory = domainMemory || context.domainMemory;`);
+								js.push(`${idnt}                ${stack0} = domainMemory.getInt8(${stack0})`);
+								break;
+							case Bytecode.LI16:
+								js.push(`${idnt}                domainMemory = domainMemory || context.domainMemory;`);
+								js.push(`${idnt}                ${stack0} = getInt16(${stack0}, true);`);
+								break;
+							case Bytecode.LI32:
+								js.push(`${idnt}                domainMemory = domainMemory || context.domainMemory;`);
+								js.push(`${idnt}                ${stack0} = domainMemory.getInt32(${stack0}, true);`);
+								break;
+							case Bytecode.LF32:
+								js.push(`${idnt}                domainMemory = domainMemory || context.domainMemory;`);
+								js.push(`${idnt}                ${stack0} = domainMemory.getFloat32(${stack0}, true);`);
+								break;
+							case Bytecode.LF64:
+								js.push(`${idnt}                domainMemory = domainMemory || context.domainMemory;`);
+								js.push(`${idnt}                ${stack0} = domainMemory.getFloat64(${stack0}, true);`);
+								break;
+						}
+					} 
+
+					if((z.name <= Bytecode.LI8 && z.name >= Bytecode.SF64)) {
+						js.push(`${idnt}                //unknown instruction ${BytecodeName[q[i].name]}`)
+						//console.log(`unknown instruction ${BytecodeName[q[i].name]} (method N${methodInfo.index()})`)
+						return { error: "unhandled instruction " + z }
+					}
 			}
 		}
 
