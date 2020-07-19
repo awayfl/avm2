@@ -16,7 +16,6 @@ import { axCoerceName } from "./run/axCoerceName"
 import { isNumeric, jsGlobal } from "@awayfl/swf-loader"
 import { ABCFile } from "./abc/lazy/ABCFile"
 import { ScriptInfo } from "./abc/lazy/ScriptInfo"
-import { AXGlobal } from "./run/AXGlobal"
 import { ExceptionInfo } from './abc/lazy/ExceptionInfo'
 import { BOX2D_PREFERENCE } from "./external";
 import { Bytecode } from './Bytecode'
@@ -69,6 +68,15 @@ class Instruction {
 	}
 }
 
+export const enum OPT_FLAGS {
+	USE_ES_PARAMS = 0x1, // use es7 style of compiled function to avoid use arguments
+	USE_NEW_FUCTION = 0x2, // use eval instead of new Function
+	SKIP_NULL_COERCE = 0x4, // skip coerce for nulled constant objects
+	SKIP_DOMAIN_MEM = 0x8 // skip compilation of domain memory instructions
+}
+
+const DEFAULT_OPT = OPT_FLAGS.USE_NEW_FUCTION | OPT_FLAGS.USE_ES_PARAMS | OPT_FLAGS.SKIP_NULL_COERCE | OPT_FLAGS.SKIP_DOMAIN_MEM;
+
 // allow set to plain object in setproperty when it not AXClass
 const UNSAFE_SET = false;
 // allow unsafe calls and property gets from objects
@@ -76,8 +84,6 @@ const UNSAFE_JIT = false;
 
 // allow use negate stack pointer (avoid stack underrun)
 const UNSAFE_STACK = false;
-
-const USE_EVAL = false;
 
 let SCRIPT_ID = 0;
 
@@ -89,12 +95,11 @@ export interface ICompilerProcess {
 	names?: Multiname[];
 }
 
-export function compile(methodInfo: MethodInfo, sync = false): ICompilerProcess {
+export function compile(methodInfo: MethodInfo, optimise: OPT_FLAGS = DEFAULT_OPT): ICompilerProcess {
 
 	let abc = methodInfo.abc
 	let code = methodInfo.getBody().code
 	let isStackUnderrun = false;
-
 	var body = methodInfo.getBody();
 
 	let q: Instruction[] = []
@@ -908,9 +913,16 @@ export function compile(methodInfo: MethodInfo, sync = false): ICompilerProcess 
 				maxlocal = q[i].params[0]
 
 	let temp = false
-	for (let i: number = 0; i < q.length; i++)
-		if (q[i].name == Bytecode.NEWOBJECT || q[i].name == Bytecode.SWAP || q[i].name == Bytecode.HASNEXT2)
+	let domMem = false;
+	for (let q_i of q) {
+		let b = q_i.name;
+
+		if (b == Bytecode.NEWOBJECT || b == Bytecode.SWAP || b == Bytecode.HASNEXT2) {
 			temp = true
+		}
+
+		domMem = domMem || (b >= Bytecode.LI8 && b <= Bytecode.SF64);
+	}
 
 	let maxscope = 0
 	for (let i: number = 0; i < q.length; i++) {
@@ -921,31 +933,72 @@ export function compile(methodInfo: MethodInfo, sync = false): ICompilerProcess 
 	let params = methodInfo.parameters
 
 	const funcName = (methodInfo.getName()).replace(/([^a-z0-9]+)/gi, "_");
-	const underrun = "[stack underrun]"
+	const underrun = "[stack underrun]";
+	let paramsShift = 0;
 
-	js0.push("return function compiled_" + funcName + "() {")
+	if(optimise & OPT_FLAGS.USE_ES_PARAMS) {
+		const args = [];		
+		
+		for (let i = 0; i < params.length; i++) {
+			let p = params[i];
+			let arg = "local" + (i + 1);
 
-	for (let i: number = 0; i < params.length; i++)
-		if (params[i].hasOptionalValue()) {
-			js0.push("    let argnum = arguments.length;")
-			break
+			if (p.hasOptionalValue()){
+				switch (p.optionalValueKind) {
+					case CONSTANT.Utf8:
+						arg += ` = ${JSON.stringify(abc.getString(p.optionalValueIndex))}`;
+						break
+					default:
+						arg += ` = ${p.getOptionalValue()}`
+				}
+			}
+
+			args.push(arg);
 		}
 
-	js0.push("    let local0 = this === context.jsGlobal ? context.savedScope.global.object : this;")
+		if(methodInfo.needsRest()) {
+			args.push("...args");
+		}
 
-	for (let i: number = 0; i < params.length; i++) {
-		let p = params[i]
-		js0.push(`    let local${(i + 1)} = arguments[${i}];`)
+		js0.push(`return function compiled_${funcName}(${args.join(', ')}) {`);
+		js0.push("    let local0 = this === context.jsGlobal ? context.savedScope.global.object : this;")
 
-		if (params[i].hasOptionalValue())
-			switch (p.optionalValueKind) {
-				case CONSTANT.Utf8:
-					js0.push(`    if (argnum <= ${i}) local${(i + 1)} = context.abc.getString(${p.optionalValueIndex});`)
-					break
-				default:
-					js0.push(`    if (argnum <= ${i}) local${(i + 1)} = ${p.getOptionalValue()};`)
-					break
+		if(methodInfo.needsRest()) {
+			js0.push(`    let local${params.length + 1} = context.sec.createArrayUnsafe(args);`);
+			paramsShift += 1;
+		}
+
+		if(methodInfo.needsArguments()) {
+			js0.push(`    let local${params.length + 1} = context.sec.createArrayUnsafe(Array.from(arguments));`);
+			paramsShift += 1;
+		}
+	} 
+	else 
+	{	
+		js0.push("return function compiled_" + funcName + "() {")
+
+		for (let i: number = 0; i < params.length; i++)
+			if (params[i].hasOptionalValue()) {
+				js0.push("    let argnum = arguments.length;")
+				break
 			}
+
+		js0.push("    let local0 = this === context.jsGlobal ? context.savedScope.global.object : this;")
+
+		for (let i: number = 0; i < params.length; i++) {
+			let p = params[i]
+			js0.push(`    let local${(i + 1)} = arguments[${i}];`)
+
+			if (params[i].hasOptionalValue())
+				switch (p.optionalValueKind) {
+					case CONSTANT.Utf8:
+						js0.push(`    if (argnum <= ${i}) local${(i + 1)} = context.abc.getString(${p.optionalValueIndex});`)
+						break
+					default:
+						js0.push(`    if (argnum <= ${i}) local${(i + 1)} = ${p.getOptionalValue()};`)
+						break
+				}
+		}
 	}
 
 	const LOCALS_POS = js0.length;
@@ -954,7 +1007,7 @@ export function compile(methodInfo: MethodInfo, sync = false): ICompilerProcess 
 
 	const optionalLocalVars: Array<{index: number, die: boolean, read: number, write: 0, isArgumentList: boolean}> = [];
 
-	for (let i: number = params.length + 1; i <= maxlocal; i++) {
+	for (let i: number = params.length + 1 + paramsShift; i <= maxlocal; i++) {
 		optionalLocalVars[i] = {
 			index: i,
 			isArgumentList: i === params.length + 1,
@@ -965,14 +1018,19 @@ export function compile(methodInfo: MethodInfo, sync = false): ICompilerProcess 
 		//js0.push(`    let local${i} = ${((i == params.length + 1) ? "context.createArrayUnsafe(Array.from(arguments))" : "undefined")};`);
 	}
 
-	for (let i = minstack; i <= maxstack; i++)
+	for (let i = minstack; i < maxstack; i++)
 		js0.push(`    let stack${i - minstack} = undefined;`)
 
-	for (let i: number = 0; i <= maxscope; i++)
+	for (let i: number = 0; i < maxscope; i++)
 		js0.push(`    let scope${i} = undefined;`)
 
 	if (temp)
 		js0.push("    let temp = undefined;")
+
+	if (domMem)
+		js0.push("    let domainMemory; // domainMemory");
+	
+	let needInitDomMem = domMem;
 
 	js0.push("    let tr = undefined;")
 
@@ -998,10 +1056,11 @@ export function compile(methodInfo: MethodInfo, sync = false): ICompilerProcess 
 	js.push("        switch (p) {")
 
 	let currentCatchBlocks: ExceptionInfo[];
-
+	let lastZ: Instruction;
+	let z: Instruction;
 	for (let i: number = 0; i < q.length; i++) {
-		let z = q[i]
-
+		z && (lastZ = z);
+		z = q[i];
 
 		if (targets.indexOf(z.position) >= 0) {
 
@@ -1152,7 +1211,7 @@ export function compile(methodInfo: MethodInfo, sync = false): ICompilerProcess 
 					js.push(`${idnt}                ${stackN} = ${abc.doubles[param(0)]};`)
 					break
 				case Bytecode.PUSHSTRING:
-					js.push(`${idnt}                ${stackN} = context.abc.getString(${param(0)});`)
+					js.push(`${idnt}                ${stackN} = ${JSON.stringify(abc.getString(param(0)))};`)
 					break
 				case Bytecode.PUSHNAN:
 					js.push(`${idnt}                ${stackN} = NaN;`)
@@ -1228,6 +1287,7 @@ export function compile(methodInfo: MethodInfo, sync = false): ICompilerProcess 
 				case Bytecode.DECLOCAL_I:
 					js.push(`${idnt}                ${local(param(0))} |= 0;`)
 					js.push(`${idnt}                ${local(param(0))}++;`)
+					break;
 				case Bytecode.NEGATE_I:
 					js.push(`${idnt}                ${stack0} = -(${stack0} | 0);`)
 					break
@@ -1581,12 +1641,20 @@ export function compile(methodInfo: MethodInfo, sync = false): ICompilerProcess 
 					js.push(`${idnt}                return;`)
 					break
 				case Bytecode.COERCE:
+					if(optimise & OPT_FLAGS.SKIP_NULL_COERCE && (lastZ.name === Bytecode.PUSHNULL || lastZ.name === Bytecode.PUSHUNDEFINED)) {
+						js.push(`${idnt}                // SKIP_NULL_COERCE`);
+						break;
+					}
 					js.push(`${idnt}                ${stack0} = ${scope}.getScopeProperty(${getname(param(0))}, true, false).axCoerce(${stack0});`)
 					break
 				case Bytecode.COERCE_A:
 					js.push(`${idnt}                ;`)
 					break
 				case Bytecode.COERCE_S:
+					if(optimise & OPT_FLAGS.SKIP_NULL_COERCE && (lastZ.name === Bytecode.PUSHNULL || lastZ.name === Bytecode.PUSHUNDEFINED)) {
+						js.push(`${idnt}                // SKIP_NULL_COERCE`);
+						break;
+					}
 					js.push(`${idnt}                ${stack0} = context.axCoerceString(${stack0});`)
 					break
 				case Bytecode.CONVERT_I:
@@ -1613,61 +1681,61 @@ export function compile(methodInfo: MethodInfo, sync = false): ICompilerProcess 
 				case Bytecode.KILL:
 					js.push(`${idnt}                ${local(param(0))} = undefined;`)
 					break
-				
-				//http://docs.redtamarin.com/0.4.1T124/avm2/intrinsics/memory/package.html#si32()
-				case Bytecode.SI8:
-					console.warn(`[JIT] Access to Domain Memory not implemented. Intsr: ${Bytecode[z.name]}');`);
-					js.push(`${idnt}                // possible implementation:`);
-					js.push(`${idnt}                // sec.domainMemory.setInt8(${stack0}, ${stack1})`);
-					break;
-				case Bytecode.SI16:
-					console.warn(`[JIT] Access to Domain Memory not implemented. Intsr: ${Bytecode[z.name]}');`);
-					js.push(`${idnt}                // possible implementation:`);
-					js.push(`${idnt}                // sec.domainMemory.setInt16(${stack0}, ${stack1}, true);`);
-				case Bytecode.SI32:
-					console.warn(`[JIT] Access to Domain Memory not implemented. Intsr: ${Bytecode[z.name]}');`);
-					js.push(`${idnt}                // possible implementation:`);
-					js.push(`${idnt}                // sec.domainMemory.setInt32(${stack0}, ${stack1}, true);`);
-				case Bytecode.SF32:
-					console.warn(`[JIT] Access to Domain Memory not implemented. Intsr: ${Bytecode[z.name]}');`);
-					js.push(`${idnt}                // possible implementation:`);
-					js.push(`${idnt}                // sec.domainMemory.setFloat32(${stack0}, ${stack1}, true);`);
-
-				case Bytecode.SF64:
-					console.warn(`[JIT] Access to Domain Memory not implemented. Intsr: ${Bytecode[z.name]}');`);
-					js.push(`${idnt}                // possible implementation:`);
-					js.push(`${idnt}                // sec.domainMemory.setFloat64(${stack0}, ${stack1}, true);`);
-					break;
-
-				//http://docs.redtamarin.com/0.4.1T124/avm2/intrinsics/memory/package.html#li32()
-				case Bytecode.LI8:
-					console.warn(`[JIT] Access to Domain Memory not implemented. Intsr: ${Bytecode[z.name]}');`);
-					js.push(`${idnt}                // possible implementation:`);
-					js.push(`${idnt}                // ${stack0} = sec.domainMemory.getInt8(${stack0})`);
-					break;
-				case Bytecode.LI16:
-					console.warn(`[JIT] Access to Domain Memory not implemented. Intsr: ${Bytecode[z.name]}');`);
-					js.push(`${idnt}                // possible implementation:`);
-					js.push(`${idnt}                // ${stack0} = sec.domainMemory.getInt16(${stack0}, true);`);
-				case Bytecode.LI32:
-					console.warn(`[JIT] Access to Domain Memory not implemented. Intsr: ${Bytecode[z.name]}');`);
-					js.push(`${idnt}                // possible implementation:`);
-					js.push(`${idnt}                // ${stack0} = sec.domainMemory.getInt32(${stack0}, true);`);
-				case Bytecode.LF32:
-					console.warn(`[JIT] Access to Domain Memory not implemented. Intsr: ${Bytecode[z.name]}');`);
-					js.push(`${idnt}                // possible implementation:`);
-					js.push(`${idnt}                // ${stack0} = sec.domainMemory.getFloat32(${stack0}, true);`);
-
-				case Bytecode.LF64:
-					console.warn(`[JIT] Access to Domain Memory not implemented. Intsr: ${Bytecode[z.name]}');`);
-					js.push(`${idnt}                // possible implementation:`);
-					js.push(`${idnt}                // ${stack0} = sec.domainMemory.getFloat64(${stack0}, true);`);
-					break;
-				
+	
 				default:
-					js.push(`${idnt}                //unknown instruction ${BytecodeName[q[i].name]}`)
-					//console.log(`unknown instruction ${BytecodeName[q[i].name]} (method N${methodInfo.index()})`)
-					return { error: "unhandled instruction " + z }
+					if(!(optimise & OPT_FLAGS.SKIP_DOMAIN_MEM)) {
+						switch(z.name){
+								//http://docs.redtamarin.com/0.4.1T124/avm2/intrinsics/memory/package.html#si32()
+							case Bytecode.SI8:
+								js.push(`${idnt}                domainMemory = domainMemory || context.domainMemory;`);
+								js.push(`${idnt}                domainMemory.setInt8(${stack0}, ${stack1})`);
+								break;
+							case Bytecode.SI16:
+								js.push(`${idnt}                domainMemory = domainMemory || context.domainMemory;`);
+								js.push(`${idnt}                domainMemory.setInt16(${stack0}, ${stack1}, true);`);
+								break;
+							case Bytecode.SI32:
+								js.push(`${idnt}                domainMemory = domainMemory || context.domainMemory;`);
+								js.push(`${idnt}                domainMemory.setInt32(${stack0}, ${stack1}, true);`);
+								break;
+							case Bytecode.SF32:
+								js.push(`${idnt}                domainMemory = domainMemory || context.domainMemory;`);
+								js.push(`${idnt}                domainMemory.setFloat32(${stack0}, ${stack1}, true);`);
+								break;
+							case Bytecode.SF64:
+								js.push(`${idnt}                domainMemory = domainMemory || context.domainMemory;`);
+								js.push(`${idnt}                domainMemory.setFloat64(${stack0}, ${stack1}, true);`);
+								break;
+
+							//http://docs.redtamarin.com/0.4.1T124/avm2/intrinsics/memory/package.html#li32()
+							case Bytecode.LI8:
+								js.push(`${idnt}                domainMemory = domainMemory || context.domainMemory;`);
+								js.push(`${idnt}                ${stack0} = domainMemory.getInt8(${stack0})`);
+								break;
+							case Bytecode.LI16:
+								js.push(`${idnt}                domainMemory = domainMemory || context.domainMemory;`);
+								js.push(`${idnt}                ${stack0} = getInt16(${stack0}, true);`);
+								break;
+							case Bytecode.LI32:
+								js.push(`${idnt}                domainMemory = domainMemory || context.domainMemory;`);
+								js.push(`${idnt}                ${stack0} = domainMemory.getInt32(${stack0}, true);`);
+								break;
+							case Bytecode.LF32:
+								js.push(`${idnt}                domainMemory = domainMemory || context.domainMemory;`);
+								js.push(`${idnt}                ${stack0} = domainMemory.getFloat32(${stack0}, true);`);
+								break;
+							case Bytecode.LF64:
+								js.push(`${idnt}                domainMemory = domainMemory || context.domainMemory;`);
+								js.push(`${idnt}                ${stack0} = domainMemory.getFloat64(${stack0}, true);`);
+								break;
+						}
+					} 
+
+					if((z.name <= Bytecode.LI8 && z.name >= Bytecode.SF64)) {
+						js.push(`${idnt}                //unknown instruction ${BytecodeName[q[i].name]}`)
+						//console.log(`unknown instruction ${BytecodeName[q[i].name]} (method N${methodInfo.index()})`)
+						return { error: "unhandled instruction " + z }
+					}
 			}
 		}
 
@@ -1714,9 +1782,11 @@ export function compile(methodInfo: MethodInfo, sync = false): ICompilerProcess 
 		}
 		// todo: this is not 100% correct yet:
 		locals.push(`    let local${l.index} =  undefined`);
-		if(l.index==params.length+1 && !l.die){
-			locals.push(`    if(arguments && arguments.length) { local${l.index} = context.sec.createArrayUnsafe(Array.from(arguments).slice(${params.length})); }`);
-			locals.push(`    else { local${l.index} = context.emptyArray; }`);
+		if(!(optimise & OPT_FLAGS.USE_ES_PARAMS)) {
+			if(l.index==params.length+1 && !l.die){
+				locals.push(`    if(arguments && arguments.length) { local${l.index} = context.sec.createArrayUnsafe(Array.from(arguments).slice(${params.length})); }`);
+				locals.push(`    else { local${l.index} = context.emptyArray; }`);
+			}
 		}
 	}
 
@@ -1728,7 +1798,7 @@ export function compile(methodInfo: MethodInfo, sync = false): ICompilerProcess 
 	const scriptPrefix = "// (#" + methodInfo.index() + ") --- " + methodInfo + "\n";
 
 	let compiled;
-	if (USE_EVAL) {
+	if (!(optimise & OPT_FLAGS.USE_NEW_FUCTION)) {
 		w = scriptPrefix + "(function(context) {\n" + w + "\n})";
 		compiled = eval(w);
 
@@ -1760,6 +1830,9 @@ export class Context {
 	private readonly axCoerceString: Function = axCoerceString;
 	private readonly axCheckFilter: Function = axCheckFilter;
 	private readonly internNamespace: Function = internNamespace;
+	private domain: any;
+	private domainMemoryView: DataView;
+
 	public readonly emptyArray: any;
 
 	constructor(mi: MethodInfo, savedScope: Scope, names: Multiname[]) {
@@ -1773,8 +1846,17 @@ export class Context {
 		this.emptyArray.value = [];
 	}
 
-	get domainMemory() {
-		return null;
+	get domainMemory(): DataView {
+		if(!this.domain) {
+			this.domain = (<any>this.sec).flash.system.ApplicationDomain.axClass.currentDomain;
+			
+			if(!this.domain) {
+				console.warn("[JIT] Try access to domainMemory on unresolved ApplicationDomain!");
+				return null;
+			}
+		}
+
+		return this.domain.internal_memoryView;
 	}
 
 	typeof(object: any): string {

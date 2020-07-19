@@ -13,6 +13,7 @@ import { AXObject } from '../run/AXObject';
 import { AXClass } from '../run/AXClass';
 import { axCoerceNumber } from '../run/axCoerceNumber';
 import { axCoerceString } from '../run/axCoerceString';
+import { ASFunction } from '../nat/ASFunction';
 
 /*
  * Copyright 2014 Mozilla Foundation
@@ -256,16 +257,20 @@ export class GenericVector extends BaseVector {
     return result.join(',');
   }
 
-  sort(sortBehavior?: any) {
-    if (arguments.length === 0) {
+  sort(sortBehavior?: ASFunction | number ) {
+    if (typeof sortBehavior === 'undefined') {
       this._buffer.sort();
       return this;
     }
     if (this.sec.AXFunction.axIsType(sortBehavior)) {
-      this._buffer.sort(<(a: any, b: any) => number>sortBehavior.value);
+      const func = (<any>sortBehavior).value;
+      const res = (<any>sortBehavior).receiver;
+      
+      this._buffer.sort(func.bind(res));
       return this;
     }
-    var options = sortBehavior|0;
+
+    var options = <number>sortBehavior | 0;
     // 80pro: todo:
     //release || assertNotImplemented (!(options & Int32Vector.UNIQUESORT), "UNIQUESORT");
     //release || assertNotImplemented (!(options & Int32Vector.RETURNINDEXEDARRAY), "RETURNINDEXEDARRAY");

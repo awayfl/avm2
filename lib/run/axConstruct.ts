@@ -49,9 +49,32 @@ export class OrphanManager {
 			//(<any>OrphanManager.orphans[i]).dispatchQueuedEvents();
 		}
 	}
-
 }
 
+interface IAssetLookup {
+	allowType: Array<any>;
+	lookupMethod?: string;
+	passToConstructor?: boolean; // pass asset to constructor?
+}
+type IAsseLookupTable = StringMap<IAssetLookup>;
+
+// ASSET LOOKUP TABLE
+// ClassType => AssetType
+const ASSET_LOOKUP: IAsseLookupTable = {
+	"Sound": {
+		allowType: [WaveAudio],
+		lookupMethod: "getAwayJSAudio",
+	},
+	"BitmapData": {
+		allowType: [SceneImage2D, BitmapImage2D],
+		lookupMethod: "getDefinition",
+	},
+	"BitmapAsset": {
+		allowType: [SceneImage2D, BitmapImage2D],
+		lookupMethod: "getDefinition",
+		passToConstructor: true
+	}
+}
 /**
  * Generic axConstruct method that lives on the AXClass prototype. This just
  * creates an empty object with the right prototype and then calls the
@@ -88,55 +111,49 @@ export function axConstruct(argArray?: any[]) {
 
 	//	ActiveLoaderContext.loaderContext is a hack !
 	//	in future the appDom should be provided by the symbol
+	//	UNSAFE! Need check more clea because assets can has nested class defenetion, like as `BitmapAsset : FlexBitmap: Bitmap`
 
 	const name = (<Multiname>_this.superClass?.classInfo?.instanceInfo?.name).name;
 	const appDom = ActiveLoaderContext.loaderContext?.applicationDomain;
+	const lookup: IAssetLookup = ASSET_LOOKUP[name];
 
-	if (name === "Sound") {
-		let instName = (<Multiname>_this.classInfo.instanceInfo.name).name;
-		let asset = appDom?.getAwayJSAudio(instName);
-		
-		// todo looks like we have a issue with multname and names that contain a "."
-		// normally you would not expect classnames to contain a "." in the name
-		// but sounds might have classnames like "sound.wav"
-		// multiname splits the name and stores the first part as "uri"
-		if(!asset){
-			instName=(<Multiname>_this.classInfo.instanceInfo.name).uri+"."+instName;
-			asset = appDom?.getAwayJSAudio(instName);
-		}
-		
-		if (asset && (<AssetBase>asset).isAsset && (<AssetBase>asset).isAsset(WaveAudio)) {
-			object.adaptee=asset;
-		}
-		else{
-			if(appDom){
-				console.log("error: could not find audio for class", instName, asset);
-			}
-			else{
-				console.log("error: could not get audio for class", instName, "no ActiveLoaderContext.loaderContext");
-			}
-		}
-	}
-	else if (name === "BitmapData") 
-	{
-		let instName = (<Multiname>_this.classInfo.instanceInfo.name).name;
-		let asset = appDom?.getDefinition(instName);
+	if(lookup) {
+		let asset: AssetBase = null;
 
-		if(!asset){
-			instName=(<Multiname>_this.classInfo.instanceInfo.name).uri+"."+instName;
-			asset = appDom?.getDefinition(instName);
-		}
-		if (asset && (<AssetBase>asset).isAsset && ((<AssetBase>asset).isAsset(SceneImage2D) || (<AssetBase>asset).isAsset(BitmapImage2D))) {
-			object.adaptee = asset;
-		}
-		else {
-			if(appDom){
-				console.log("error: could not find bitmap for class", instName, asset);
+		const instName = (<Multiname>_this.classInfo.instanceInfo.name).name;
+		const paths = [
+			instName, 
+			(<Multiname>_this.classInfo.instanceInfo.name).uri + "." + instName
+		];
+
+		const method = appDom ? appDom[lookup.lookupMethod ?? "getDefinition" ] : null;
+		
+		if(!method) {
+			console.warn(`error: could not get asset ${name} for class ${instName}, no ActiveLoaderContext.loaderContext`);
+		} else {
+
+			for(let i = 0; i < paths.length && !asset; i ++) {
+				try {
+					asset = method.call(appDom, paths[i]);
+				} catch {};
 			}
-			else{
-				console.log("error: could not get bitmap for class", instName, "no ActiveLoaderContext.loaderContext");
+
+			if(!asset) {
+				console.warn(`error: could not get asset ${name} for class ${instName}, no ActiveLoaderContext.loaderContext`);
+			} else {
+
+				const isAsset = asset.isAsset && lookup.allowType.some((type) => asset.isAsset(type));
+
+				if(!isAsset) {
+					console.warn(`error: invalid asset type for class ${instName} of type ${name},
+						recieved: ${asset ?? asset.assetType}, expected [${ lookup.allowType.map((e) => e.assetType).join()}]`);
+					
+					asset = null;
+				}
 			}
-		}	
+		}
+
+		asset && (object.adaptee = asset);
 	}
 
 	if(object.adaptee && object.adaptee.timeline){
