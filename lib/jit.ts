@@ -1437,7 +1437,7 @@ export function compile(methodInfo: MethodInfo, optimise: OPT_FLAGS = DEFAULT_OP
 						js.push(`${idnt}                ${stackF(param(0))} = context.getdefinitionbyname(${scope}, ${obj}, [${pp.join(", ")}]);`)
 					}
 					else {
-						js.push(`${idnt}                if (!${obj}[AX_CLASS_SYMBOL]) {`)
+						js.push(`${idnt}                if (typeof ${obj} === 'object' && !${obj}[AX_CLASS_SYMBOL]) {`)
 						js.push(`${idnt}                    ${stackF(param(0))} = ${obj}['${mn.name}'].apply(${obj}, [${pp.join(", ")}]);`)
 						js.push(`${idnt}                } else {`)
 						js.push(`${idnt}                // ${mn}`)
@@ -1465,7 +1465,7 @@ export function compile(methodInfo: MethodInfo, optimise: OPT_FLAGS = DEFAULT_OP
 						pp.push(stackF(param(0) - j))
 
 					let obj = pp.shift();
-					js.push(`${idnt}                if (!${obj}[AX_CLASS_SYMBOL]) {`)
+					js.push(`${idnt}                if (typeof ${obj} === 'object' && !${obj}[AX_CLASS_SYMBOL]) {`)
 					js.push(`${idnt}                    ${obj}['${mn.name}'].apply(${obj}, [${pp.join(", ")}]);`)
 					js.push(`${idnt}                } else {`)
 					js.push(`${idnt}                    temp = sec.box(${obj});`)
