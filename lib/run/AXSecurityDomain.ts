@@ -1,6 +1,6 @@
 import { AXApplicationDomain } from "./AXApplicationDomain";
 import { ClassAliases } from "../amf";
-import { AXClass } from "./AXClass";
+import { AXClass, IS_AX_CLASS } from "./AXClass";
 import { AXMethodClosureClass } from "./AXMethodClosureClass";
 import { AXXMLClass } from "./AXXMLClass";
 import { AXXMLListClass } from "./AXXMLListClass";
@@ -123,7 +123,7 @@ export class AXSecurityDomain{
       return this._AXFunctionUndefinedPrototype ||
               (this._AXFunctionUndefinedPrototype = this.createObject());
     }
-  
+
     public objectPrototype: AXObject;
     public argumentsPrototype: AXObject;
     private rootClassPrototype: AXObject;
@@ -488,7 +488,10 @@ export class AXSecurityDomain{
       var scope = global.scope = new Scope(null, global, false);
       var objectTraits = this.AXObject.classInfo.instanceInfo.runtimeTraits;
       var traits = scriptInfo.traits.resolveRuntimeTraits(objectTraits, null, scope);
+
       applyTraits(global, traits);
+
+      global[IS_AX_CLASS] = true;
       return global;
     }
 
@@ -521,6 +524,7 @@ export class AXSecurityDomain{
         }
       });
   
+      rootClassPrototype[IS_AX_CLASS] = true;
       this.rootClassPrototype = rootClassPrototype;
     }
   
@@ -571,6 +575,8 @@ export class AXSecurityDomain{
       objectCI.runtimeTraits = objectCI.traits.resolveRuntimeTraits(classII.runtimeTraits, null,
                                                                     scope);
       applyTraits(this.AXObject, objectCI.runtimeTraits);
+
+      AXObject[IS_AX_CLASS] = true;
       return AXObject;
     }
   
@@ -594,7 +600,9 @@ export class AXSecurityDomain{
         axClass.dPrototype = Object.create(instancePrototype);
         axClass.tPrototype = Object.create(axClass.dPrototype);
       }
+      
       this[exportName] = this.nativeClasses[name] = axClass;
+      axClass[IS_AX_CLASS] = true;
       return axClass;
     }
   
@@ -613,6 +621,9 @@ export class AXSecurityDomain{
       D(axClass, "axIsType", isType);
       D(axClass, "axIsInstanceOf", isInstanceOf);
       D(axClass.dPrototype, "value", defaultValue);
+
+      axClass[IS_AX_CLASS] = true;
+
       return axClass;
     }
   

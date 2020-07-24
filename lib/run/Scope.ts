@@ -4,6 +4,7 @@ import { CONSTANT } from "../abc/lazy/CONSTANT";
 import { Multiname } from "../abc/lazy/Multiname";
 import { Namespace } from "../abc/lazy/Namespace";
 import { AXObject } from "./AXObject";
+import { IS_AX_CLASS } from "./AXClass";
 
 export class Scope {
     parent: Scope;
@@ -21,6 +22,7 @@ export class Scope {
     constructor(parent: Scope, object: AXObject, isWith: boolean = false) {
       Scope.ID ++;
 
+      this[IS_AX_CLASS] = true;
       this.init(parent, object, isWith);
     }
 

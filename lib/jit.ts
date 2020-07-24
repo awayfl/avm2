@@ -11,7 +11,7 @@ import { Multiname } from "./abc/lazy/Multiname"
 import { CONSTANT } from "./abc/lazy/CONSTANT"
 import { MethodInfo } from "./abc/lazy/MethodInfo"
 import { internNamespace } from "./abc/lazy/internNamespace";
-import { AXClass } from "./run/AXClass"
+import { AXClass, IS_AX_CLASS } from "./run/AXClass"
 import { axCoerceName } from "./run/axCoerceName"
 import { isNumeric, jsGlobal } from "@awayfl/swf-loader"
 import { ABCFile } from "./abc/lazy/ABCFile"
@@ -19,19 +19,42 @@ import { ScriptInfo } from "./abc/lazy/ScriptInfo"
 import { ExceptionInfo } from './abc/lazy/ExceptionInfo'
 import { BOX2D_PREFERENCE } from "./external";
 import { Bytecode } from './Bytecode'
+import { AXNamespaceClass } from './run/AXNamespaceClass'
 
-let B2D = undefined;
-function b2Class(name: string, args: any[]) {
-	if(!B2D) {
-		B2D = BOX2D_PREFERENCE.prefer;
+const LONG_NAMES = /nape./;
+
+let extClassLib = undefined;
+
+function extClassContructor(mn: Multiname, args: any[]) {
+	if(!extClassLib) {
+		extClassLib = BOX2D_PREFERENCE.prefer;
 	}
 
-	if(!B2D) {
+	if(!extClassLib) {
 		return null;
 	}
 
+	const name = mn.name;
+	const ns = mn.namespace?.uri;
 	// import - is freezed object, class - is function. We can call it as regular class.
-	const Constructor = B2D[name];
+	// fast lookup, for box2D
+	let Constructor = extClassLib[name];
+
+	// nape?
+	if(!Constructor && ns && LONG_NAMES.test(ns)) {
+		const lookup = ns.split(".");
+
+		Constructor = extClassLib;
+
+		for(let child of lookup) {
+			Constructor = Constructor[child];
+			if(!Constructor) {
+				return null;
+			}
+		}
+
+		Constructor = Constructor[name];
+	}
 
 	if(!Constructor) {
 		return null;
@@ -1414,7 +1437,7 @@ export function compile(methodInfo: MethodInfo, optimise: OPT_FLAGS = DEFAULT_OP
 						js.push(`${idnt}                ${stackF(param(0))} = context.getdefinitionbyname(${scope}, ${obj}, [${pp.join(", ")}]);`)
 					}
 					else {
-						js.push(`${idnt}                if (${obj}.__fast__ || ${ UNSAFE_JIT && `typeof ${obj}['axInitializer'] === 'undefined'`}) {`)
+						js.push(`${idnt}                if (!${obj}[AX_CLASS_SYMBOL]) {`)
 						js.push(`${idnt}                    ${stackF(param(0))} = ${obj}['${mn.name}'].apply(${obj}, [${pp.join(", ")}]);`)
 						js.push(`${idnt}                } else {`)
 						js.push(`${idnt}                // ${mn}`)
@@ -1442,7 +1465,7 @@ export function compile(methodInfo: MethodInfo, optimise: OPT_FLAGS = DEFAULT_OP
 						pp.push(stackF(param(0) - j))
 
 					let obj = pp.shift();
-					js.push(`${idnt}                if (${obj}.__fast__ || ${ UNSAFE_JIT && `typeof ${obj}['axInitializer'] === 'undefined'`}) {`)
+					js.push(`${idnt}                if (!${obj}[AX_CLASS_SYMBOL]) {`)
 					js.push(`${idnt}                    ${obj}['${mn.name}'].apply(${obj}, [${pp.join(", ")}]);`)
 					js.push(`${idnt}                } else {`)
 					js.push(`${idnt}                    temp = sec.box(${obj});`)
@@ -1556,7 +1579,7 @@ export function compile(methodInfo: MethodInfo, optimise: OPT_FLAGS = DEFAULT_OP
 				case Bytecode.GETPROPERTY:
 					var mn = abc.getMultiname(param(0));
 					js.push(`${idnt}                // ${mn}`)
-					js.push(`${idnt}                if (${stack0}.__fast__ || ${ UNSAFE_JIT && `typeof ${stack0}['axInitializer'] === 'undefined'`} ) {`)
+					js.push(`${idnt}                if (!${stack0}[AX_CLASS_SYMBOL] ) {`)
 					js.push(`${idnt}                    ${stack0} = ${stack0}['${mn.name}'];`)
 					js.push(`${idnt}                } else {`)
 					js.push(`${idnt}                    temp = sec.box(${stack0});`)
@@ -1577,7 +1600,7 @@ export function compile(methodInfo: MethodInfo, optimise: OPT_FLAGS = DEFAULT_OP
 				case Bytecode.SETPROPERTY:
 					var mn = abc.getMultiname(param(0))
 					js.push(`${idnt}                // ${mn}`)
-					js.push(`${idnt}                if (${stack1}.__fast__) {`)
+					js.push(`${idnt}                if (!${stack1}[AX_CLASS_SYMBOL]){`)
 					js.push(`${idnt}                    ${stack1}['${mn.name}'] = ${stack0};`)
 					js.push(`${idnt}                } else {`)
 					js.push(`${idnt}                    context.setproperty(${getname(param(0))}, ${stack0}, ${stack1});`)
@@ -1792,7 +1815,9 @@ export function compile(methodInfo: MethodInfo, optimise: OPT_FLAGS = DEFAULT_OP
 
 	js0[LOCALS_POS] = locals.join("\n");
 
-	let w = js0.join("\n") + "\n" + js.join("\n");
+	const symbol = "const AX_CLASS_SYMBOL = context.AX_CLASS_SYMBOL;\n";
+
+	let w = symbol +  js0.join("\n") + "\n" + js.join("\n");
 	const hasError = w.indexOf(underrun) > -1;
 	
 	const scriptPrefix = "// (#" + methodInfo.index() + ") --- " + methodInfo + "\n";
@@ -1834,6 +1859,7 @@ export class Context {
 	private domainMemoryView: DataView;
 
 	public readonly emptyArray: any;
+	public readonly AX_CLASS_SYMBOL = IS_AX_CLASS;
 
 	constructor(mi: MethodInfo, savedScope: Scope, names: Multiname[]) {
 		this.mi = mi;
@@ -1915,10 +1941,10 @@ export class Context {
 		return b.axGetProperty(mn)
 	}
 
-	setproperty(mn: Multiname, value: any, obj: AXClass & {__fast__: true}) {
+	setproperty(mn: Multiname, value: any, obj: AXClass) {
 
 		// unsfae SET fro plain Objects
-		if(obj.__fast__ || (typeof obj.axInitializer === 'undefined' && UNSAFE_SET)) {
+		if(!obj[IS_AX_CLASS]) {
 			obj[mn.name] = value;
 			return;
 		}
@@ -1942,7 +1968,7 @@ export class Context {
 	construct(obj, pp) {
 		let mn = obj.classInfo.instanceInfo.getName()
 
-		let r = b2Class(mn.name, pp)
+		let r = extClassContructor(mn.name, pp)
 
 		if (r != null)
 			return r
@@ -1955,8 +1981,8 @@ export class Context {
 	}
 
 
-	constructprop(mn, obj, pp) {
-		let r = b2Class(mn.name, pp)
+	constructprop(mn: Multiname, obj, pp) {
+		let r = extClassContructor(mn, pp)
 
 		if (r != null)
 			return r

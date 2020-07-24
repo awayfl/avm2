@@ -4,6 +4,7 @@ import { RuntimeTraits } from "../abc/lazy/RuntimeTraits";
 import { AXBasePrototype_$BgtoString } from "./AXBasePrototype_";
 import { defineNonEnumerableProperty } from "@awayfl/swf-loader";
 import { isPrimitiveJSValue } from './isPrimitiveJSValue';
+import { IS_AX_CLASS } from './AXClass';
 
 function AXBasePrototype_toString() {
     return this.$BgtoString.axCall(this);
@@ -63,7 +64,8 @@ export function initializeAXBasePrototype() {
     // Helper methods borrowed from Object.prototype.
     D(AXBasePrototype, "isPrototypeOf", Object.prototype.isPrototypeOf);
     D(AXBasePrototype, "hasOwnProperty", Object.prototype.hasOwnProperty);
-  
+    D(AXBasePrototype, IS_AX_CLASS, true);
+
     AXBasePrototype.$BgtoString = AXBasePrototype_$BgtoString;
     AXBasePrototype.toString = AXBasePrototype_toString;
     AXBasePrototype.$BgvalueOf = AXBasePrototype_$BgvalueOf;
