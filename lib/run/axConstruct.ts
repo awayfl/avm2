@@ -1,7 +1,7 @@
 import { MovieClip, SceneImage2D, FrameScriptManager } from '@awayjs/scene';
 import { AssetBase, WaveAudio } from '@awayjs/core';
 import { BitmapImage2D } from '@awayjs/stage';
-import { AXClass } from './AXClass';
+import { AXClass, IS_AX_CLASS } from './AXClass';
 import { Multiname } from '../abc/lazy/Multiname';
 import { AXApplicationDomain } from './AXApplicationDomain';
 
@@ -203,6 +203,9 @@ export function axConstruct(argArray?: any[]) {
 
 		asset && (object.adaptee = asset);
 	}
+
+	// mark object that it is AX object, not a regular class
+	object[IS_AX_CLASS] = true;
 
 	if(object.adaptee && object.adaptee.timeline){
 		object.adaptee.timeline.resetScripts();

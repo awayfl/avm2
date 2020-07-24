@@ -4,7 +4,10 @@ import { ClassInfo } from "../abc/lazy/ClassInfo";
 import { Multiname } from "../abc/lazy/Multiname";
 import { ASClass } from '../nat/ASClass';
 
+export const IS_AX_CLASS = Symbol("AX class marker");
+
 export interface AXClass extends AXObject {
+    [IS_AX_CLASS]: boolean;
     scope: Scope;
     asClass: ASClass;
     superClass: AXClass;
