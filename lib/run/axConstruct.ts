@@ -73,7 +73,11 @@ const ASSET_LOOKUP: IAsseLookupTable = {
 		allowType: [SceneImage2D, BitmapImage2D],
 		lookupMethod: "getDefinition",
 		passToConstructor: true
-	}
+	},
+	"Bitmap": {
+		allowType: [SceneImage2D, BitmapImage2D],
+		lookupMethod: "getDefinition",
+	},
 }
 /**
  * Generic axConstruct method that lives on the AXClass prototype. This just
