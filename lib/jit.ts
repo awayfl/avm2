@@ -17,60 +17,8 @@ import { isNumeric, jsGlobal } from "@awayfl/swf-loader"
 import { ABCFile } from "./abc/lazy/ABCFile"
 import { ScriptInfo } from "./abc/lazy/ScriptInfo"
 import { ExceptionInfo } from './abc/lazy/ExceptionInfo'
-import { BOX2D_PREFERENCE } from "./external";
 import { Bytecode } from './Bytecode'
-import { AXNamespaceClass } from './run/AXNamespaceClass'
-
-const LONG_NAMES = /nape./;
-
-let extClassLib = undefined;
-
-function extClassContructor(mn: Multiname, args: any[]) {
-	if(!extClassLib) {
-		extClassLib = BOX2D_PREFERENCE.prefer;
-	}
-
-	if(!extClassLib) {
-		return null;
-	}
-
-	const name = mn.name;
-	const ns = mn.namespace?.uri;
-	// import - is freezed object, class - is function. We can call it as regular class.
-	// fast lookup, for box2D
-	let Constructor = extClassLib[name];
-
-	// nape?
-	if(!Constructor && ns && LONG_NAMES.test(ns)) {
-		const lookup = ns.split(".");
-
-		Constructor = extClassLib;
-
-		for(let child of lookup) {
-			Constructor = Constructor[child];
-			if(!Constructor) {
-				return null;
-			}
-		}
-
-		Constructor = Constructor[name];
-	}
-
-	if(!Constructor) {
-		return null;
-	}
-
-	// faster that Object.create;
-	// class constructor optimized in v8 and WebKit
-	// s ... rollup issues =(
-	const obj = Object.create(Constructor.prototype)
-	Constructor.apply(obj, args);
-
-	// force fast mode;
-	obj.__fast__ = true;
-
-	return obj;
-}
+import { extClassContructor} from "./ext/external";
 
 export let BytecodeName = Bytecode
 
@@ -95,10 +43,16 @@ export const enum OPT_FLAGS {
 	USE_ES_PARAMS = 0x1, // use es7 style of compiled function to avoid use arguments
 	USE_NEW_FUCTION = 0x2, // use eval instead of new Function
 	SKIP_NULL_COERCE = 0x4, // skip coerce for nulled constant objects
-	SKIP_DOMAIN_MEM = 0x8 // skip compilation of domain memory instructions
+	SKIP_DOMAIN_MEM = 0x8, // skip compilation of domain memory instructions
+	ALLOW_CUSTOM_OPTIMISER = 0x16 // allow use custom optimiser classe for mutate codegenerator
 }
 
-const DEFAULT_OPT = OPT_FLAGS.USE_NEW_FUCTION | OPT_FLAGS.USE_ES_PARAMS | OPT_FLAGS.SKIP_NULL_COERCE | OPT_FLAGS.SKIP_DOMAIN_MEM;
+const DEFAULT_OPT = 
+	OPT_FLAGS.ALLOW_CUSTOM_OPTIMISER |
+	OPT_FLAGS.USE_NEW_FUCTION | 
+	OPT_FLAGS.USE_ES_PARAMS | 
+	OPT_FLAGS.SKIP_NULL_COERCE | 
+	OPT_FLAGS.SKIP_DOMAIN_MEM;
 
 // allow set to plain object in setproperty when it not AXClass
 const UNSAFE_SET = false;
