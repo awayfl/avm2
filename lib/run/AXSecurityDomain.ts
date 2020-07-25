@@ -312,9 +312,11 @@ export class AXSecurityDomain{
           // dynamic prototype not the tPrototype.
           if (superClass === this.AXObject) {
             axClass.dPrototype = Object.create(this.objectPrototype);
-          } else {
+          } else if(superClass.dPrototype) {
             axClass.dPrototype = Object.create(superClass.dPrototype);
-          }
+          } else {
+			axClass.dPrototype = Object.create((<any>superClass).prototype);
+		  }
           axClass.tPrototype = Object.create(axClass.dPrototype);
           axClass.tPrototype.axInitializer = this.createInitializerFunction(classInfo, classScope);
         }
@@ -375,7 +377,7 @@ export class AXSecurityDomain{
       applyTraits(axClass, classTraits);
   
       // Prepare instance traits.
-      var superInstanceTraits = superClass ? superClass.classInfo.instanceInfo.runtimeTraits : null;
+      var superInstanceTraits = (superClass && superClass[IS_AX_CLASS]) ? superClass.classInfo.instanceInfo.runtimeTraits : null;
       var protectedNs = classInfo.abc.getNamespace(instanceInfo.protectedNs);
       var instanceTraits = instanceInfo.traits.resolveRuntimeTraits(superInstanceTraits,
                                                                     protectedNs, scope);

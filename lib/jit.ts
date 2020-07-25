@@ -18,11 +18,81 @@ import { ABCFile } from "./abc/lazy/ABCFile"
 import { ScriptInfo } from "./abc/lazy/ScriptInfo"
 import { ExceptionInfo } from './abc/lazy/ExceptionInfo'
 import { Bytecode } from './Bytecode'
-import { extClassContructor} from "./ext/external";
+import { extClassContructor, getExtClassField} from "./ext/external";
 
 export let BytecodeName = Bytecode
 
 const DEFAULT_STACK_INDEX = -1024;
+
+interface IImportDefinition {
+	name: Multiname;
+	alias: string;
+}
+
+class GenerateLexImports {
+	imports: Array<IImportDefinition> = [];
+	_testReg: RegExp = /nape./;
+
+	public test(mn: Multiname) {
+		return false;
+	}
+
+	public getStaticAlias(mn: Multiname): string {
+		if(!this.test(mn)) {
+			throw `Can't generate static alias for ${mn.name} of ${mn.namespace?.uri}`;
+		}
+
+		let def: IImportDefinition = this.imports.find((e) => e.name === mn);
+
+		if(def) {
+			return def.alias;
+		}
+
+		const alias = mn.namespace.uri.replace(".", "_") + "__" + mn.name;
+		
+		def = { name: mn, alias };
+
+		this.imports.push(def);
+
+		return def.alias;
+	}
+
+	public genHeader() {
+		let header = ["\n/* GenerateLexImports */"];
+		
+		for(let def of this.imports) {
+			const uri = def.name.namespace.uri;
+			const name = def.name.name;
+			header.push(`const ${def.alias} = context.getStaticImportExt('${uri}', '${name}');`);
+		}
+
+		header.push("\n");
+		return header.join("\n");
+	}
+
+	public genBody() {
+		return "";
+	}
+}
+
+class NapeLex extends GenerateLexImports {
+	public test(mn: Multiname) {
+		const uri = mn.namespace?.uri;
+		
+		if(!uri) {
+			return false;
+		}
+
+		if(!uri.startsWith('nape.')) {
+			return false;
+		}
+
+		if(mn.name.includes('Debug')) {
+			return false;
+		}
+		return true;
+	}
+}
 
 class Instruction {
 	public stack: number = DEFAULT_STACK_INDEX
@@ -74,11 +144,13 @@ export interface ICompilerProcess {
 
 export function compile(methodInfo: MethodInfo, optimise: OPT_FLAGS = DEFAULT_OPT): ICompilerProcess {
 
+	// lex generator
+	const lexGen = new NapeLex();
+
 	let abc = methodInfo.abc
 	let code = methodInfo.getBody().code
 	let isStackUnderrun = false;
 	var body = methodInfo.getBody();
-
 	let q: Instruction[] = []
 
 	for (let i: number = 0; i < code.length;) {
@@ -1603,13 +1675,20 @@ export function compile(methodInfo: MethodInfo, optimise: OPT_FLAGS = DEFAULT_OP
 					}
 					break
 				case Bytecode.GETLEX:
-					var mn = abc.getMultiname(param(0))
-					js.push(`${idnt}                // ${mn}`)
-					js.push(`${idnt}                temp = ${scope}.findScopeProperty(${getname(param(0))}, true, false);`)
-					js.push(`${idnt}                ${stackN} = temp['$Bg${mn.name}'];`)
-					js.push(`${idnt}                if (${stackN} === undefined || typeof ${stackN} === 'function') {`)
-					js.push(`${idnt}                    ${stackN} = temp.axGetProperty(${getname(param(0))});`)
-					js.push(`${idnt}                }`)
+					var mn = abc.getMultiname(param(0));
+
+					if(optimise & OPT_FLAGS.ALLOW_CUSTOM_OPTIMISER && lexGen && lexGen.test(mn)) {
+						js.push(`${idnt}                // ${mn}`)
+						js.push(`${idnt}                /* GenerateLexImports */`);
+						js.push(`${idnt}                ${stackN} = ${lexGen.getStaticAlias(mn)};`)
+					} else {
+						js.push(`${idnt}                // ${mn}`)
+						js.push(`${idnt}                temp = ${scope}.findScopeProperty(${getname(param(0))}, true, false);`)
+						js.push(`${idnt}                ${stackN} = temp['$Bg${mn.name}'];`)
+						js.push(`${idnt}                if (${stackN} === undefined || typeof ${stackN} === 'function') {`)
+						js.push(`${idnt}                    ${stackN} = temp.axGetProperty(${getname(param(0))});`)
+						js.push(`${idnt}                }`)
+					}
 					break
 				case Bytecode.RETURNVALUE:
 					js.push(`${idnt}                return ${stack0};`)
@@ -1769,9 +1848,13 @@ export function compile(methodInfo: MethodInfo, optimise: OPT_FLAGS = DEFAULT_OP
 
 	js0[LOCALS_POS] = locals.join("\n");
 
-	const symbol = "const AX_CLASS_SYMBOL = context.AX_CLASS_SYMBOL;\n";
+	const header = ["const AX_CLASS_SYMBOL = context.AX_CLASS_SYMBOL;"];
+	
+	if(optimise & OPT_FLAGS.ALLOW_CUSTOM_OPTIMISER && lexGen) {
+		header.push(lexGen.genHeader());
+	}
 
-	let w = symbol +  js0.join("\n") + "\n" + js.join("\n");
+	let w = header.join("\n") +  js0.join("\n") + "\n" + js.join("\n");
 	const hasError = w.indexOf(underrun) > -1;
 	
 	const scriptPrefix = "// (#" + methodInfo.index() + ") --- " + methodInfo + "\n";
@@ -1837,6 +1920,13 @@ export class Context {
 		}
 
 		return this.domain.internal_memoryView;
+	}
+
+	/**
+	 * Generate static import of object
+	 */
+	getStaticImportExt(namespace: string, name: string = undefined): any {
+		return getExtClassField(name, namespace);
 	}
 
 	typeof(object: any): string {

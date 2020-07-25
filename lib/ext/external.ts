@@ -1,44 +1,39 @@
-
-import { Multiname } from "./../abc/lazy/Multiname"
+import { Multiname } from "./../abc/lazy/Multiname";
 import { BOX2D_PREFERENCE } from "./../external";
 
 export const IS_EXTERNAL_CLASS = Symbol("External instance");
-type Ctr = { new ():Object };
+type Ctr = { new (): Object };
 
 const LONG_NAMES = /nape./;
 
 let extClassLib = undefined;
+export function getExtClassField(name: string, namespace: string = undefined): Ctr | null {
+	const lib = extClassLib;
 
-export function getExtClassField(mn: Multiname, lib: Object, strict: boolean = false): Ctr | null {
-	if(!lib || !mn || !mn.name || mn.numeric) {
+	if (!lib || !name) {
 		return null;
 	}
 
-	const name = mn.name;
-	const ns = mn.namespace?.uri;
-
 	// fast check, for Box2D
-	if(!strict && typeof lib[name] !== 'undefined') {
+	if (!namespace && typeof lib[name] !== "undefined") {
 		return lib[name];
 	}
 
-	// nape?
-	if(strict && ns && LONG_NAMES.test(ns)) {
-		const lookup = ns.split(".");
-
-		let trace = lib;
-
-		for(let child of lookup) {
-			trace = lib[child];
-			if(!trace) {
-				return null;
-			}
-		}
-
-		return trace[name];
+	if(!namespace) {
+		return null;
 	}
 
-	return null;
+	let trace = lib;
+	let path = namespace.split(".");
+
+	for (let child of path) {
+		trace = trace[child];
+		if (!trace) {
+			return null;
+		}
+	}
+
+	return trace[name] as Ctr;
 }
 /**
  * Try construct object from external lib, like as Box2D or Nape
@@ -46,30 +41,33 @@ export function getExtClassField(mn: Multiname, lib: Object, strict: boolean = f
  * @param args {any[]}
  */
 export function extClassContructor(mn: Multiname, args: any[]) {
-	if(!extClassLib) {
+	if (!extClassLib) {
 		extClassLib = BOX2D_PREFERENCE.prefer;
 	}
 
-	if(!extClassLib) {
+	if (!extClassLib) {
 		return null;
 	}
 
 	const ns = mn.namespace?.uri;
-	const Constructor = getExtClassField(mn, extClassLib, ns ? LONG_NAMES.test(ns): false);
+	const name = mn.name;
+	const isLong = ns && LONG_NAMES.test(ns);
 
-	if(typeof Constructor !== 'function') {
+	const Constructor = getExtClassField(name, isLong ? ns : undefined);
+
+	if (typeof Constructor !== "function") {
 		return null;
 	}
 
 	// faster that Object.create;
 	// class constructor optimized in v8 and WebKit
 	// s ... rollup issues =(
-	const obj = Object.create(Constructor.prototype)
+	const obj = Object.create(Constructor.prototype);
 	Constructor.apply(obj, args);
 
-    // force fast mode;
-    // legacy
-    obj.__fast__ = true;
-    obj[IS_EXTERNAL_CLASS] = true;
+	// force fast mode;
+	// legacy
+	obj.__fast__ = true;
+	obj[IS_EXTERNAL_CLASS] = true;
 	return obj;
 }
