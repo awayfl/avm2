@@ -157,7 +157,7 @@ class TweenCallSaver extends CallBlockSaver {
 }
 
 export function emitIsAXOrPrimitive(name: string): string {
-	return `(_a = typeof ${name}, ((_a !== 'object' && _a !== 'function') || ${name}[AX_CLASS_SYMBOL]))`
+	return `(_a = typeof ${name}, ((_a !== 'object' && _a !== 'function' ) || ${name} == null || ${name}[AX_CLASS_SYMBOL]))`
 }
 
 export function emitIsCallableNative(name: string, func: string) {
@@ -1505,7 +1505,7 @@ export function compile(methodInfo: MethodInfo, optimise: OPT_FLAGS = DEFAULT_OP
 					break;
 
 				case Bytecode.ASTYPELATE:
-					js.push(`${idnt}                ${stack1} = ${stack0}.axAsType(${stack1});`)
+					js.push(`${idnt}                ${stack1} = ${emitIsAXOrPrimitive(stack1)} ? ${stack0}.axAsType(${stack1}) : ${stack1};`)
 					break
 
 				case Bytecode.CALL: {
