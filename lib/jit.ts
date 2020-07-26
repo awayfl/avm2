@@ -48,7 +48,7 @@ class GenerateLexImports {
 			return def.alias;
 		}
 
-		const alias = mn.namespace.uri.replace(".", "_") + "__" + mn.name;
+		const alias = mn.namespace.uri.replace(/\./g, "_") + "__" + mn.name;
 		
 		def = { name: mn, alias };
 
