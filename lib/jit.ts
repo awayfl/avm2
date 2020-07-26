@@ -156,8 +156,9 @@ class TweenCallSaver extends CallBlockSaver {
 	}	
 }
 
-export function emitIsAXOrPrimitive(name: string): string {
-	return `(_a = typeof ${name}, ((_a !== 'object' && _a !== 'function' ) || ${name} == null || ${name}[AX_CLASS_SYMBOL]))`
+export function emitIsAXOrPrimitive(name: string, explictNull = false): string {
+	const nullTest = explictNull ? "" : `|| ${name} == null`;
+	return `(_a = typeof ${name}, ((_a !== 'object' && _a !== 'function' ) ${nullTest} || ${name}[AX_CLASS_SYMBOL]))`
 }
 
 export function emitIsCallableNative(name: string, func: string) {
