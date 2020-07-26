@@ -1,4 +1,4 @@
-import { MovieClip, SceneImage2D, FrameScriptManager } from '@awayjs/scene';
+import { MovieClip, SceneImage2D, FrameScriptManager, Sprite } from '@awayjs/scene';
 import { AssetBase, WaveAudio } from '@awayjs/core';
 import { BitmapImage2D } from '@awayjs/stage';
 import { AXClass, IS_AX_CLASS } from './AXClass';
@@ -40,7 +40,11 @@ export class OrphanManager {
 		for (var i = 0; i < OrphanManager.orphans.length; i++) {
 			
 			//if((<AwayMovieClip>OrphanManager.orphans[i].adaptee).isAsset(AwayMovieClip)){
+			if(OrphanManager.orphans[i].adaptee.update)
 				OrphanManager.orphans[i].adaptee.update();
+			else if(OrphanManager.orphans[i].adaptee.advanceFrame){
+				OrphanManager.orphans[i].adaptee.advanceFrame();
+			}
 			// }
 			// else{
 			// 	(<any>OrphanManager.orphans[i]).advanceFrame(events);
@@ -153,7 +157,6 @@ export function axConstruct(argArray?: any[]) {
 		}
 		newMC.reset();
 		FrameScriptManager.execute_as3_constructors();
-		OrphanManager.addOrphan(object);
 	}
 
 
@@ -211,6 +214,7 @@ export function axConstruct(argArray?: any[]) {
 		object.adaptee.timeline.resetScripts();
 	}
 	object.axInitializer.apply(object,argArray);
-	
+	if (object.adaptee instanceof MovieClip || object.adaptee instanceof Sprite)
+		OrphanManager.addOrphan(object);
 	return object;
 }
