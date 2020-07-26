@@ -180,11 +180,11 @@ class Instruction {
 }
 
 export const enum OPT_FLAGS {
-	USE_ES_PARAMS = 0x1, // use es7 style of compiled function to avoid use arguments
-	USE_NEW_FUCTION = 0x2, // use eval instead of new Function
-	SKIP_NULL_COERCE = 0x4, // skip coerce for nulled constant objects
-	SKIP_DOMAIN_MEM = 0x8, // skip compilation of domain memory instructions
-	ALLOW_CUSTOM_OPTIMISER = 0x16 // allow use custom optimiser classe for mutate codegenerator
+	USE_ES_PARAMS = 1, // use es7 style of compiled function to avoid use arguments
+	USE_NEW_FUCTION = 2, // use eval instead of new Function
+	SKIP_NULL_COERCE = 4, // skip coerce for nulled constant objects
+	SKIP_DOMAIN_MEM = 8, // skip compilation of domain memory instructions
+	ALLOW_CUSTOM_OPTIMISER = 16 // allow use custom optimiser classe for mutate codegenerator
 }
 
 const DEFAULT_OPT = 
