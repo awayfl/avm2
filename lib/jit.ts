@@ -152,7 +152,7 @@ class CallBlockSaver {
 
 class TweenCallSaver extends CallBlockSaver {
 	test(mn: Multiname) {
-		return mn.namespace?.uri && mn.namespace.uri.includes("TweenLite");
+		return mn.namespaces && mn.namespace?.uri && mn.namespace.uri.includes("TweenLite");
 	}	
 }
 
