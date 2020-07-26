@@ -211,10 +211,6 @@ export function axConstruct(argArray?: any[]) {
 		object.adaptee.timeline.resetScripts();
 	}
 	object.axInitializer.apply(object,argArray);
-	if(object.initAdapter){
-		object.executeConstructor=()=>{};
-		object.initAdapter();
-	}
 	
 	return object;
 }
