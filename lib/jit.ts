@@ -1309,7 +1309,7 @@ export function compile(methodInfo: MethodInfo, optimise: OPT_FLAGS = DEFAULT_OP
 					break
 				case Bytecode.DECLOCAL_I:
 					js.push(`${idnt}                ${local(param(0))} |= 0;`)
-					js.push(`${idnt}                ${local(param(0))}++;`)
+					js.push(`${idnt}                ${local(param(0))}--;`)
 					break;
 				case Bytecode.NEGATE_I:
 					js.push(`${idnt}                ${stack0} = -(${stack0} | 0);`)
