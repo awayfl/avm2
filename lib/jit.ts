@@ -18,7 +18,12 @@ import { ABCFile } from "./abc/lazy/ABCFile"
 import { ScriptInfo } from "./abc/lazy/ScriptInfo"
 import { ExceptionInfo } from './abc/lazy/ExceptionInfo'
 import { Bytecode } from './Bytecode'
-import { extClassContructor, getExtClassField} from "./ext/external";
+import {
+	extClassContructor, 
+	getExtClassField, 
+	emitIsAXOrPrimitive, 
+	emitIsAX
+} from "./ext/external";
 
 export let BytecodeName = Bytecode
 
@@ -58,6 +63,10 @@ class GenerateLexImports {
 	}
 
 	public genHeader() {
+		if(!this.imports.length) {
+			return "";
+		}
+
 		let header = ["\n/* GenerateLexImports */"];
 		
 		for(let def of this.imports) {
@@ -81,6 +90,11 @@ class NapeLex extends GenerateLexImports {
 		
 		if(!uri) {
 			return false;
+		}
+		
+		// generate static for box2D
+		if(uri.startsWith('Box2D')) {
+			return true; 
 		}
 
 		if(!uri.startsWith('nape.')) {
@@ -156,14 +170,7 @@ class TweenCallSaver extends CallBlockSaver {
 	}	
 }
 
-export function emitIsAXOrPrimitive(name: string, explictNull = false): string {
-	const nullTest = explictNull ? "" : `|| ${name} == null`;
-	return `(_a = typeof ${name}, ((_a !== 'object' && _a !== 'function' ) ${nullTest} || ${name}[AX_CLASS_SYMBOL]))`
-}
 
-export function emitIsCallableNative(name: string, func: string) {
-	return `( !${name}[AX_CLASS_SYMBOL] && typeof ${name}['${func}'] === 'function')`;
-}
 
 class Instruction {
 	public stack: number = DEFAULT_STACK_INDEX
@@ -1593,7 +1600,15 @@ export function compile(methodInfo: MethodInfo, optimise: OPT_FLAGS = DEFAULT_OP
 
 
 				case Bytecode.FINDPROPSTRICT:
-					js.push(`${idnt}                // ${abc.getMultiname(param(0))}`)
+					var mn = abc.getMultiname(param(0));
+					js.push(`${idnt}                // ${mn}`)
+
+					if(optimise & OPT_FLAGS.ALLOW_CUSTOM_OPTIMISER && lexGen && lexGen.test(mn)) {
+						js.push(`${idnt}                /* GenerateLexImports */`);
+						js.push(`${idnt}                ${stackN} = ${lexGen.getStaticAlias(mn)};`)
+						break;
+					}
+
 					js.push(`${idnt}                ${stackN} = ${scope}.findScopeProperty(${getname(param(0))}, true, false);`)
 					break
 				case Bytecode.FINDPROPERTY:
@@ -1698,7 +1713,7 @@ export function compile(methodInfo: MethodInfo, optimise: OPT_FLAGS = DEFAULT_OP
 					}
 
 					js.push(`${idnt}                // ${mn}`)
-					js.push(`${idnt}                if (${stack0} && !${stack0}[AX_CLASS_SYMBOL] ) {`)
+					js.push(`${idnt}                if (!${emitIsAX(stack0)}) {`)
 					js.push(`${idnt}                    ${stack0} = ${stack0}['${mn.name}'];`)
 					js.push(`${idnt}                } else {`)
 					js.push(`${idnt}                    temp = ${stack0}[AX_CLASS_SYMBOL] ? ${stack0} : sec.box(${stack0});`)
@@ -1731,7 +1746,7 @@ export function compile(methodInfo: MethodInfo, optimise: OPT_FLAGS = DEFAULT_OP
 				case Bytecode.SETPROPERTY:
 					var mn = abc.getMultiname(param(0))
 					js.push(`${idnt}                // ${mn}`)
-					js.push(`${idnt}                if (!${stack1}[AX_CLASS_SYMBOL]){`)
+					js.push(`${idnt}                if (!${emitIsAX(stack1)}){`)
 					js.push(`${idnt}                    ${stack1}['${mn.name}'] = ${stack0};`)
 					js.push(`${idnt}                } else {`)
 					js.push(`${idnt}                    context.setproperty(${getname(param(0))}, ${stack0}, ${stack1});`)
@@ -1806,7 +1821,7 @@ export function compile(methodInfo: MethodInfo, optimise: OPT_FLAGS = DEFAULT_OP
 						js.push(`${idnt}                // SKIP_NULL_COERCE`);
 						break;
 					}
-					js.push(`${idnt}                ${stack0} = ${scope}.getScopeProperty(${getname(param(0))}, true, false).axCoerce(${stack0});`)
+					js.push(`${idnt}                ${stack0} = ${emitIsAX(stack0)} ? ${scope}.getScopeProperty(${getname(param(0))}, true, false).axCoerce(${stack0}): ${stack0};`)
 					break
 				case Bytecode.COERCE_A:
 					js.push(`${idnt}                ;`)

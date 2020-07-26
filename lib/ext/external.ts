@@ -15,7 +15,7 @@ export function getExtClassField(name: string, namespace: string = undefined): C
 	}
 
 	// fast check, for Box2D
-	if (!namespace && typeof lib[name] !== "undefined") {
+	if (!namespace || typeof lib[name] !== "undefined") {
 		return lib[name];
 	}
 
@@ -70,4 +70,27 @@ export function extClassContructor(mn: Multiname, args: any[]) {
 	obj.__fast__ = true;
 	obj[IS_EXTERNAL_CLASS] = true;
 	return obj;
+}
+
+export function emitIsAX(name: string) {
+	if(!BOX2D_PREFERENCE.prefer) {
+		return 'true';
+	}
+
+	return `(${name} != undefined && ${name}[AX_CLASS_SYMBOL])`	
+}
+
+export function emitIsAXOrPrimitive(name: string, explictNull = false): string {
+	if(!BOX2D_PREFERENCE.prefer) {
+		return 'true';
+	}
+	const nullTest = explictNull ? `` : `|| ${name} == null`;
+	return `(_a = typeof ${name}, ((_a !== 'object' && _a !== 'function' ) ${nullTest} || ${name}[AX_CLASS_SYMBOL]))`
+}
+
+export function emitIsCallableNative(name: string, func: string) {
+	if(!BOX2D_PREFERENCE.prefer) {
+		return 'false';
+	}
+	return `( !${name}[AX_CLASS_SYMBOL] && typeof ${name}['${func}'] === 'function')`;
 }
