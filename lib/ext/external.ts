@@ -8,7 +8,7 @@ const LONG_NAMES = /nape./;
 
 let extClassLib = undefined;
 export function getExtClassField(name: string, namespace: string = undefined): Ctr | null {
-	const lib = extClassLib;
+	const lib = extClassLib  || (extClassLib =  BOX2D_PREFERENCE.prefer);
 
 	if (!lib || !name) {
 		return null;
