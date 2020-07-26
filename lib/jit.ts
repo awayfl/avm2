@@ -94,6 +94,14 @@ class NapeLex extends GenerateLexImports {
 	}
 }
 
+export function emitIsAXOrPrimitive(name: string): string {
+	return `(_a = typeof ${name}, ((_a !== 'object' && _a !== 'function') || ${name}[AX_CLASS_SYMBOL]))`
+}
+
+export function emitIsCallableNative(name: string, func: string) {
+	return `( !${name}[AX_CLASS_SYMBOL] && typeof ${name}['${func}'] === 'function')`;
+}
+
 class Instruction {
 	public stack: number = DEFAULT_STACK_INDEX
 	public scope: number = DEFAULT_STACK_INDEX
@@ -1463,7 +1471,7 @@ export function compile(methodInfo: MethodInfo, optimise: OPT_FLAGS = DEFAULT_OP
 						js.push(`${idnt}                ${stackF(param(0))} = context.getdefinitionbyname(${scope}, ${obj}, [${pp.join(", ")}]);`)
 					}
 					else {
-						js.push(`${idnt}                if (typeof ${obj} === 'object' && !${obj}[AX_CLASS_SYMBOL]) {`)
+						js.push(`${idnt}                if (!${emitIsAXOrPrimitive(obj)}) {`)
 						js.push(`${idnt}                    ${stackF(param(0))} = ${obj}['${mn.name}'].apply(${obj}, [${pp.join(", ")}]);`)
 						js.push(`${idnt}                } else {`)
 						js.push(`${idnt}                // ${mn}`)
@@ -1491,7 +1499,7 @@ export function compile(methodInfo: MethodInfo, optimise: OPT_FLAGS = DEFAULT_OP
 						pp.push(stackF(param(0) - j))
 
 					let obj = pp.shift();
-					js.push(`${idnt}                if (typeof ${obj} === 'object' && !${obj}[AX_CLASS_SYMBOL]) {`)
+					js.push(`${idnt}                if (!${emitIsAXOrPrimitive(obj)}) {`)
 					js.push(`${idnt}                    ${obj}['${mn.name}'].apply(${obj}, [${pp.join(", ")}]);`)
 					js.push(`${idnt}                } else {`)
 					js.push(`${idnt}                    temp = sec.box(${obj});`)
