@@ -94,6 +94,68 @@ class NapeLex extends GenerateLexImports {
 	}
 }
 
+/**
+ * @description Generate safe instruction for null block usage
+ */
+class CallBlockSaver {
+	_block: {alias: string} = null;
+	_used: boolean = false;
+	_needSafe: boolean = false;
+	test(mn: Multiname) {
+		return false;
+	}
+
+	markToSafe( mn: Multiname) {
+		return this._needSafe = this.test(mn);
+	}
+
+	drop() {
+		// we can drop already used block
+		if(this._used) {
+			return;
+		}
+		this._needSafe = false;
+		this._block = undefined;
+	}
+
+	safe(alias: string) {
+		this._block = {alias};
+		this._used = false;
+		return true;
+	}
+
+	needSafe(alias: string) {
+		return this._needSafe && this._block && this._block.alias === alias;
+	}
+
+	beginSafeBlock(alias: string) {
+		if(!this.needSafe(alias)) {
+			return "";
+		}
+
+		this._used = true;
+		return `if(${this._block.alias} != undefined) {`; // push block end;
+	}
+
+	endSafeBlock(fallback?: string) {
+		if(!this._used) {
+			return "";
+		}
+		
+		const result = fallback ? `} else { ${this._block.alias} = ${fallback}; }` : "}";
+
+		this._used = false;
+		this._block = undefined;
+		return result;
+	}
+}
+
+class TweenCallSaver extends CallBlockSaver {
+	test(mn: Multiname) {
+		return mn.namespace?.uri && mn.namespace.uri.includes("TweenLite");
+	}	
+}
+
 export function emitIsAXOrPrimitive(name: string): string {
 	return `(_a = typeof ${name}, ((_a !== 'object' && _a !== 'function') || ${name}[AX_CLASS_SYMBOL]))`
 }
@@ -154,6 +216,7 @@ export function compile(methodInfo: MethodInfo, optimise: OPT_FLAGS = DEFAULT_OP
 
 	// lex generator
 	const lexGen = new NapeLex();
+	const blockSaver = new TweenCallSaver();
 
 	let abc = methodInfo.abc
 	let code = methodInfo.getBody().code
@@ -1124,6 +1187,10 @@ export function compile(methodInfo: MethodInfo, optimise: OPT_FLAGS = DEFAULT_OP
 			// if we are in any try-catch-blocks, we must close them
 			if (openTryCatchBlockGroups) closeAllTryCatch();
 
+			if(optimise & OPT_FLAGS.ALLOW_CUSTOM_OPTIMISER && blockSaver) {
+				blockSaver.drop();
+			}
+
 			js.push(`            case ${z.position}:`)
 
 			// now we reopen all the try-catch again 
@@ -1442,12 +1509,15 @@ export function compile(methodInfo: MethodInfo, optimise: OPT_FLAGS = DEFAULT_OP
 					break
 
 				case Bytecode.CALL: {
-					let pp = []
-
+					let pp = [];
+					let obj = stackF(param(0) + 1);
 					for (let j: number = 1; j <= param(0); j++)
 						pp.push(stackF(param(0) - j))
-
-					js.push(`${idnt}                ${stackF(param(0) + 1)} = context.call(${stackF(param(0) + 1)}, ${stackF(param(0))}, [${pp.join(", ")}]);`)
+					
+					if(optimise && OPT_FLAGS.ALLOW_CUSTOM_OPTIMISER && blockSaver && blockSaver.safe(obj)) {
+						js.push(`${idnt}                /* This call maybe a safe, ${blockSaver.constructor.name} */`)
+					}
+					js.push(`${idnt}                ${obj} = context.call(${stackF(param(0) + 1)}, ${stackF(param(0))}, [${pp.join(", ")}]);`)
 				}
 					break
 				case Bytecode.CONSTRUCT: {
@@ -1612,8 +1682,19 @@ export function compile(methodInfo: MethodInfo, optimise: OPT_FLAGS = DEFAULT_OP
 					break
 				case Bytecode.GETPROPERTY:
 					var mn = abc.getMultiname(param(0));
+					let isSafe = false;
+					let lastIdnt = idnt;
+
+					if(optimise && OPT_FLAGS.ALLOW_CUSTOM_OPTIMISER && blockSaver && blockSaver.needSafe(stack0)) {
+						isSafe = true;
+
+						js.push(`${idnt}                ${blockSaver.beginSafeBlock(stack0)}`);
+						lastIdnt = idnt;
+						idnt +="    ";	
+					}
+
 					js.push(`${idnt}                // ${mn}`)
-					js.push(`${idnt}                if (!${stack0}[AX_CLASS_SYMBOL] ) {`)
+					js.push(`${idnt}                if (${stack0} && !${stack0}[AX_CLASS_SYMBOL] ) {`)
 					js.push(`${idnt}                    ${stack0} = ${stack0}['${mn.name}'];`)
 					js.push(`${idnt}                } else {`)
 					js.push(`${idnt}                    temp = sec.box(${stack0});`)
@@ -1622,13 +1703,25 @@ export function compile(methodInfo: MethodInfo, optimise: OPT_FLAGS = DEFAULT_OP
 					js.push(`${idnt}                        ${stack0} = temp.axGetProperty(${getname(param(0))});`)
 					js.push(`${idnt}                    }`)
 					js.push(`${idnt}                }`)
+
+					if(isSafe) {
+						idnt = lastIdnt;
+						js.push(`${idnt}                ${blockSaver.endSafeBlock('undefined')}`);
+					}
+
 					break
 				case Bytecode.GETPROPERTY_DYN:
 					var mn = abc.getMultiname(param(0));
+					
+					if(optimise && OPT_FLAGS.ALLOW_CUSTOM_OPTIMISER && blockSaver && blockSaver.markToSafe(mn)) {
+						js.push(`${idnt}                /* Mark lookup to safe call, ${blockSaver.constructor.name} */`)
+					}
+
+					js.push(`${idnt}                // ${mn}`);
 					if (mn.isRuntimeName() && mn.isRuntimeNamespace()) {
-						js.push(`${idnt}                    ${stack2} = context.getpropertydyn(context.runtimename(${getname(param(0))}, ${stack0}, ${stack1}), ${stack2});`)
+						js.push(`${idnt}                 ${stack2} = context.getpropertydyn(context.runtimename(${getname(param(0))}, ${stack0}, ${stack1}), ${stack2});`)
 					} else {
-						js.push(`${idnt}                    ${stack1} = context.getpropertydyn(context.runtimename(${getname(param(0))}, ${stack0}), ${stack1});`)
+						js.push(`${idnt}                 ${stack1} = context.getpropertydyn(context.runtimename(${getname(param(0))}, ${stack0}), ${stack1});`)
 					}
 					break
 				case Bytecode.SETPROPERTY:
