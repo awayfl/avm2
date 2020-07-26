@@ -1260,17 +1260,19 @@ export function compile(methodInfo: MethodInfo, optimise: OPT_FLAGS = DEFAULT_OP
 					break
 
 				case Bytecode.GETSLOT:
-					js.push(`${idnt}                ${stack0} = sec.box(${stack0}).axGetSlot(${param(0)});`)
+					// slots can be get/set only on AX objects
+					js.push(`${idnt}                ${stack0} = ${stack0}.axGetSlot(${param(0)});`)
 					break
 				case Bytecode.SETSLOT:
-					js.push(`${idnt}                sec.box(${stack1}).axSetSlot(${param(0)}, ${stack0});`)
+					js.push(`${idnt}                ${stack1}.axSetSlot(${param(0)}, ${stack0});`)
 					break
 
 				case Bytecode.GETGLOBALSCOPE:
 					js.push(`${idnt}                ${stackN} = context.savedScope.global.object;`)
 					break
 				case Bytecode.PUSHSCOPE:
-					js.push(`${idnt}                ${scopeN} = ${scope}.extend(sec.box(${stack0}));`)
+					// extends can be used only on AXObject
+					js.push(`${idnt}                ${scopeN} = ${scope}.extend(${stack0});`)
 					break
 				case Bytecode.PUSHWITH:
 					js.push(`${idnt}                ${scopeN} = context.pushwith(${scope}, ${stack0});`)
@@ -1545,7 +1547,7 @@ export function compile(methodInfo: MethodInfo, optimise: OPT_FLAGS = DEFAULT_OP
 						js.push(`${idnt}                    ${stackF(param(0))} = ${obj}['${mn.name}'].apply(${obj}, [${pp.join(", ")}]);`)
 						js.push(`${idnt}                } else {`)
 						js.push(`${idnt}                // ${mn}`)
-						js.push(`${idnt}                    temp = sec.box(${obj});`)
+						js.push(`${idnt}                    temp = ${obj}[AX_CLASS_SYMBOL] ? ${obj} : sec.box(${obj});`)
 						js.push(`${idnt}                    ${stackF(param(0))} = (typeof temp['$Bg${mn.name}'] === 'function')? temp['$Bg${mn.name}'](${pp.join(", ")}) : temp.axCallProperty(${getname(param(1))}, [${pp.join(", ")}], false);`)
 						js.push(`${idnt}                }`)
 					}
@@ -1572,7 +1574,7 @@ export function compile(methodInfo: MethodInfo, optimise: OPT_FLAGS = DEFAULT_OP
 					js.push(`${idnt}                if (!${emitIsAXOrPrimitive(obj)}) {`)
 					js.push(`${idnt}                    ${obj}['${mn.name}'].apply(${obj}, [${pp.join(", ")}]);`)
 					js.push(`${idnt}                } else {`)
-					js.push(`${idnt}                    temp = sec.box(${obj});`)
+					js.push(`${idnt}                    temp = ${obj}[AX_CLASS_SYMBOL] ? ${obj} : sec.box(${obj});`)
 					js.push(`${idnt}                    (typeof temp['$Bg${mn.name}'] === 'function')? temp['$Bg${mn.name}'](${pp.join(", ")}) : temp.axCallProperty(${getname(param(1))}, [${pp.join(", ")}], false);`)
 					js.push(`${idnt}                }`)
 				}
@@ -1697,7 +1699,7 @@ export function compile(methodInfo: MethodInfo, optimise: OPT_FLAGS = DEFAULT_OP
 					js.push(`${idnt}                if (${stack0} && !${stack0}[AX_CLASS_SYMBOL] ) {`)
 					js.push(`${idnt}                    ${stack0} = ${stack0}['${mn.name}'];`)
 					js.push(`${idnt}                } else {`)
-					js.push(`${idnt}                    temp = sec.box(${stack0});`)
+					js.push(`${idnt}                    temp = ${stack0}[AX_CLASS_SYMBOL] ? ${stack0} : sec.box(${stack0});`)
 					js.push(`${idnt}                    ${stack0} = temp['$Bg${mn.name}'];`)
 					js.push(`${idnt}                    if (${stack0} === undefined || typeof ${stack0} === 'function') {`)
 					js.push(`${idnt}                        ${stack0} = temp.axGetProperty(${getname(param(0))});`)
