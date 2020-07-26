@@ -1544,7 +1544,8 @@ export function compile(methodInfo: MethodInfo, optimise: OPT_FLAGS = DEFAULT_OP
 					}
 					else {
 						js.push(`${idnt}                if (!${emitIsAXOrPrimitive(obj)}) {`)
-						js.push(`${idnt}                    ${stackF(param(0))} = ${obj}['${mn.name}'].apply(${obj}, [${pp.join(", ")}]);`)
+						// fast instruction already binded
+						js.push(`${idnt}                    ${stackF(param(0))} = ${obj}['${mn.name}'](${pp.join(", ")});`)
 						js.push(`${idnt}                } else {`)
 						js.push(`${idnt}                // ${mn}`)
 						js.push(`${idnt}                    temp = ${obj}[AX_CLASS_SYMBOL] ? ${obj} : sec.box(${obj});`)
@@ -1572,7 +1573,7 @@ export function compile(methodInfo: MethodInfo, optimise: OPT_FLAGS = DEFAULT_OP
 
 					let obj = pp.shift();
 					js.push(`${idnt}                if (!${emitIsAXOrPrimitive(obj)}) {`)
-					js.push(`${idnt}                    ${obj}['${mn.name}'].apply(${obj}, [${pp.join(", ")}]);`)
+					js.push(`${idnt}                    ${obj}['${mn.name}'](${pp.join(", ")});`)
 					js.push(`${idnt}                } else {`)
 					js.push(`${idnt}                    temp = ${obj}[AX_CLASS_SYMBOL] ? ${obj} : sec.box(${obj});`)
 					js.push(`${idnt}                    (typeof temp['$Bg${mn.name}'] === 'function')? temp['$Bg${mn.name}'](${pp.join(", ")}) : temp.axCallProperty(${getname(param(1))}, [${pp.join(", ")}], false);`)
