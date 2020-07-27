@@ -149,7 +149,7 @@ export interface ICompilerProcess {
 export function compile(methodInfo: MethodInfo, optimise: OPT_FLAGS = DEFAULT_OPT): ICompilerProcess {
 
 	// lex generator
-	const lexGen = new ComplexGenerator([new PhysicsLex()]);
+	const lexGen = new ComplexGenerator([new PhysicsLex({box2D: false})]);
 	const blockSaver = new TweenCallSaver();
 
 	let abc = methodInfo.abc
