@@ -18,6 +18,8 @@ import { ABCFile } from "./abc/lazy/ABCFile"
 import { ScriptInfo } from "./abc/lazy/ScriptInfo"
 import { ExceptionInfo } from './abc/lazy/ExceptionInfo'
 import { Bytecode } from './Bytecode'
+
+import {ComplexGenerator, PhysicsLex} from "./gen/LexImportsGenerator";
 import {
 	extClassContructor, 
 	getExtClassField, 
@@ -25,88 +27,10 @@ import {
 	emitIsAX
 } from "./ext/external";
 
+
 export let BytecodeName = Bytecode
 
 const DEFAULT_STACK_INDEX = -1024;
-
-interface IImportDefinition {
-	name: Multiname;
-	alias: string;
-}
-
-class GenerateLexImports {
-	imports: Array<IImportDefinition> = [];
-	_testReg: RegExp = /nape./;
-
-	public test(mn: Multiname) {
-		return false;
-	}
-
-	public getStaticAlias(mn: Multiname): string {
-		if(!this.test(mn)) {
-			throw `Can't generate static alias for ${mn.name} of ${mn.namespace?.uri}`;
-		}
-
-		let def: IImportDefinition = this.imports.find((e) => e.name === mn);
-
-		if(def) {
-			return def.alias;
-		}
-
-		const alias = mn.namespace.uri.replace(/\./g, "_") + "__" + mn.name;
-		
-		def = { name: mn, alias };
-
-		this.imports.push(def);
-
-		return def.alias;
-	}
-
-	public genHeader() {
-		if(!this.imports.length) {
-			return "";
-		}
-
-		let header = ["\n/* GenerateLexImports */"];
-		
-		for(let def of this.imports) {
-			const uri = def.name.namespace.uri;
-			const name = def.name.name;
-			header.push(`const ${def.alias} = context.getStaticImportExt('${uri}', '${name}');`);
-		}
-
-		header.push("\n");
-		return header.join("\n");
-	}
-
-	public genBody() {
-		return "";
-	}
-}
-
-class NapeLex extends GenerateLexImports {
-	public test(mn: Multiname) {
-		const uri = mn.namespace?.uri;
-		
-		if(!uri) {
-			return false;
-		}
-		
-		// generate static for box2D
-		if(uri.startsWith('Box2D')) {
-			return true; 
-		}
-
-		if(!uri.startsWith('nape.')) {
-			return false;
-		}
-
-		if(mn.name.includes('Debug')) {
-			return false;
-		}
-		return true;
-	}
-}
 
 /**
  * @description Generate safe instruction for null block usage
@@ -223,7 +147,7 @@ export interface ICompilerProcess {
 export function compile(methodInfo: MethodInfo, optimise: OPT_FLAGS = DEFAULT_OPT): ICompilerProcess {
 
 	// lex generator
-	const lexGen = new NapeLex();
+	const lexGen = new ComplexGenerator([new PhysicsLex()]);
 	const blockSaver = new TweenCallSaver();
 
 	let abc = methodInfo.abc
@@ -2040,6 +1964,13 @@ export class Context {
 		}
 
 		return this.domain.internal_memoryView;
+	}
+
+	/**
+	* Generate static import for builtins
+	*/
+	getStaticImport(namespace: string, name: string = undefined): any {
+		return getExtClassField(name, namespace);
 	}
 
 	/**
