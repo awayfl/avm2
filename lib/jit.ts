@@ -24,8 +24,10 @@ import {
 	extClassContructor, 
 	getExtClassField, 
 	emitIsAXOrPrimitive, 
-	emitIsAX
+	emitIsAX,
+	IS_EXTERNAL_CLASS
 } from "./ext/external";
+import { ASObject } from './nat/ASObject'
 
 
 export let BytecodeName = Bytecode
@@ -1579,7 +1581,7 @@ export function compile(methodInfo: MethodInfo, optimise: OPT_FLAGS = DEFAULT_OP
 					for (let j: number = 1; j <= param(0); j++)
 						pp.push(stackF(param(0) - j))
 
-					js.push(`${idnt}                context.savedScope.object.superClass.tPrototype.axInitializer.apply(${stackF(param(0))}, [${pp.join(", ")}]);`)
+					js.push(`${idnt}                context.savedScope.superConstructor.call(${stackF(param(0))}, ${pp.join(", ")});`)
 				}
 					break
 				case Bytecode.CALLSUPER: {
@@ -2044,13 +2046,21 @@ export class Context {
 			return;
 		}
 
-		const tmp = this.sec.box(obj);
-
 		if (typeof mn === "number"){
-			return tmp.axSetNumericProperty(mn, value)
+			return obj.axSetNumericProperty(mn, value)
 		}
 
-		tmp.axSetProperty(mn, value, Bytecode.INITPROPERTY)
+		// Hubrid
+		// Mom is Human, Dad is Marsian
+		// and it not has a axSetProp
+		if(obj[IS_EXTERNAL_CLASS]) {
+			// create prop and proxy to JS side.
+			ASObject.prototype.axSetProperty.call(obj, mn, value, <any>Bytecode.INITPROPERTY);
+			Object.defineProperty(obj, mn.name, {value});
+			return;
+		}
+
+		obj.axSetProperty(mn, value, <any>Bytecode.INITPROPERTY)
 	}
 
 	deleteproperty(name, obj) {

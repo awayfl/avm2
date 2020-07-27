@@ -5,11 +5,14 @@ import { Multiname } from "../abc/lazy/Multiname";
 import { Namespace } from "../abc/lazy/Namespace";
 import { AXObject } from "./AXObject";
 import { IS_AX_CLASS } from "./AXClass";
+import { AXFunction } from './AXFunction';
+import { ASObject } from '../nat/ASObject';
+import { ASFunction } from '../nat/ASFunction';
 
 export class Scope {
     parent: Scope;
     global: Scope;
-    object: AXObject;
+	object: AXObject;
     isWith: boolean;
     cache: AXObject[];
     defaultNamespace: Namespace;
@@ -32,10 +35,25 @@ export class Scope {
       this.global = parent ? parent.global : this;
       this.isWith = isWith;
       this.cache = [];
-      this.defaultNamespace = null;
-      
+	  this.defaultNamespace = null;
+
       object["__scope__"] = this;
-    }
+	}
+
+	get superConstructor(): ASFunction | Function {
+		const superCtr = (<any>this.object).superClass;
+
+		if(!superCtr) {
+			return null;
+		}
+
+		let r = superCtr[IS_AX_CLASS] ? superCtr.tPrototype.axInitializer : superCtr;
+
+		// hack!
+		// redefine field. Now it always return precomputed field.
+		Object.defineProperty(this, 'superConstructor', {value: r});
+		return r;
+	}
 
     extend(object: AXObject) {
         if (object === this.object)
@@ -102,7 +120,7 @@ export class Scope {
 
       // Scope lookups should not be trapped by proxies. Except for with scopes, check only trait
       // properties.
-      if (this.object && (this.isWith ?
+      if (this.object && this.object[IS_AX_CLASS] && (this.isWith ?
                           this.object.axHasPropertyInternal(mn) :
                           this.object.traits.getTrait(mn.namespaces, mn.name))) {
         return (this.isWith || mn.isRuntime()) ? this.object : (this.cache[mn.id] = this.object);

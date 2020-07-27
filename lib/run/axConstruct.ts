@@ -164,9 +164,9 @@ export function axConstruct(argArray?: any[]) {
 	//	in future the appDom should be provided by the symbol
 	//	UNSAFE! Need check more clea because assets can has nested class defenetion, like as `BitmapAsset : FlexBitmap: Bitmap`
 
-	const name = (<Multiname>_this.superClass?.classInfo?.instanceInfo?.name).name;
+	const name = (<Multiname>_this.superClass?.classInfo?.instanceInfo?.name)?.name;
 	const appDom = ActiveLoaderContext.loaderContext?.applicationDomain;
-	const lookup: IAssetLookup = ASSET_LOOKUP[name];
+	const lookup: IAssetLookup = name ? ASSET_LOOKUP[name] : null;
 
 	if(lookup) {
 		let asset: AssetBase = null;

@@ -1,7 +1,7 @@
 import { Multiname } from "./../abc/lazy/Multiname";
 import { BOX2D_PREFERENCE } from "./../external";
 
-export const IS_EXTERNAL_CLASS = Symbol("External instance");
+export const IS_EXTERNAL_CLASS = Symbol("External class marker");
 type Ctr = { new (): Object };
 
 const LONG_NAMES = /nape./;
@@ -59,6 +59,9 @@ export function extClassContructor(mn: Multiname, args: any[]) {
 		return null;
 	}
 
+	Object.defineProperty(Constructor.prototype, IS_EXTERNAL_CLASS,  {
+		value: true
+	})
 	// faster that Object.create;
 	// class constructor optimized in v8 and WebKit
 	// s ... rollup issues =(
@@ -68,7 +71,6 @@ export function extClassContructor(mn: Multiname, args: any[]) {
 	// force fast mode;
 	// legacy
 	obj.__fast__ = true;
-	obj[IS_EXTERNAL_CLASS] = true;
 	return obj;
 }
 

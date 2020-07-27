@@ -72,6 +72,7 @@ import { axCoerceObject } from "./axCoerceObject";
 import { initializeAXBasePrototype, AXBasePrototype } from "./initializeAXBasePrototype";
 import { ByteArray, ByteArrayDataProvider } from '../natives/byteArray';
 import { Namespace } from '../abc/lazy/Namespace';
+import { IS_EXTERNAL_CLASS } from '../ext/external';
 
 /**
  * Provides security isolation between application domains.
@@ -193,7 +194,7 @@ export class AXSecurityDomain{
       if (vectorClass) {
         return vectorClass;
       }
-      var typeClassName = type ?
+      var typeClassName = type && type.classInfo ?
                           type.classInfo.instanceInfo.getName().getMangledName() :
                           '$BgObject';
       switch (typeClassName) {
@@ -316,6 +317,8 @@ export class AXSecurityDomain{
             axClass.dPrototype = Object.create(superClass.dPrototype);
           } else {
 			axClass.dPrototype = Object.create((<any>superClass).prototype);
+			// mark that has external prototupe of chain
+			Object.defineProperty(axClass.dPrototype, IS_EXTERNAL_CLASS, {value: true});
 		  }
           axClass.tPrototype = Object.create(axClass.dPrototype);
           axClass.tPrototype.axInitializer = this.createInitializerFunction(classInfo, classScope);
