@@ -80,7 +80,7 @@ export abstract class LexImportsGenerator implements ILexGenerator {
  * Import generator for Box2D and Nape external libs
  */
 export class PhysicsLex extends LexImportsGenerator {
-	constructor(public allows: { box2D: boolean; nape: boolean } = { box2D: true, nape: true }) {
+	constructor(public allows: { box2D?: boolean; nape?: boolean } = { box2D: true, nape: true }) {
 		super();
 	}
 
