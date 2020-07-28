@@ -19,7 +19,12 @@ import { ScriptInfo } from "./abc/lazy/ScriptInfo"
 import { ExceptionInfo } from './abc/lazy/ExceptionInfo'
 import { Bytecode } from './Bytecode'
 
-import {ComplexGenerator, PhysicsLex} from "./gen/LexImportsGenerator";
+import {
+	ComplexGenerator, 
+	PhysicsLex, 
+	TopLevelLex 
+} from "./gen/LexImportsGenerator";
+
 import {
 	extClassContructor, 
 	getExtClassField, 
@@ -149,7 +154,10 @@ export interface ICompilerProcess {
 export function compile(methodInfo: MethodInfo, optimise: OPT_FLAGS = DEFAULT_OPT): ICompilerProcess {
 
 	// lex generator
-	const lexGen = new ComplexGenerator([new PhysicsLex({box2D: false})]);
+	const lexGen = new ComplexGenerator([
+		new PhysicsLex({box2D: false}), // generate static aliases for Physics engine
+		new TopLevelLex() // generate alias for TopLevel props
+	]);
 	const blockSaver = new TweenCallSaver();
 
 	let abc = methodInfo.abc
@@ -1531,7 +1539,7 @@ export function compile(methodInfo: MethodInfo, optimise: OPT_FLAGS = DEFAULT_OP
 
 					if(optimise & OPT_FLAGS.ALLOW_CUSTOM_OPTIMISER && lexGen && lexGen.test(mn)) {
 						js.push(`${idnt}                /* GenerateLexImports */`);
-						js.push(`${idnt}                ${stackN} = ${lexGen.getStaticAlias(mn)};`)
+						js.push(`${idnt}                ${stackN} = ${lexGen.getStaticAlias(mn,{nameAlias: getname(param(0))})};`)
 						break;
 					}
 
@@ -1726,7 +1734,7 @@ export function compile(methodInfo: MethodInfo, optimise: OPT_FLAGS = DEFAULT_OP
 					if(optimise & OPT_FLAGS.ALLOW_CUSTOM_OPTIMISER && lexGen && lexGen.test(mn)) {
 						js.push(`${idnt}                // ${mn}`)
 						js.push(`${idnt}                /* GenerateLexImports */`);
-						js.push(`${idnt}                ${stackN} = ${lexGen.getStaticAlias(mn)};`)
+						js.push(`${idnt}                ${stackN} = ${lexGen.getStaticAlias(mn, {nameAlias: getname(param(0)), strict: true})};`)
 					} else {
 						js.push(`${idnt}                // ${mn}`)
 						js.push(`${idnt}                temp = ${scope}.findScopeProperty(${getname(param(0))}, true, false);`)
@@ -1971,8 +1979,13 @@ export class Context {
 	/**
 	* Generate static import for builtins
 	*/
-	getStaticImport(namespace: string, name: string = undefined): any {
-		return getExtClassField(name, namespace);
+	getTopLevel(mnId: number, name?: string): any {
+		const prop = this.savedScope.findScopeProperty(this.names[mnId], true, false);
+
+		if(name) {
+			return prop[name];
+		}
+		return prop;
 	}
 
 	/**

@@ -4,6 +4,7 @@ import { getExtClassField } from "../ext/external";
 export interface IImportDefinition {
 	name: Multiname;
 	alias: string;
+	opt: any | undefined;
 }
 export interface ILexGenerator {
 	/**
@@ -15,7 +16,7 @@ export interface ILexGenerator {
 	 * Generate import alias if can be generated
 	 * @throws lex import can't be generated
 	 */
-	getStaticAlias(mn: Multiname): string;
+	getStaticAlias(mn: Multiname, options?: any): string;
 
 	/**
 	 * Generate header (before method anotation) of imports when it exist, or return empty string
@@ -34,7 +35,18 @@ export abstract class LexImportsGenerator implements ILexGenerator {
 		return false;
 	}
 
-	public getStaticAlias(mn: Multiname): string {
+	protected _genEntry(def: IImportDefinition): string {
+		const uri = def.name.namespace.uri;
+		const name = def.name.name;
+
+		return `const ${def.alias} = context.getStaticImportExt('${uri}', '${name}');`;
+	}
+
+	protected _genAlias(mn: Multiname, options?: any): string {
+		return mn.namespace.uri.replace(/\./g, "_") + "__" + mn.name;
+	}
+
+	public getStaticAlias(mn: Multiname, options?: any): string {
 		if (!this.test(mn)) {
 			throw `Can't generate static alias for ${mn.name} of ${mn.namespace?.uri}`;
 		}
@@ -45,13 +57,13 @@ export abstract class LexImportsGenerator implements ILexGenerator {
 			return def.alias;
 		}
 
-		const alias = mn.namespace.uri.replace(/\./g, "_") + "__" + mn.name;
+		const alias = this._genAlias(mn, options);
 
-		def = { name: mn, alias };
+		def = { name: mn, alias, opt: options ?  Object.assign({}, options) : undefined };
 
 		this.imports.push(def);
 
-		return def.alias;
+		return alias;
 	}
 
 	public genHeader(): string {
@@ -62,9 +74,7 @@ export abstract class LexImportsGenerator implements ILexGenerator {
 		let header = [`\n/* ${this.constructor.name} */`];
 
 		for (let def of this.imports) {
-			const uri = def.name.namespace.uri;
-			const name = def.name.name;
-			header.push(`const ${def.alias} = context.getStaticImportExt('${uri}', '${name}');`);
+			header.push(this._genEntry(def));
 		}
 
 		header.push("\n");
@@ -75,6 +85,70 @@ export abstract class LexImportsGenerator implements ILexGenerator {
 		return "";
 	}
 }
+
+
+/**
+ * Generate imports for all lex generators
+ */
+export class ComplexGenerator implements ILexGenerator {
+	/**
+	 * Allowed collsion for alias of generator, return first alias;
+	 */
+	public allowColissions: Boolean = false;
+	constructor(public generators: ILexGenerator[]) {
+		if (!generators) {
+			throw "Generators array can't be null";
+		}
+	}
+
+	test(mn: Multiname): boolean {
+		if (!this.generators.length) {
+			return false;
+		}
+
+		for (let g of this.generators) {
+			if (g.test(mn)) {
+				return true;
+			}
+		}
+
+		return false;
+	}
+
+	getStaticAlias(mn: Multiname, options?: any): string {
+		const gens = this.generators.filter((e) => e.test(mn));
+
+		if (!gens.length) {
+			throw `Can't generate static alias for ${mn.name} of ${mn.namespace?.uri}`;
+		} else if (gens.length > 1 && !this.allowColissions) {
+			throw `Alias collision for for ${mn.name} of ${mn.namespace?.uri}`;
+		}
+
+		return gens[0].getStaticAlias(mn, options);
+	}
+
+	genHeader(): string {
+		let header = "";
+
+		for (let g of this.generators) {
+			header += g.genHeader();
+		}
+
+		return header;
+	}
+
+	genBody(): string {
+		let header = "";
+
+		for (let g of this.generators) {
+			header += g.genHeader();
+		}
+
+		return header;
+	}
+}
+
+/* -------------------- GENERATORS ------------------- */
 
 /**
  * Import generator for Box2D and Nape external libs
@@ -107,63 +181,52 @@ export class PhysicsLex extends LexImportsGenerator {
 	}
 }
 
-/**
- * Generate imports for all lex generators
- */
-export class ComplexGenerator implements ILexGenerator {
-	/**
-	 * Allowed collsion for alias of generator, return first alias;
-	 */
-	public allowColissions: Boolean = false;
-	constructor(public generators: ILexGenerator[]) {
-		if (!generators) {
-			throw "Generators array can't be null";
-		}
-	}
+const ALLOWED_TOP_LEVEL_NAMES: String[] = [
+	'flash.utils', 
+	'Math', 
+	'trace' 	
+]
 
-	test(mn: Multiname): boolean {
-		if (!this.generators.length) {
+export class TopLevelLex extends LexImportsGenerator {
+	public test(mn: Multiname) {
+		const uri = mn.namespace?.uri;
+		const name = mn.name;
+
+		if (typeof uri  === 'undefined') {
 			return false;
 		}
 
-		for (let g of this.generators) {
-			if (g.test(mn)) {
-				return true;
-			}
-		}
+		if(
+			ALLOWED_TOP_LEVEL_NAMES.indexOf(name) > -1 || // trace, Math
+			ALLOWED_TOP_LEVEL_NAMES.indexOf(uri) > -1)
+		{
+			return true;
+		} 
 
 		return false;
 	}
+	
+	protected _genEntry(def: IImportDefinition): string {
+		const uri = def.name.namespace.uri;
+		const name = def.name.name;
+		const nameAlisas: string = def.opt?.nameAlias;
+		const strict: boolean = def.opt?.strict;
 
-	getStaticAlias(mn: Multiname): string {
-		const gens = this.generators.filter((e) => e.test(mn));
-
-		if (!gens.length) {
-			throw `Can't generate static alias for ${mn.name} of ${mn.namespace?.uri}`;
-		} else if (gens.length > 1 && !this.allowColissions) {
-			throw `Alias collision for for ${mn.name} of ${mn.namespace?.uri}`;
+		if(!nameAlisas) {
+			throw "Name alias required for generatin Toplevel exports!";
 		}
 
-		return gens[0].getStaticAlias(mn);
+		const id = Number(nameAlisas.replace("name", ""));
+		const mnname =  `'${Multiname.getPublicMangledName(name)}'`;
+
+		return `const ${def.alias} = context.getTopLevel(${id}, ${strict ? mnname : '' }); // ${uri}:${name}`;
 	}
 
-	genHeader(): string {
-		let header = "";
+	protected _genAlias(mn: Multiname, options: {nameAlias: string}): string {
+		const hasUri = !!mn.namespace.uri;
+		const uri = mn.namespace.uri.split(/\./g);
+		const prf = ['Top', ...uri];
 
-		for (let g of this.generators) {
-			header += g.genHeader();
-		}
-
-		return header;
-	}
-
-	genBody(): string {
-		let header = "";
-
-		for (let g of this.generators) {
-			header += g.genHeader();
-		}
-
-		return header;
+		return `${prf.join('_')}${ (hasUri ? "" : ("__" + mn.name))}`;
 	}
 }
