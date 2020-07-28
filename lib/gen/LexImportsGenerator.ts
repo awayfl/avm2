@@ -4,8 +4,12 @@ import { getExtClassField } from "../ext/external";
 export interface IImportDefinition {
 	name: Multiname;
 	alias: string;
-	opt: any | undefined;
+	options: IImportGenOptions | undefined;
 }
+export interface IImportGenOptions {
+	findProp?: boolean;
+}
+
 export interface ILexGenerator {
 	/**
 	 * Test Multiname to support import generation
@@ -16,7 +20,13 @@ export interface ILexGenerator {
 	 * Generate import alias if can be generated
 	 * @throws lex import can't be generated
 	 */
-	getStaticAlias(mn: Multiname, options?: any): string;
+	getLexAlias(mn: Multiname, options?: IImportGenOptions): string;
+
+	/**
+	 * Generate import alias if can be generated
+	 * @throws lex import can't be generated
+	 */
+	getPropStrictAlias(mn: Multiname, options?: IImportGenOptions): string;
 
 	/**
 	 * Generate header (before method anotation) of imports when it exist, or return empty string
@@ -36,22 +46,25 @@ export abstract class LexImportsGenerator implements ILexGenerator {
 	}
 
 	protected _genEntry(def: IImportDefinition): string {
-		const uri = def.name.namespace.uri;
-		const name = def.name.name;
-
-		return `const ${def.alias} = context.getStaticImportExt('${uri}', '${name}');`;
+		return `//` + def.name;
 	}
 
-	protected _genAlias(mn: Multiname, options?: any): string {
+	protected _genAlias(mn: Multiname, options?: IImportGenOptions): string {
 		return mn.namespace.uri.replace(/\./g, "_") + "__" + mn.name;
 	}
 
-	public getStaticAlias(mn: Multiname, options?: any): string {
+	public getLexAlias(mn: Multiname, options?: IImportGenOptions): string {
+		return this.getPropStrictAlias(mn, Object.assign({findProp: true}, options || {}));
+	}
+
+	public getPropStrictAlias(mn: Multiname, options: IImportGenOptions = {findProp: false}): string {
 		if (!this.test(mn)) {
 			throw `Can't generate static alias for ${mn.name} of ${mn.namespace?.uri}`;
 		}
 
-		let def: IImportDefinition = this.imports.find((e) => e.name === mn);
+		let def: IImportDefinition = this.imports.find((e) => {
+			return e.name === mn && options.findProp === e.options.findProp
+		});
 
 		if (def) {
 			return def.alias;
@@ -59,9 +72,13 @@ export abstract class LexImportsGenerator implements ILexGenerator {
 
 		const alias = this._genAlias(mn, options);
 
-		def = { name: mn, alias, opt: options ?  Object.assign({}, options) : undefined };
-
-		this.imports.push(def);
+		if(!this.imports.find((e) => e.alias === alias)) {
+			this.imports.push({ 
+				name: mn, 
+				alias, 
+				options 
+			});
+		}
 
 		return alias;
 	}
@@ -101,33 +118,49 @@ export class ComplexGenerator implements ILexGenerator {
 		}
 	}
 
-	test(mn: Multiname): boolean {
+	/**
+	 * Return generator that will used for lex generation 
+	 */
+	public getGenerator(mn: Multiname): ILexGenerator | null {
+		for (let g of this.generators) {
+			if (g.test(mn)) {
+				return g;
+			}
+		}
+		return null;
+	}
+
+	public test(mn: Multiname): boolean {
 		if (!this.generators.length) {
 			return false;
 		}
 
-		for (let g of this.generators) {
-			if (g.test(mn)) {
-				return true;
-			}
-		}
-
-		return false;
+		return !!this.getGenerator(mn);
 	}
+	/**
+	 * Return generator that will used for propstrict generation 
+	 */
+	public getLexAlias(mn: Multiname, options?: IImportGenOptions): string {
+		const gen = this.getGenerator(mn);
 
-	getStaticAlias(mn: Multiname, options?: any): string {
-		const gens = this.generators.filter((e) => e.test(mn));
-
-		if (!gens.length) {
+		if (!gen) {
 			throw `Can't generate static alias for ${mn.name} of ${mn.namespace?.uri}`;
-		} else if (gens.length > 1 && !this.allowColissions) {
-			throw `Alias collision for for ${mn.name} of ${mn.namespace?.uri}`;
 		}
 
-		return gens[0].getStaticAlias(mn, options);
+		return gen.getLexAlias(mn, options);
 	}
 
-	genHeader(): string {
+	public getPropStrictAlias(mn: Multiname, options?: any): string {
+		const gen = this.getGenerator(mn);
+
+		if (!gen) {
+			throw `Can't generate static alias for ${mn.name} of ${mn.namespace?.uri}`;
+		}
+
+		return gen.getPropStrictAlias(mn, options);
+	}
+
+	public genHeader(): string {
 		let header = "";
 
 		for (let g of this.generators) {
@@ -137,7 +170,7 @@ export class ComplexGenerator implements ILexGenerator {
 		return header;
 	}
 
-	genBody(): string {
+	public genBody(): string {
 		let header = "";
 
 		for (let g of this.generators) {
@@ -156,6 +189,17 @@ export class ComplexGenerator implements ILexGenerator {
 export class PhysicsLex extends LexImportsGenerator {
 	constructor(public allows: { box2D?: boolean; nape?: boolean } = { box2D: true, nape: true }) {
 		super();
+	}
+
+	protected _genEntry(def: IImportDefinition): string {
+		const uri = def.name.namespace.uri;
+		const name = def.name.name;
+
+		return `const ${def.alias} = context.getStaticImportExt('${uri}', '${name}');`;
+	}
+
+	protected _genAlias(mn: Multiname, options?: IImportGenOptions): string {
+		return mn.namespace.uri.replace(/\./g, "_") + "__" + mn.name;
 	}
 
 	public test(mn: Multiname) {
@@ -182,10 +226,19 @@ export class PhysicsLex extends LexImportsGenerator {
 }
 
 const ALLOWED_TOP_LEVEL_NAMES: String[] = [
+	'flash.geom',
 	'flash.utils', 
 	'Math', 
 	'trace' 	
+];
+
+const NOT_ALLOWED: String[] = [
+	`getDefinitionByName`
 ]
+
+interface ITopGenOptions extends IImportGenOptions {
+	nameAlias: string;
+}
 
 export class TopLevelLex extends LexImportsGenerator {
 	public test(mn: Multiname) {
@@ -195,6 +248,12 @@ export class TopLevelLex extends LexImportsGenerator {
 		if (typeof uri  === 'undefined') {
 			return false;
 		}
+
+		if(
+			NOT_ALLOWED.indexOf(name) > -1 || 
+			NOT_ALLOWED.indexOf(uri) > -1) {
+			return null;
+		} 
 
 		if(
 			ALLOWED_TOP_LEVEL_NAMES.indexOf(name) > -1 || // trace, Math
@@ -209,24 +268,22 @@ export class TopLevelLex extends LexImportsGenerator {
 	protected _genEntry(def: IImportDefinition): string {
 		const uri = def.name.namespace.uri;
 		const name = def.name.name;
-		const nameAlisas: string = def.opt?.nameAlias;
-		const strict: boolean = def.opt?.strict;
 
-		if(!nameAlisas) {
+		const { nameAlias, findProp } =  <ITopGenOptions> def.options || {};
+
+		if(!nameAlias) {
 			throw "Name alias required for generatin Toplevel exports!";
 		}
 
-		const id = Number(nameAlisas.replace("name", ""));
-		const mnname =  `'${Multiname.getPublicMangledName(name)}'`;
+		const id = Number(nameAlias.replace("name", ""));
+		const mnname =  `['${Multiname.getPublicMangledName(name)}']`;
 
-		return `const ${def.alias} = context.getTopLevel(${id}, ${strict ? mnname : '' }); // ${uri}:${name}`;
+		return `const ${def.alias} = context.getTopLevel(${id})${ findProp ? mnname : ''}; // ${uri}:${name}`;
 	}
 
-	protected _genAlias(mn: Multiname, options: {nameAlias: string}): string {
-		const hasUri = !!mn.namespace.uri;
+	protected _genAlias(mn: Multiname, options: IImportGenOptions): string {
 		const uri = mn.namespace.uri.split(/\./g);
-		const prf = ['Top', ...uri];
 
-		return `${prf.join('_')}${ (hasUri ? "" : ("__" + mn.name))}`;
+		return `${uri.join('_')}__${mn.name}${options.findProp ? '' : '_def'}`;
 	}
 }

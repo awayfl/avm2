@@ -34,7 +34,6 @@ import {
 } from "./ext/external";
 import { ASObject } from './nat/ASObject'
 
-
 export let BytecodeName = Bytecode
 
 const DEFAULT_STACK_INDEX = -1024;
@@ -159,6 +158,24 @@ export function compile(methodInfo: MethodInfo, optimise: OPT_FLAGS = DEFAULT_OP
 		new TopLevelLex() // generate alias for TopLevel props
 	]);
 	const blockSaver = new TweenCallSaver();
+
+	const fastCall =  
+	{
+		_active: {},
+		mark(stackAlias: string, mangled: boolean) {
+			this._active[stackAlias] = {mangled};
+		},
+		sureThatFast(stackAlias: string): any {
+			return this._active[stackAlias];
+		},
+		kill(stackAlias: string,) {
+			delete this._active[stackAlias];
+		}
+	}
+	
+	const USE_OPT = (opt) => {
+		return optimise & OPT_FLAGS.ALLOW_CUSTOM_OPTIMISER && !!opt;
+	}
 
 	let abc = methodInfo.abc
 	let code = methodInfo.getBody().code
@@ -1129,7 +1146,7 @@ export function compile(methodInfo: MethodInfo, optimise: OPT_FLAGS = DEFAULT_OP
 			// if we are in any try-catch-blocks, we must close them
 			if (openTryCatchBlockGroups) closeAllTryCatch();
 
-			if(optimise & OPT_FLAGS.ALLOW_CUSTOM_OPTIMISER && blockSaver) {
+			if(USE_OPT(blockSaver)) {
 				blockSaver.drop();
 			}
 
@@ -1458,7 +1475,7 @@ export function compile(methodInfo: MethodInfo, optimise: OPT_FLAGS = DEFAULT_OP
 					for (let j: number = 1; j <= param(0); j++)
 						pp.push(stackF(param(0) - j))
 					
-					if(optimise && OPT_FLAGS.ALLOW_CUSTOM_OPTIMISER && blockSaver && blockSaver.safe(obj)) {
+					if(USE_OPT(blockSaver) && blockSaver.safe(obj)) {
 						js.push(`${idnt}                /* This call maybe a safe, ${blockSaver.constructor.name} */`)
 					}
 					js.push(`${idnt}                ${obj} = context.call(${stackF(param(0) + 1)}, ${stackF(param(0))}, [${pp.join(", ")}]);`)
@@ -1476,7 +1493,6 @@ export function compile(methodInfo: MethodInfo, optimise: OPT_FLAGS = DEFAULT_OP
 				case Bytecode.CALLPROPERTY:
 					var mn = abc.getMultiname(param(1));
 					let pp = []
-
 					for (let j: number = 0; j <= param(0); j++)
 						pp.push(stackF(param(0) - j))
 
@@ -1485,6 +1501,17 @@ export function compile(methodInfo: MethodInfo, optimise: OPT_FLAGS = DEFAULT_OP
 						js.push(`${idnt}                ${stackF(param(0))} = context.getdefinitionbyname(${scope}, ${obj}, [${pp.join(", ")}]);`)
 					}
 					else {
+						if(USE_OPT(fastCall) && fastCall.sureThatFast(`${obj}`)) 
+						{
+							const n = fastCall.sureThatFast(`${obj}`).mangled ? Multiname.getPublicMangledName(mn.name) : mn.name;
+							fastCall.kill(`${obj}`);
+
+							js.push(`${idnt}                /* We sure that this safe call */ `)
+							js.push(`${idnt}                ${stackF(param(0))} = ${obj}['${n}'](${pp.join(", ")});`)
+
+							break;
+						}
+
 						js.push(`${idnt}                if (!${emitIsAXOrPrimitive(obj)}) {`)
 						// fast instruction already binded
 						js.push(`${idnt}                    ${stackF(param(0))} = ${obj}['${mn.name}'](${pp.join(", ")});`)
@@ -1514,6 +1541,18 @@ export function compile(methodInfo: MethodInfo, optimise: OPT_FLAGS = DEFAULT_OP
 						pp.push(stackF(param(0) - j))
 
 					let obj = pp.shift();
+
+					if(USE_OPT(fastCall) && fastCall.sureThatFast(`${obj}`)) 
+					{
+						const n = fastCall.sureThatFast(`${obj}`) ? Multiname.getPublicMangledName(mn.name) : mn.name;
+
+						js.push(`${idnt}                /* We sure that this safe call */ `)
+						js.push(`${idnt}                ${obj}['${n}'](${pp.join(", ")});`)
+
+						fastCall.kill(`${obj}`);
+						break;
+					}
+
 					js.push(`${idnt}                if (!${emitIsAXOrPrimitive(obj)}) {`)
 					js.push(`${idnt}                    ${obj}['${mn.name}'](${pp.join(", ")});`)
 					js.push(`${idnt}                } else {`)
@@ -1537,9 +1576,14 @@ export function compile(methodInfo: MethodInfo, optimise: OPT_FLAGS = DEFAULT_OP
 					var mn = abc.getMultiname(param(0));
 					js.push(`${idnt}                // ${mn}`)
 
-					if(optimise & OPT_FLAGS.ALLOW_CUSTOM_OPTIMISER && lexGen && lexGen.test(mn)) {
+					if(USE_OPT(lexGen) && lexGen.test(mn)) {
 						js.push(`${idnt}                /* GenerateLexImports */`);
-						js.push(`${idnt}                ${stackN} = ${lexGen.getStaticAlias(mn,{nameAlias: getname(param(0))})};`)
+						js.push(`${idnt}                ${stackN} = ${lexGen.getPropStrictAlias(mn,<any>{nameAlias: getname(param(0))})};`)
+
+						if(USE_OPT(fastCall)) {
+							const mangled = (lexGen.getGenerator(mn) instanceof TopLevelLex);
+							fastCall.mark(`${stackN}`, mangled);
+						}
 						break;
 					}
 
@@ -1631,6 +1675,8 @@ export function compile(methodInfo: MethodInfo, optimise: OPT_FLAGS = DEFAULT_OP
 						pp.push(stackF(param(0) - j))
 
 					js.push(`${idnt}                ${stackF(param(0))} = context.constructprop(${getname(param(1))}, ${stackF(param(0))}, [${pp.join(", ")}]);`)
+
+					USE_OPT(fastCall) && fastCall.kill(stackF(param(0)));
 				}
 					break
 				case Bytecode.GETPROPERTY:
@@ -1638,7 +1684,7 @@ export function compile(methodInfo: MethodInfo, optimise: OPT_FLAGS = DEFAULT_OP
 					let isSafe = false;
 					let lastIdnt = idnt;
 
-					if(optimise && OPT_FLAGS.ALLOW_CUSTOM_OPTIMISER && blockSaver && blockSaver.needSafe(stack0)) {
+					if(USE_OPT(blockSaver) && blockSaver.needSafe(stack0)) {
 						isSafe = true;
 
 						js.push(`${idnt}                ${blockSaver.beginSafeBlock(stack0)}`);
@@ -1666,7 +1712,7 @@ export function compile(methodInfo: MethodInfo, optimise: OPT_FLAGS = DEFAULT_OP
 				case Bytecode.GETPROPERTY_DYN:
 					var mn = abc.getMultiname(param(0));
 					
-					if(optimise && OPT_FLAGS.ALLOW_CUSTOM_OPTIMISER && blockSaver && blockSaver.markToSafe(mn)) {
+					if(USE_OPT(blockSaver) && blockSaver.markToSafe(mn)) {
 						js.push(`${idnt}                /* Mark lookup to safe call, ${blockSaver.constructor.name} */`)
 					}
 
@@ -1731,10 +1777,16 @@ export function compile(methodInfo: MethodInfo, optimise: OPT_FLAGS = DEFAULT_OP
 				case Bytecode.GETLEX:
 					var mn = abc.getMultiname(param(0));
 
-					if(optimise & OPT_FLAGS.ALLOW_CUSTOM_OPTIMISER && lexGen && lexGen.test(mn)) {
+					if(USE_OPT(lexGen) && lexGen.test(mn)) {
 						js.push(`${idnt}                // ${mn}`)
 						js.push(`${idnt}                /* GenerateLexImports */`);
-						js.push(`${idnt}                ${stackN} = ${lexGen.getStaticAlias(mn, {nameAlias: getname(param(0)), strict: true})};`)
+						js.push(`${idnt}                ${stackN} = ${lexGen.getLexAlias(mn,<any>{nameAlias : getname(param(0))})};`);
+
+						if(fastCall) {
+							const mangled = (lexGen.getGenerator(mn) instanceof TopLevelLex);
+							fastCall.mark(`${stackN}`, mangled);
+						}
+
 					} else {
 						js.push(`${idnt}                // ${mn}`)
 						js.push(`${idnt}                temp = ${scope}.findScopeProperty(${getname(param(0))}, true, false);`)
@@ -1904,7 +1956,7 @@ export function compile(methodInfo: MethodInfo, optimise: OPT_FLAGS = DEFAULT_OP
 
 	const header = ["const AX_CLASS_SYMBOL = context.AX_CLASS_SYMBOL;"];
 	
-	if(optimise & OPT_FLAGS.ALLOW_CUSTOM_OPTIMISER && lexGen) {
+	if(USE_OPT(lexGen)) {
 		header.push(lexGen.genHeader());
 	}
 
