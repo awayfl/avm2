@@ -187,8 +187,9 @@ export class ComplexGenerator implements ILexGenerator {
  * Import generator for Box2D and Nape external libs
  */
 export class PhysicsLex extends LexImportsGenerator {
-	constructor(public allows: { box2D?: boolean; nape?: boolean } = { box2D: true, nape: true }) {
+	constructor(public allows: { box2D?: boolean; nape?: boolean }) {
 		super();
+		this.allows = Object.assign({ box2D: true, nape: true }, allows)
 	}
 
 	protected _genEntry(def: IImportDefinition): string {
@@ -233,7 +234,9 @@ const ALLOWED_TOP_LEVEL_NAMES: String[] = [
 ];
 
 const NOT_ALLOWED: String[] = [
-	`getDefinitionByName`
+	'getDefinitionByName',
+	'SetIntervalTimer',
+	'setTimeout'
 ]
 
 interface ITopGenOptions extends IImportGenOptions {

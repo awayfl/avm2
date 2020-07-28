@@ -100,8 +100,6 @@ class TweenCallSaver extends CallBlockSaver {
 	}	
 }
 
-
-
 class Instruction {
 	public stack: number = DEFAULT_STACK_INDEX
 	public scope: number = DEFAULT_STACK_INDEX
@@ -159,17 +157,27 @@ export function compile(methodInfo: MethodInfo, optimise: OPT_FLAGS = DEFAULT_OP
 	]);
 	const blockSaver = new TweenCallSaver();
 
+	// kill cache when instruction set a far that this
+	const SAFE_INS_DIST = 4;
 	const fastCall =  
 	{
 		_active: {},
-		mark(stackAlias: string, mangled: boolean) {
-			this._active[stackAlias] = {mangled};
+		mark(stackAlias: string, mangled: boolean, index: number) {
+			this._active[stackAlias] = {mangled, index};
 		},
 		sureThatFast(stackAlias: string): any {
 			return this._active[stackAlias];
 		},
 		kill(stackAlias: string,) {
 			delete this._active[stackAlias];
+		},
+		killFar(index: number) {
+			const keys = Object.keys(this._active);
+			for(let k of keys) {
+				if(index - this._active[k].index >= SAFE_INS_DIST) {
+					delete this._active[k];	
+				}
+			}
 		}
 	}
 	
@@ -1141,6 +1149,8 @@ export function compile(methodInfo: MethodInfo, optimise: OPT_FLAGS = DEFAULT_OP
 		z && (lastZ = z);
 		z = q[i];
 
+		USE_OPT(fastCall) && fastCall.killFar(i);
+
 		if (targets.indexOf(z.position) >= 0) {
 
 			// if we are in any try-catch-blocks, we must close them
@@ -1582,7 +1592,7 @@ export function compile(methodInfo: MethodInfo, optimise: OPT_FLAGS = DEFAULT_OP
 
 						if(USE_OPT(fastCall)) {
 							const mangled = (lexGen.getGenerator(mn) instanceof TopLevelLex);
-							fastCall.mark(`${stackN}`, mangled);
+							fastCall.mark(`${stackN}`, mangled, i);
 						}
 						break;
 					}
@@ -1692,6 +1702,17 @@ export function compile(methodInfo: MethodInfo, optimise: OPT_FLAGS = DEFAULT_OP
 						idnt +="    ";	
 					}
 
+					if(USE_OPT(fastCall) && fastCall.sureThatFast(stack0)) 
+					{
+						const n = fastCall.sureThatFast(stack0).mangled ? Multiname.getPublicMangledName(mn.name) : mn.name;
+						fastCall.kill(stack0);
+
+						js.push(`${idnt}                /* We sure that this safe call */ `)
+						js.push(`${idnt}                ${stack0} = ${stack0}['${n}'];`)
+
+						break;
+					}
+					
 					js.push(`${idnt}                // ${mn}`)
 					js.push(`${idnt}                if (!${emitIsAX(stack0)}) {`)
 					js.push(`${idnt}                    ${stack0} = ${stack0}['${mn.name}'];`)
@@ -1784,7 +1805,7 @@ export function compile(methodInfo: MethodInfo, optimise: OPT_FLAGS = DEFAULT_OP
 
 						if(fastCall) {
 							const mangled = (lexGen.getGenerator(mn) instanceof TopLevelLex);
-							fastCall.mark(`${stackN}`, mangled);
+							fastCall.mark(`${stackN}`, mangled, i);
 						}
 
 					} else {
