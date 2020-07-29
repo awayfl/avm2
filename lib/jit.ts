@@ -410,16 +410,21 @@ export function compile(methodInfo: MethodInfo, optimise: OPT_FLAGS = DEFAULT_OP
 
 	js0.push(`${idnt} let sec = context.sec;`)
 
+	const genBrancher = jumps.length > 1 || catchStart;
 
-	js.push(`${idnt} let p = 0;`)
-	js.push(`${idnt} while (true) {`)
-	js.push(`${moveIdnt(1)} switch (p) {`)
+	js.push(`${idnt} `)
+	if(genBrancher) {
+		js.push(`${idnt} let p = 0;`)
+		js.push(`${idnt} while (true) {`)
+		js.push(`${moveIdnt(1)} switch (p) {`)
+	}
 
 	let currentCatchBlocks: ExceptionInfo[];
 	let lastZ: Instruction;
 	let z: Instruction;
 
-	moveIdnt(2);
+	// case + case int
+	genBrancher && moveIdnt(2);
 	
 	for (let i: number = 0; i < q.length; i++) {
 		z && (lastZ = z);
@@ -434,11 +439,11 @@ export function compile(methodInfo: MethodInfo, optimise: OPT_FLAGS = DEFAULT_OP
 				blockSaver.drop();
 			}
 
-			moveIdnt(-1);
-			
-			js.push(`${idnt} case ${z.position}:`);
-
-			moveIdnt(1);
+			if(genBrancher) {
+				moveIdnt(-1);		
+				js.push(`${idnt} case ${z.position}:`);
+				moveIdnt(1);
+			}
 			// now we reopen all the try-catch again 
 			if (openTryCatchBlockGroups) openAllTryCatch();
 		}
@@ -1221,8 +1226,12 @@ export function compile(methodInfo: MethodInfo, optimise: OPT_FLAGS = DEFAULT_OP
 		}
 	}
 
-	js.push(`${moveIdnt(-1)} }`)
-	js.push(`${moveIdnt(-1)} }`)
+	if(genBrancher) {
+		// close switch
+		js.push(`${moveIdnt(-1)} }`)
+		// close while
+		js.push(`${moveIdnt(-1)} }`)
+	}
 	js.push(`${moveIdnt(-1)} }`)
 
 	// Debugging magic 
