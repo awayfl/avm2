@@ -136,9 +136,6 @@ const UNSAFE_SET = false;
 // allow unsafe calls and property gets from objects
 const UNSAFE_JIT = false;
 
-// allow use negate stack pointer (avoid stack underrun)
-const UNSAFE_STACK = false;
-
 let SCRIPT_ID = 0;
 
 export interface ICompilerProcess {
@@ -186,7 +183,6 @@ export function compile(methodInfo: MethodInfo, optimise: OPT_FLAGS = DEFAULT_OP
 		return optimise & OPT_FLAGS.ALLOW_CUSTOM_OPTIMISER && !!opt;
 	}
 
-	const abc = methodInfo.abc
 	const {
 		error,
 		jumps,
@@ -199,6 +195,12 @@ export function compile(methodInfo: MethodInfo, optimise: OPT_FLAGS = DEFAULT_OP
 	if(error) {
 		return {error};
 	}
+	
+	const abc = methodInfo.abc;
+	const body = methodInfo.getBody();
+	const maxstack = body.maxStack;
+	const maxlocal = body.localCount - 1;
+	const maxscope = body.maxScopeDepth - body.initScopeDepth;
 
 	let js0 = [];
 	let js = [];
@@ -267,28 +269,6 @@ export function compile(methodInfo: MethodInfo, optimise: OPT_FLAGS = DEFAULT_OP
 
 	}
 
-	let maxstack = 0
-	let minstack = 0;
-
-	for (let i: number = 0; i < q.length; i++){
-		if (q[i].stack > maxstack)
-			maxstack = q[i].stack
-		if(q[i].stack < minstack && q[i].stack !== DEFAULT_STACK_INDEX)
-			minstack = q[i].stack;
-	}
-
-	if(!UNSAFE_STACK) {
-		minstack = 0;
-	}
-
-	//console.log(minstack, maxstack);
-
-	let maxlocal = 0
-	for (let i: number = 0; i < q.length; i++)
-		if (q[i].name == Bytecode.GETLOCAL || q[i].name == Bytecode.SETLOCAL)
-			if (q[i].params[0] > maxlocal)
-				maxlocal = q[i].params[0]
-
 	let temp = false
 	let domMem = false;
 	for (let q_i of q) {
@@ -299,12 +279,6 @@ export function compile(methodInfo: MethodInfo, optimise: OPT_FLAGS = DEFAULT_OP
 		}
 
 		domMem = domMem || (b >= Bytecode.LI8 && b <= Bytecode.SF64);
-	}
-
-	let maxscope = 0
-	for (let i: number = 0; i < q.length; i++) {
-		if (q[i].scope > maxscope)
-			maxscope = q[i].scope
 	}
 
 	let params = methodInfo.parameters
@@ -395,8 +369,8 @@ export function compile(methodInfo: MethodInfo, optimise: OPT_FLAGS = DEFAULT_OP
 		//js0.push(`    let local${i} = ${((i == params.length + 1) ? "context.createArrayUnsafe(Array.from(arguments))" : "undefined")};`);
 	}
 
-	for (let i = minstack; i < maxstack; i++)
-		js0.push(`    let stack${i - minstack} = undefined;`)
+	for (let i = 0; i < maxstack; i++)
+		js0.push(`    let stack${i} = undefined;`)
 
 	for (let i: number = 0; i < maxscope; i++)
 		js0.push(`    let scope${i} = undefined;`)
