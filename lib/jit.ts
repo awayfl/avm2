@@ -18,7 +18,7 @@ import { ABCFile } from "./abc/lazy/ABCFile"
 import { ScriptInfo } from "./abc/lazy/ScriptInfo"
 import { ExceptionInfo } from './abc/lazy/ExceptionInfo'
 import { Bytecode } from './Bytecode'
-import { affilate } from "./gen/affiliate"
+import { affilate, Instruction } from "./gen/affiliate"
 
 import {
 	ComplexGenerator, 
@@ -99,21 +99,6 @@ class TweenCallSaver extends CallBlockSaver {
 	test(mn: Multiname) {
 		return mn.namespaces && mn.namespace?.uri && mn.namespace.uri.includes("TweenLite");
 	}	
-}
-
-class Instruction {
-	public stack: number = DEFAULT_STACK_INDEX
-	public scope: number = DEFAULT_STACK_INDEX
-	public catchBlock: ExceptionInfo;
-	public catchStart: boolean = false;
-	public catchEnd: boolean = false;
-
-	constructor(readonly position: number, readonly name: Bytecode, readonly params: Array<any> = [], readonly delta: number = 0, readonly deltaScope: number = 0, readonly terminal: boolean = false, readonly refs: Array<number> = []) {
-	}
-
-	toString() {
-		return `Instruction(${this.position}, ${BytecodeName[this.name]} (${this.name}), [${this.params}], ${this.stack} -> ${this.stack + this.delta}, ${this.scope} -> ${this.scope + this.deltaScope}, ${this.terminal}, [${this.refs}])`
-	}
 }
 
 export const enum OPT_FLAGS {
@@ -456,7 +441,7 @@ export function compile(methodInfo: MethodInfo, optimise: OPT_FLAGS = DEFAULT_OP
 			moveIdnt(1);
 		}
 
-		js.push(`${idnt} //${BytecodeName[z.name]} ${z.params.join(" / ")}`);// + " pos: " + z.position+ " scope:"+z.scope+ " stack:"+z.stack)
+		js.push(`${idnt} //${BytecodeName[z.name]} ${z.params.join(" / ")} -> ${z.returnTypeId}`);// + " pos: " + z.position+ " scope:"+z.scope+ " stack:"+z.stack)
 
 		let stackF = (n: number) => ((z.stack - 1 - n) >= 0) ? (`stack${(z.stack - 1 - n)}`) : `/*${underrun} ${z.stack - 1 - n}*/ stack0`;
 		let stack0 = stackF(0)
