@@ -12,8 +12,8 @@ import { CONSTANT } from "./CONSTANT";
 
 export class InstanceInfo extends Info {
     public classInfo: ClassInfo = null;
-    public runtimeTraits: RuntimeTraits = null;
-  
+	public runtimeTraits: RuntimeTraits = null;
+
     private _interfaces: Set<AXClass>;
   
     constructor(
@@ -32,8 +32,10 @@ export class InstanceInfo extends Info {
   
     getInitializer(): MethodInfo {
       if (typeof this.initializer === "number") {
-        this.initializer = this.abc.getMethodInfo(<number>this.initializer);
-      }
+		this.initializer = this.abc.getMethodInfo(<number>this.initializer);
+		this.initializer.instanceInfo = this;
+		this.initializer.isConstructor = true;
+	  }
       return <MethodInfo>this.initializer;
     }
   

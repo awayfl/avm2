@@ -9,6 +9,7 @@ import { InstanceInfo } from "./InstanceInfo";
 import { ClassInfo } from "./ClassInfo";
 import { METHOD } from "./METHOD";
 import { Multiname } from './Multiname';
+import { ScriptInfo } from './ScriptInfo';
 
 export class MethodInfo {
     public trait: MethodTraitInfo = null;
@@ -16,9 +17,14 @@ export class MethodInfo {
     private _body: MethodBodyInfo;
     private _returnType: AXClass;
 
-    public compiled:Function = null;
+	public scriptInfo: ScriptInfo = null;
+	public classInfo: ClassInfo = null;
+	public instanceInfo: InstanceInfo = null;
+	public isConstructor: boolean = false;
+
+	public compiled:Function = null;
     public names:Multiname[];
-    public error:string = null;
+	public error:string = null;
 
     constructor(
       public abc: ABCFile,
@@ -71,8 +77,8 @@ export class MethodInfo {
     }
   
     getName(): string {
-      if (this.name) {
-        return this.abc.getString(this.name);
+      if (typeof this.name === 'number') {
+        return this.abc.getString(this.name) || 'anonymous';
       }
       if (this.trait) {
         return this.trait.getName().name;

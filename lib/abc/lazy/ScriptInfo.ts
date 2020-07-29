@@ -8,7 +8,8 @@ import { IndentingWriter } from "@awayfl/swf-loader";
 
 export class ScriptInfo extends Info {
     public global: AXGlobal = null;
-    public state: ScriptInfoState = ScriptInfoState.None;
+	public state: ScriptInfoState = ScriptInfoState.None;
+	private initialiser: MethodInfo;
     constructor(
       public abc: ABCFile,
       public initializer: number,
@@ -18,7 +19,14 @@ export class ScriptInfo extends Info {
     }
   
     getInitializer(): MethodInfo {
-      return this.abc.getMethodInfo(this.initializer);
+	  if(this.initialiser) {
+		  return this.initialiser;
+	  }
+
+	  this.initialiser = this.abc.getMethodInfo(this.initializer);
+	  this.initialiser.scriptInfo = this;
+
+	  return this.initialiser;
     }
   
     trace(writer: IndentingWriter) {

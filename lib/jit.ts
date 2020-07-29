@@ -34,6 +34,8 @@ import {
 	IS_EXTERNAL_CLASS
 } from "./ext/external";
 import { ASObject } from './nat/ASObject'
+import { InstanceInfo } from './abc/lazy/InstanceInfo'
+import { ClassInfo } from './abc/lazy/ClassInfo'
 
 export let BytecodeName = Bytecode
 
@@ -122,6 +124,8 @@ const UNSAFE_SET = false;
 const UNSAFE_JIT = false;
 
 let SCRIPT_ID = 0;
+
+const CLASS_NAME_METHOD_NAME: StringMap<number> = {};
 
 export interface ICompilerProcess {
 	error?: string;
@@ -1224,7 +1228,37 @@ export function compile(methodInfo: MethodInfo, optimise: OPT_FLAGS = DEFAULT_OP
 
 	const prefix = ("" + (SCRIPT_ID++)).padLeft("0", 4);
 
-	js.push(`//# sourceURL=http://jit/${prefix}_${funcName || 'unknown'}.js`)
+
+	let name = `__root__/${prefix}_${funcName || 'unknown'}`;
+	let path = "";
+
+	if(methodInfo.trait && methodInfo.trait.holder instanceof InstanceInfo) {
+		path = methodInfo.trait.holder.getClassName().replace(/\./g, "/");
+
+		name = `${path}/${(methodInfo.isConstructor || !funcName) ? "constructor" : ("m_" + funcName)}`;
+	
+		if(CLASS_NAME_METHOD_NAME[name] !== undefined) {
+			const index = CLASS_NAME_METHOD_NAME[name] = CLASS_NAME_METHOD_NAME[name] + 1;
+			name += "$" + index;			
+		} else {
+			CLASS_NAME_METHOD_NAME[name] = 0;
+		}
+	}
+
+	// for instances of symbol
+	if(methodInfo.instanceInfo) {
+		path =  methodInfo.instanceInfo.getClassName().replace(/\./g, "/");
+		name = `${path}/${(methodInfo.isConstructor) ? "constructor" : funcName}`;
+	}
+
+	// for static methods
+	if(methodInfo.trait && methodInfo.trait.holder instanceof ClassInfo) {
+		path =  methodInfo.trait.holder.instanceInfo.getClassName().replace(/\./g, "/");
+		name = `${path}/${funcName || 'unknown'}`;
+	}
+
+
+	js.push(`//# sourceURL=http://jit/${name}.js`)
 
 	const locals = [];
 
