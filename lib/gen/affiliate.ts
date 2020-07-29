@@ -17,15 +17,6 @@ const enum PRIMITIVE_TYPE {
 	ANY = -1000
 }
 
-export class CFGNode {
-	static ID = 0;
-	readonly id = CFGNode.ID ++;
-
-	instruction: Instruction;
-	parents: CFGNode[] = [];
-	child: CFGNode[] = [];
-}
-
 export class Instruction {
 	public stack: number = DEFAULT_STACK_INDEX;
 	public scope: number = DEFAULT_STACK_INDEX;
@@ -33,6 +24,7 @@ export class Instruction {
 	public catchStart: boolean = false;
 	public catchEnd: boolean = false;
 	public returnTypeId: number = -1; // void
+	public childs: number[] = [];
 
 	constructor(
 		readonly position: number, 
@@ -107,6 +99,45 @@ export function propagateScope (position: number, scope: number, q: Array<Instru
 	}
 }
 
+export function propogateTree(q: Array<Instruction>, jumps: number[]): void {
+	const branches = {};
+	const condNodes: Instruction[] = [];
+
+	branches[0] = 0;
+
+	const l = q.length;
+	for(let i = 1; i < l; i ++) {
+		const inst = q[i];
+
+		if(jumps.indexOf(inst.position) > -1) {
+			branches[inst.position] = i;
+		}
+
+		if(inst.name >= Bytecode.IFNLT 
+			&& inst.name <= Bytecode.LOOKUPSWITCH) {
+			condNodes.push(inst);
+		}
+	}
+
+	for(let c of condNodes) {
+		if(c.name === Bytecode.LOOKUPSWITCH) {
+			const params = c.params;
+			c.childs = [];
+			for(let i = 0; i < params.length - 1; i ++) {
+				c.childs.push(branches[i]);
+			}
+			continue;
+		}
+
+		if(c.name === Bytecode.JUMP) {
+			c.childs = [branches[c.params[0]]];
+			continue;
+		}
+
+		c.childs.push(branches[c.params[0]]);
+	}
+
+}
 
 /**
  * Affilate instruction set from method info
@@ -116,7 +147,6 @@ export function affilate(methodInfo: MethodInfo): IAffilerResult & IAffilerError
 	const abc = methodInfo.abc;
 	const body = methodInfo.getBody();
 	const code = body.code;
-	const tree = new CFGNode();
 
 	let q: Instruction[] = []
 	let type: number = 0;
@@ -839,6 +869,8 @@ export function affilate(methodInfo: MethodInfo): IAffilerResult & IAffilerError
 			jumps.push(block.target)
 		}
 	}
+
+	propogateTree(q, jumps);
 
 	return {
 		set: q,
