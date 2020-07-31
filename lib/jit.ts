@@ -40,9 +40,24 @@ import {
 } from "./ext/external";
 
 
-export let BytecodeName = Bytecode
+const METHOD_HOOKS: StringMap<{path: string, place: "begin" | "return", hook: Function}> = {};
 
-const DEFAULT_STACK_INDEX = -1024;
+export let BytecodeName = Bytecode
+/**
+ * Try resolve method and attach hook to it 
+ */
+export function UNSAFE_attachMethodHook(
+	path: string, 
+	place: 'begin' | 'return' = 'begin', 
+	hook: Function) {
+		if(!path || typeof hook !== 'function') {
+			throw "Hook path should be exits and function should be a function";
+		}
+	
+	METHOD_HOOKS[path + "__" + place] = {
+		path, place, hook
+	};
+}
 
 /**
  * @description Generate safe instruction for null block usage
@@ -240,10 +255,11 @@ export function compile(methodInfo: MethodInfo, optimise: OPT_FLAGS = DEFAULT_OP
 		fullPath = path + "/" + methodName;
 	}
 
+	const hookMethodPath = `${path}${isMemeber ? "::" : "."}${methodName}`
 	const scriptHeader = 
 `/*
 	Index: ${methodInfo.index()}
-	Path:  ${path}${isMemeber ? "::" : "."}${methodName}
+	Path:  ${hookMethodPath}
 	Type:  ${methodType}
 	Super: ${superClass || '-'}
 */\n\n`
@@ -464,6 +480,10 @@ export function compile(methodInfo: MethodInfo, optimise: OPT_FLAGS = DEFAULT_OP
 
 	const genBrancher = jumps.length > 1 || catchStart;
 
+	if(METHOD_HOOKS && METHOD_HOOKS[hookMethodPath + "__begin"]) {
+		js.push(`${idnt} /* ATTACH METHOD HOOK */`)
+		js.push(`${idnt} context.executeHook(local0, '${hookMethodPath + "__begin"}')`)	
+	}
 	js.push(`${idnt} `)
 	if(genBrancher) {
 		js.push(`${idnt} let p = 0;`)
@@ -1152,9 +1172,18 @@ export function compile(methodInfo: MethodInfo, optimise: OPT_FLAGS = DEFAULT_OP
 					}
 					break
 				case Bytecode.RETURNVALUE:
+					if(METHOD_HOOKS && METHOD_HOOKS[hookMethodPath + "__return"]) {
+						js.push(`${idnt} /* ATTACH METHOD HOOK */`)
+						js.push(`${idnt} context.executeHook(local0, '${hookMethodPath + "__return"}')`)	
+					}
 					js.push(`${idnt} return ${stack0};`)
 					break
 				case Bytecode.RETURNVOID:
+					if(METHOD_HOOKS && METHOD_HOOKS[hookMethodPath + "__return"]) {
+						js.push(`${idnt} /* ATTACH METHOD HOOK */`)
+						js.push(`${idnt} context.executeHook(local0, '${hookMethodPath + "__return"}')`)	
+					}
+
 					js.push(`${idnt} return;`)
 					break
 				case Bytecode.COERCE:
@@ -1382,6 +1411,15 @@ export class Context {
 		}
 
 		return this.domain.internal_memoryView;
+	}
+	/**
+	 * Execute JS hoo
+	 */
+	executeHook(context: any, name: string) {
+		let hook = METHOD_HOOKS[name];
+		if(hook) {
+			hook.hook(context);
+		}
 	}
 
 	/**
