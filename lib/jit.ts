@@ -18,6 +18,11 @@ import { ABCFile } from "./abc/lazy/ABCFile"
 import { ScriptInfo } from "./abc/lazy/ScriptInfo"
 import { ExceptionInfo } from './abc/lazy/ExceptionInfo'
 import { Bytecode } from './Bytecode'
+import { ASObject } from './nat/ASObject'
+import { InstanceInfo } from './abc/lazy/InstanceInfo'
+import { ClassInfo } from './abc/lazy/ClassInfo'
+import { MethodTraitInfo } from './abc/lazy/MethodTraitInfo'
+import { namespaceTypeNames } from './abc/lazy/NamespaceType'
 import { affilate, Instruction } from "./gen/affiliate"
 
 import {
@@ -33,9 +38,7 @@ import {
 	emitIsAX,
 	IS_EXTERNAL_CLASS
 } from "./ext/external";
-import { ASObject } from './nat/ASObject'
-import { InstanceInfo } from './abc/lazy/InstanceInfo'
-import { ClassInfo } from './abc/lazy/ClassInfo'
+
 
 export let BytecodeName = Bytecode
 
@@ -185,11 +188,72 @@ export function compile(methodInfo: MethodInfo, optimise: OPT_FLAGS = DEFAULT_OP
 		return {error};
 	}
 	
+	const prefix = ("" + (SCRIPT_ID++)).padLeft("0", 4);
+	const funcName = (methodInfo.getName()).replace(/([^a-z0-9]+)/gi, "_");
+	
+	let fullPath = `__root__/${prefix}_${funcName || 'unknown'}`;
+	let path = fullPath;
+	let methodName = funcName;
+	let isMemeber = true;
+	let methodType = "Public";
+	let superClass = undefined;
+
+	if(methodInfo.trait) {
+		if(methodInfo.trait.holder instanceof ClassInfo) {
+			path =  methodInfo.trait.holder.instanceInfo.getClassName().replace(/\./g, "/");
+			isMemeber = false;
+		}
+		else if(methodInfo.trait.holder instanceof InstanceInfo) {
+			path = methodInfo.trait.holder.getClassName().replace(/\./g, "/");
+			superClass =  methodInfo.trait.holder.getSuperName()?.
+									toFQNString(false).replace(/\./g, "/");;
+		}
+		if(methodInfo.trait instanceof MethodTraitInfo ){
+			methodName = (<Multiname>methodInfo.trait.name).name;
+			methodType = namespaceTypeNames[(<Multiname>methodInfo.trait.name).namespace.type];
+		}
+
+		if(methodInfo.isConstructor) {
+			//constructor
+			methodName = 'constructor';
+		} else {
+			// member
+			methodName  = isMemeber ?  ("m_" + methodName) : methodName;
+		}
+
+		fullPath = path + "/" + methodName;
+	
+		if(CLASS_NAME_METHOD_NAME[fullPath] !== undefined) {
+			const index = CLASS_NAME_METHOD_NAME[fullPath] = CLASS_NAME_METHOD_NAME[fullPath] + 1;
+			fullPath += "$" + index;			
+		} else {
+			CLASS_NAME_METHOD_NAME[fullPath] = 0;
+		}
+	}
+
+	// for instances
+	if(methodInfo.instanceInfo) {
+		path = methodInfo.instanceInfo.getClassName().replace(/\./g, "/");
+		methodName = methodInfo.isConstructor ? 'constructor' : funcName;
+		superClass = methodInfo.instanceInfo.getSuperName()?.
+									toFQNString(false).replace(/\./g, "/");
+		fullPath = path + "/" + methodName;
+	}
+
+	const scriptHeader = 
+`/*
+	Index: ${methodInfo.index()}
+	Path:  ${path}${isMemeber ? "::" : "."}${methodName}
+	Type:  ${methodType}
+	Super: ${superClass || '-'}
+*/\n\n`
+
 	const abc = methodInfo.abc;
 	const body = methodInfo.getBody();
 	const maxstack = body.maxStack;
 	const maxlocal = body.localCount - 1;
 	const maxscope = body.maxScopeDepth - body.initScopeDepth;
+
 
 	let js0 = [];
 	let js = [];
@@ -280,7 +344,6 @@ export function compile(methodInfo: MethodInfo, optimise: OPT_FLAGS = DEFAULT_OP
 
 	let params = methodInfo.parameters
 
-	const funcName = (methodInfo.getName()).replace(/([^a-z0-9]+)/gi, "_");
 	const underrun = "[stack underrun]";
 	let paramsShift = 0;
 
@@ -308,7 +371,7 @@ export function compile(methodInfo: MethodInfo, optimise: OPT_FLAGS = DEFAULT_OP
 			args.push("...args");
 		}
 
-		js0.push(`return function compiled_${funcName}(${args.join(', ')}) {`);
+		js0.push(`return function compiled_${methodName}(${args.join(', ')}) {`);
 
 		moveIdnt(1);
 
@@ -326,7 +389,7 @@ export function compile(methodInfo: MethodInfo, optimise: OPT_FLAGS = DEFAULT_OP
 	} 
 	else 
 	{	
-		js0.push("return function compiled_" + funcName + "() {")
+		js0.push("return function compiled_" + methodName + "() {")
 
 		for (let i: number = 0; i < params.length; i++)
 			if (params[i].hasOptionalValue()) {
@@ -1226,39 +1289,7 @@ export function compile(methodInfo: MethodInfo, optimise: OPT_FLAGS = DEFAULT_OP
 	// Debugging magic 
 	// https://developer.mozilla.org/en-US/docs/Tools/Debugger/How_to/Debug_eval_sources
 
-	const prefix = ("" + (SCRIPT_ID++)).padLeft("0", 4);
-
-
-	let name = `__root__/${prefix}_${funcName || 'unknown'}`;
-	let path = "";
-
-	if(methodInfo.trait && methodInfo.trait.holder instanceof InstanceInfo) {
-		path = methodInfo.trait.holder.getClassName().replace(/\./g, "/");
-
-		name = `${path}/${(methodInfo.isConstructor || !funcName) ? "constructor" : ("m_" + funcName)}`;
-	
-		if(CLASS_NAME_METHOD_NAME[name] !== undefined) {
-			const index = CLASS_NAME_METHOD_NAME[name] = CLASS_NAME_METHOD_NAME[name] + 1;
-			name += "$" + index;			
-		} else {
-			CLASS_NAME_METHOD_NAME[name] = 0;
-		}
-	}
-
-	// for instances of symbol
-	if(methodInfo.instanceInfo) {
-		path =  methodInfo.instanceInfo.getClassName().replace(/\./g, "/");
-		name = `${path}/${(methodInfo.isConstructor) ? "constructor" : funcName}`;
-	}
-
-	// for static methods
-	if(methodInfo.trait && methodInfo.trait.holder instanceof ClassInfo) {
-		path =  methodInfo.trait.holder.instanceInfo.getClassName().replace(/\./g, "/");
-		name = `${path}/${funcName || 'unknown'}`;
-	}
-
-
-	js.push(`//# sourceURL=http://jit/${name}.js`)
+	js.push(`//# sourceURL=http://jit/${fullPath}.js`)
 
 	const locals = [];
 
@@ -1288,18 +1319,15 @@ export function compile(methodInfo: MethodInfo, optimise: OPT_FLAGS = DEFAULT_OP
 		header.push(lexGen.genHeader());
 	}
 
-	let w = header.join("\n") +  js0.join("\n") + "\n" + js.join("\n");
+	let w = scriptHeader + header.join("\n") +  js0.join("\n") + "\n" + js.join("\n");
 	const hasError = w.indexOf(underrun) > -1;
-	
-	const scriptPrefix = "// (#" + methodInfo.index() + ") --- " + methodInfo + "\n";
 
 	let compiled;
 	if (!(optimise & OPT_FLAGS.USE_NEW_FUCTION)) {
-		w = scriptPrefix + "(function(context) {\n" + w + "\n})";
+		w = "(function(context) {\n" + w + "\n})";
 		compiled = eval(w);
 
 	} else {
-		w = scriptPrefix + w;
 		compiled = new Function("context", w);
 	}
 
