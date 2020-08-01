@@ -671,7 +671,7 @@ export function affilate(methodInfo: MethodInfo): IAffilerResult & IAffilerError
 			case Bytecode.DELETEPROPERTY:
 				var [index, dyn, d] = mn()
 				ins = (new Instruction(oldi, z + dyn, [index], 0 + d))
-
+				break;
 			case Bytecode.GETSUPER:
 				var [index, dyn, d] = mn()
 				ins = (new Instruction(oldi, z + dyn, [index], 0 + d))
