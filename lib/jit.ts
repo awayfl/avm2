@@ -616,9 +616,7 @@ export function compile(methodInfo: MethodInfo, optimise: OPT_FLAGS = DEFAULT_OP
 			case Bytecode.DELETEPROPERTY:
 				var [index, dyn, d] = mn()
 				q.push(new Instruction(oldi, z + dyn, [index], 0 + d))
-
-
-
+				break;
 			case Bytecode.GETSUPER:
 				var [index, dyn, d] = mn()
 				q.push(new Instruction(oldi, z + dyn, [index], 0 + d))
@@ -1621,9 +1619,9 @@ export function compile(methodInfo: MethodInfo, optimise: OPT_FLAGS = DEFAULT_OP
 				case Bytecode.DELETEPROPERTY_DYN:
                     var mn = abc.getMultiname(param(0));
 					if (mn.isRuntimeName() && mn.isRuntimeNamespace()) {
-						js.push(`${idnt}                    ${stack2} = context.deleteproperty(context.runtimename(${getname(param(0))}, ${stack0}, ${stack1}), ${stack2});`)
+						js.push(`${idnt}                ${stack2} = context.deleteproperty(context.runtimename(${getname(param(0))}, ${stack0}, ${stack1}), ${stack2});`)
 					} else {
-						js.push(`${idnt}                    ${stack1} = context.deleteproperty(context.runtimename(${getname(param(0))}, ${stack0}), ${stack1});`)
+						js.push(`${idnt}                ${stack1} = context.deleteproperty(context.runtimename(${getname(param(0))}, ${stack0}), ${stack1});`)
 					}
 					break
 				case Bytecode.GETSUPER:
