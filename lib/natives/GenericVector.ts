@@ -10,7 +10,7 @@ import { checkValue } from '../run/checkValue';
 import { AXCallable } from '../run/AXCallable';
 import { axIsCallable } from '../run/axIsCallable';
 import { AXObject } from '../run/AXObject';
-import { AXClass } from '../run/AXClass';
+import { AXClass, IS_AX_CLASS } from '../run/AXClass';
 import { axCoerceNumber } from '../run/axCoerceNumber';
 import { axCoerceString } from '../run/axCoerceString';
 import { ASFunction } from '../nat/ASFunction';
@@ -425,7 +425,7 @@ export class GenericVector extends BaseVector {
   }
 
   _coerce(v) {
-    return (<any>this.axClass).type.axCoerce(v);
+    return (<any>this.axClass).type[IS_AX_CLASS] ? (<any>this.axClass).type.axCoerce(v): v;
   }
 
   shift() {

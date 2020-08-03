@@ -250,7 +250,7 @@ export class ASObject implements IMetaobjectProtocol {
         this[mangledName] = value;
         if (freeze) {
             Object.defineProperty(this, mangledName, { writable: false });
-        }
+		}
     }
 
     axGetProperty(mn: Multiname): any {

@@ -9,9 +9,8 @@ export const enum NamespaceType {
     StaticProtected = 5
   }
   
-  var namespaceTypeNames = ["Public", "Protected", "PackageInternal", "Private", "Explicit", "StaticProtected"];
-  
-  export function getNamespaceTypeName(namespaceType: NamespaceType): string {
-    return release ? String(namespaceType) : namespaceTypeNames[namespaceType];
-  }
-  
+export const namespaceTypeNames = ["Public", "Protected", "PackageInternal", "Private", "Explicit", "StaticProtected"];
+
+export function getNamespaceTypeName(namespaceType: NamespaceType): string {
+	return release ? String(namespaceType) : namespaceTypeNames[namespaceType];
+}

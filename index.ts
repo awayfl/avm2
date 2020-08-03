@@ -1,4 +1,4 @@
-console.debug("AwayFL - AVM2 - 0.2.83");
+console.debug("AwayFL - AVM2 - 0.2.85");
 
 // export {AVMAwayStage} from "./lib/AVMAwayStage";
 export { ASObject } from "./lib/nat/ASObject";
@@ -55,3 +55,4 @@ export { AVM2LoadLibrariesFlags } from "./lib/AVM2LoadLibrariesFlags";
 export {PREF_BOX2D_VERSION, BOX2D_PREFERENCE} from "./lib/external";
 
 export { Natives } from "./lib/nat/Natives";
+export { UNSAFE_attachMethodHook } from "./lib/jit";
