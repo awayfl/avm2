@@ -164,7 +164,7 @@ export function compile(methodInfo: MethodInfo, optimise: OPT_FLAGS = DEFAULT_OP
 
 	// kill cache when instruction set a far that this
 	const SAFE_INS_DIST = 4;
-	const fastCall =  
+	const fastCall = undefined;/* =  
 	{
 		_active: {},
 		mark(stackAlias: string, mangled: boolean, index: number) {
@@ -184,7 +184,7 @@ export function compile(methodInfo: MethodInfo, optimise: OPT_FLAGS = DEFAULT_OP
 				}
 			}
 		}
-	}
+	}*/
 	
 	const USE_OPT = (opt) => {
 		return optimise & OPT_FLAGS.ALLOW_CUSTOM_OPTIMISER && !!opt;
