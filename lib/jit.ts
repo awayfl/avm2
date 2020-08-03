@@ -313,8 +313,8 @@ export function compile(methodInfo: MethodInfo, optimise: OPT_FLAGS = DEFAULT_OP
 					names.push(typeName)
 					js0.push(`    let name${n} = context.names[${n}];`)
 				}
-				js.push(`${idnt} const errorClass = context.sec.application.getClass(name${n});`);
-				js.push(`${idnt} if(errorClass && errorClass.axIsType(e))`);
+				js.push(`${idnt} const errorClass$${i} = context.sec.application.getClass(name${n});`);
+				js.push(`${idnt} if(errorClass$${i} && errorClass$${i}.axIsType(e))`);
 				js.push(`${idnt}     { p = ${catchBlocks[i].target}; continue; };`);
 			}
 		}
