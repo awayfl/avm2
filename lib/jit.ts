@@ -1,4 +1,4 @@
-import { assert } from "@awayjs/graphics"
+import { assert, ShapeTag } from "@awayjs/graphics"
 import { Scope } from "./run/Scope"
 import { HasNext2Info } from "./run/HasNext2Info"
 import { AXSecurityDomain } from "./run/AXSecurityDomain"
@@ -24,6 +24,8 @@ import { ClassInfo } from './abc/lazy/ClassInfo'
 import { MethodTraitInfo } from './abc/lazy/MethodTraitInfo'
 import { namespaceTypeNames } from './abc/lazy/NamespaceType'
 import { affilate, Instruction } from "./gen/affiliate"
+import { TinyConstructor } from "./gen/TinyConstructor";
+import { TweenCallSaver } from "./gen/CallBlockSaver";
 
 import {
 	ComplexGenerator, 
@@ -60,66 +62,16 @@ export function UNSAFE_attachMethodHook(
 	};
 }
 
-/**
- * @description Generate safe instruction for null block usage
- */
-class CallBlockSaver {
-	_block: {alias: string} = null;
-	_used: boolean = false;
-	_needSafe: boolean = false;
-	test(mn: Multiname) {
-		return false;
+function generateFunc(body: string, path: string, useEval = false) {
+	body += `\n//# sourceURL=http://jit/${path}.js`;
+
+	if (useEval) {
+		body = "(function(context) {\n" + body + "\n})";
+		return eval(body);
+
+	} else {
+		return  new Function("context", body);
 	}
-
-	markToSafe( mn: Multiname) {
-		return this._needSafe = this.test(mn);
-	}
-
-	drop() {
-		// we can drop already used block
-		if(this._used) {
-			return;
-		}
-		this._needSafe = false;
-		this._block = undefined;
-	}
-
-	safe(alias: string) {
-		this._block = {alias};
-		this._used = false;
-		return true;
-	}
-
-	needSafe(alias: string) {
-		return this._needSafe && this._block && this._block.alias === alias;
-	}
-
-	beginSafeBlock(alias: string) {
-		if(!this.needSafe(alias)) {
-			return "";
-		}
-
-		this._used = true;
-		return `if(${this._block.alias} != undefined) {`; // push block end;
-	}
-
-	endSafeBlock(fallback?: string) {
-		if(!this._used) {
-			return "";
-		}
-		
-		const result = fallback ? `} else { ${this._block.alias} = ${fallback}; }` : "}";
-
-		this._used = false;
-		this._block = undefined;
-		return result;
-	}
-}
-
-class TweenCallSaver extends CallBlockSaver {
-	test(mn: Multiname) {
-		return mn.namespaces && mn.namespace?.uri && mn.namespace.uri.includes("TweenLite");
-	}	
 }
 
 export const enum OPT_FLAGS {
@@ -137,12 +89,15 @@ const DEFAULT_OPT =
 	OPT_FLAGS.SKIP_NULL_COERCE | 
 	OPT_FLAGS.SKIP_DOMAIN_MEM;
 
-// allow set to plain object in setproperty when it not AXClass
-const UNSAFE_SET = false;
-// allow unsafe calls and property gets from objects
-const UNSAFE_JIT = false;
+// lex generator
+const lexGen = new ComplexGenerator([
+	new PhysicsLex({box2D: false}), // generate static aliases for Physics engine
+	new TopLevelLex() // generate alias for TopLevel props
+]);
 
-let SCRIPT_ID = 0;
+const blockSaver = new TweenCallSaver();
+
+const tinyCtr = new TinyConstructor();
 
 const CLASS_NAME_METHOD_NAME: StringMap<number> = {};
 
@@ -158,17 +113,12 @@ export interface ICompilerOptions {
 	optimise?: OPT_FLAGS;
 }
 
+let SCRIPT_ID = 0;
+
 export function compile(methodInfo: MethodInfo, options: ICompilerOptions = {optimise: DEFAULT_OPT}): ICompilerProcess {
 	const {
 		optimise = DEFAULT_OPT, scope
 	} = options;
-
-	// lex generator
-	const lexGen = new ComplexGenerator([
-		new PhysicsLex({box2D: false}), // generate static aliases for Physics engine
-		new TopLevelLex() // generate alias for TopLevel props
-	]);
-	const blockSaver = new TweenCallSaver();
 
 	// kill cache when instruction set a far that this
 	const SAFE_INS_DIST = 4;
@@ -198,19 +148,6 @@ export function compile(methodInfo: MethodInfo, options: ICompilerOptions = {opt
 		return optimise & OPT_FLAGS.ALLOW_CUSTOM_OPTIMISER && !!opt;
 	}
 
-	const {
-		error,
-		jumps,
-		catchStart,
-		catchEnd,
-		set : q
-	} = affilate(methodInfo);
-
-	// if affilate a generate error, broadcast it
-	if(error) {
-		return {error};
-	}
-	
 	const prefix = ("" + (SCRIPT_ID++)).padLeft("0", 4);
 	const funcName = (methodInfo.getName()).replace(/([^a-z0-9]+)/gi, "_");
 	
@@ -271,6 +208,37 @@ export function compile(methodInfo: MethodInfo, options: ICompilerOptions = {opt
 	Type:  ${methodType}
 	Super: ${superClass || '-'}
 */\n\n`
+
+
+	if(USE_OPT(tinyCtr)) {
+		const b = tinyCtr.getBody(methodInfo);
+		if(b) {
+			const isShort = path.indexOf("/") == -1;
+			const w = 
+				scriptHeader 
+				+ '    return function compiled_constructor() { \n'
+				+ b.join("\n")  
+				+ '    }'
+
+				return {
+					names: [], 
+					compiled: generateFunc(w, (isShort ? "__tiny__/" : "") + fullPath, !(optimise & OPT_FLAGS.USE_NEW_FUCTION))
+				}
+		}
+	}
+
+	const {
+		error,
+		jumps,
+		catchStart,
+		catchEnd,
+		set : q
+	} = affilate(methodInfo);
+
+	// if affilate a generate error, broadcast it
+	if(error) {
+		return {error};
+	}
 
 	const abc = methodInfo.abc;
 	const body = methodInfo.getBody();
@@ -1365,10 +1333,6 @@ export function compile(methodInfo: MethodInfo, options: ICompilerOptions = {opt
 	}
 	js.push(`${moveIdnt(-1)} }`)
 
-	// Debugging magic 
-	// https://developer.mozilla.org/en-US/docs/Tools/Debugger/How_to/Debug_eval_sources
-
-	js.push(`//# sourceURL=http://jit/${fullPath}.js`)
 
 	const locals = [];
 
@@ -1398,23 +1362,28 @@ export function compile(methodInfo: MethodInfo, options: ICompilerOptions = {opt
 		header.push(lexGen.genHeader());
 	}
 
-	let w = scriptHeader + header.join("\n") +  js0.join("\n") + "\n" + js.join("\n");
+	const w = 
+		scriptHeader + 
+		header.join("\n") +  
+		js0.join("\n") + "\n" + 
+		js.join("\n");
+
 	const hasError = w.indexOf(underrun) > -1;
 
-	let compiled;
-	if (!(optimise & OPT_FLAGS.USE_NEW_FUCTION)) {
-		w = "(function(context) {\n" + w + "\n})";
-		compiled = eval(w);
-
-	} else {
-		compiled = new Function("context", w);
-	}
+	const compiled = generateFunc(w, fullPath, !(optimise & OPT_FLAGS.USE_NEW_FUCTION))
 
 	let underrunLine = -1;
 
 	if(hasError) {
 		underrunLine = w.split("\n").findIndex(v => v.indexOf(underrun) >= 0) + 3;
 	}
+
+	// reset lexer
+	USE_OPT(lexGen) && lexGen.reset();
+
+	// reset saver
+	USE_OPT(blockSaver) && blockSaver.reset();
+
 	return {
 		names: names,
 		compiled,

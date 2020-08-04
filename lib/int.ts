@@ -147,7 +147,7 @@ export function interpret(methodInfo: MethodInfo, savedScope: Scope, callee: AXF
 	}
 	
     if (methodInfo.compiled == null && methodInfo.error == null && methodInfo.getBody() != null) {
-        let r = compile(methodInfo)
+        let r = compile(methodInfo, {scope: savedScope})
         if (r.error) {
             methodInfo.error = r.error;
         } else {

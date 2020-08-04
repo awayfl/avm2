@@ -37,6 +37,11 @@ export interface ILexGenerator {
 	 * Generate body (after method annotations), return empty string
 	 */
 	genBody(): string;
+
+	/**
+	 * Reset lexer
+	 */
+	reset(): void;
 }
 
 export abstract class LexImportsGenerator implements ILexGenerator {
@@ -100,6 +105,10 @@ export abstract class LexImportsGenerator implements ILexGenerator {
 
 	public genBody(): string {
 		return "";
+	}
+
+	reset(): void {
+		this.imports.length = 0;
 	}
 }
 
@@ -178,6 +187,10 @@ export class ComplexGenerator implements ILexGenerator {
 		}
 
 		return header;
+	}
+
+	reset(): void {
+		this.generators.forEach((e) => e.reset());
 	}
 }
 
