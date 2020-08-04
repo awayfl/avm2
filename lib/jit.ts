@@ -36,7 +36,8 @@ import {
 	getExtClassField, 
 	emitIsAXOrPrimitive, 
 	emitIsAX,
-	IS_EXTERNAL_CLASS
+	IS_EXTERNAL_CLASS,
+	needFastCheck
 } from "./ext/external";
 
 
@@ -152,8 +153,15 @@ export interface ICompilerProcess {
 	compiled?: Function;
 	names?: Multiname[];
 }
+export interface ICompilerOptions {
+	scope?: Scope;
+	optimise?: OPT_FLAGS;
+}
 
-export function compile(methodInfo: MethodInfo, optimise: OPT_FLAGS = DEFAULT_OPT): ICompilerProcess {
+export function compile(methodInfo: MethodInfo, options: ICompilerOptions = {optimise: DEFAULT_OPT}): ICompilerProcess {
+	const {
+		optimise = DEFAULT_OPT, scope
+	} = options;
 
 	// lex generator
 	const lexGen = new ComplexGenerator([
@@ -283,7 +291,6 @@ export function compile(methodInfo: MethodInfo, optimise: OPT_FLAGS = DEFAULT_OP
 
 		return idnt = (" ").repeat( idnLen ? idnLen - 1 : 0);
 	}
-	
 	let openTryCatchBlockGroups: ExceptionInfo[][] = [];
 	//	creates a catch condition for a list of ExceptionInfo
 	let createCatchConditions = (catchBlocks: ExceptionInfo[]) => {
@@ -363,6 +370,9 @@ export function compile(methodInfo: MethodInfo, optimise: OPT_FLAGS = DEFAULT_OP
 	const underrun = "[stack underrun]";
 	let paramsShift = 0;
 
+	// shift function body
+	moveIdnt(1);
+
 	if(optimise & OPT_FLAGS.USE_ES_PARAMS) {
 		const args = [];		
 		
@@ -387,7 +397,7 @@ export function compile(methodInfo: MethodInfo, optimise: OPT_FLAGS = DEFAULT_OP
 			args.push("...args");
 		}
 
-		js0.push(`return function compiled_${methodName}(${args.join(', ')}) {`);
+		js0.push(`${idnt} return function compiled_${methodName}(${args.join(', ')}) {`);
 
 		moveIdnt(1);
 
@@ -405,7 +415,7 @@ export function compile(methodInfo: MethodInfo, optimise: OPT_FLAGS = DEFAULT_OP
 	} 
 	else 
 	{	
-		js0.push("return function compiled_" + methodName + "() {")
+		js0.push(`${idnt} return function compiled_${methodName}() {`)
 
 		for (let i: number = 0; i < params.length; i++)
 			if (params[i].hasOptionalValue()) {
@@ -464,13 +474,14 @@ export function compile(methodInfo: MethodInfo, optimise: OPT_FLAGS = DEFAULT_OP
 
 	let names: Multiname[] = []
 
+	const nameIdnt = idnt;
 	let getname = (n: number) => {
 		let mn = abc.getMultiname(n)
 		let i = names.indexOf(mn)
 		if (i < 0) {
 			i = names.length
 			names.push(mn)
-			js0.push(`    let name${i} = context.names[${i}];`)
+			js0.push(`${nameIdnt} let name${i} = context.names[${i}];`)
 		}
 		return "name" + i
 	}
@@ -630,7 +641,7 @@ export function compile(methodInfo: MethodInfo, optimise: OPT_FLAGS = DEFAULT_OP
 					js.push(`${idnt} ${stackN} = ${stack0};`)
 					break
 				case Bytecode.POP:
-					js.push(`${idnt};`)
+					//js.push(`${idnt};`)
 					break
 				case Bytecode.SWAP:
 					js.push(`${idnt} temp = ${stack0};`)
@@ -876,14 +887,23 @@ export function compile(methodInfo: MethodInfo, optimise: OPT_FLAGS = DEFAULT_OP
 							break;
 						}
 
-						js.push(`${idnt} if (!${emitIsAXOrPrimitive(obj)}) {`)
-						// fast instruction already binded
-						js.push(`${idnt}    ${stackF(param(0))} = ${obj}['${mn.name}'](${pp.join(", ")});`)
-						js.push(`${idnt} } else {`)
-						js.push(`${idnt}    // ${mn}`)
-						js.push(`${idnt}    temp = ${obj}[AX_CLASS_SYMBOL] ? ${obj} : sec.box(${obj});`)
-						js.push(`${idnt}    ${stackF(param(0))} = (typeof temp['$Bg${mn.name}'] === 'function')? temp['$Bg${mn.name}'](${pp.join(", ")}) : temp.axCallProperty(${getname(param(1))}, [${pp.join(", ")}], false);`)
-						js.push(`${idnt} }`)
+						if(needFastCheck()) {
+							js.push(`${idnt} if (!${emitIsAXOrPrimitive(obj)}) {`)
+							// fast instruction already binded
+							js.push(`${idnt}    ${stackF(param(0))} = ${obj}['${mn.name}'](${pp.join(", ")});`)
+							js.push(`${idnt} } else {`)
+
+							moveIdnt(1);
+						}
+
+						js.push(`${idnt} // ${mn}`)
+						js.push(`${idnt} temp = ${obj}[AX_CLASS_SYMBOL] ? ${obj} : sec.box(${obj});`)
+						js.push(`${idnt} ${stackF(param(0))} = (typeof temp['$Bg${mn.name}'] === 'function')? temp['$Bg${mn.name}'](${pp.join(", ")}) : temp.axCallProperty(${getname(param(1))}, [${pp.join(", ")}], false);`)
+						
+						if(needFastCheck()) {
+							moveIdnt(-1);
+							js.push(`${idnt} }`)
+						}
 					}
 					break
 				case Bytecode.CALLPROPLEX: {
@@ -917,12 +937,22 @@ export function compile(methodInfo: MethodInfo, optimise: OPT_FLAGS = DEFAULT_OP
 						break;
 					}
 
-					js.push(`${idnt} if (!${emitIsAXOrPrimitive(obj)}) {`)
-					js.push(`${idnt}     ${obj}['${mn.name}'](${pp.join(", ")});`)
-					js.push(`${idnt} } else {`)
-					js.push(`${idnt}     temp = ${obj}[AX_CLASS_SYMBOL] ? ${obj} : sec.box(${obj});`)
-					js.push(`${idnt}     (typeof temp['$Bg${mn.name}'] === 'function')? temp['$Bg${mn.name}'](${pp.join(", ")}) : temp.axCallProperty(${getname(param(1))}, [${pp.join(", ")}], false);`)
-					js.push(`${idnt} }`)
+					if(needFastCheck()) {
+						js.push(`${idnt} if (!${emitIsAXOrPrimitive(obj)}) {`)
+						js.push(`${idnt}     ${obj}['${mn.name}'](${pp.join(", ")});`)
+						js.push(`${idnt} } else {`)
+
+						moveIdnt(1)
+					}
+
+					js.push(`${idnt} temp = ${obj}[AX_CLASS_SYMBOL] ? ${obj} : sec.box(${obj});`)
+					js.push(`${idnt} (typeof temp['$Bg${mn.name}'] === 'function')? temp['$Bg${mn.name}'](${pp.join(", ")}) : temp.axCallProperty(${getname(param(1))}, [${pp.join(", ")}], false);`)
+					
+					if(needFastCheck()) {
+						moveIdnt(-1)
+						js.push(`${idnt} }`)
+					}
+
 				}
 					break
 				case Bytecode.APPLYTYPE: {
@@ -1068,15 +1098,25 @@ export function compile(methodInfo: MethodInfo, optimise: OPT_FLAGS = DEFAULT_OP
 					}
 					
 					js.push(`${idnt} // ${mn}`)
-					js.push(`${idnt} if (!${emitIsAX(stack0)}) {`)
-					js.push(`${idnt}     ${stack0} = ${stack0}['${mn.name}'];`)
-					js.push(`${idnt} } else {`)
-					js.push(`${idnt}     temp = ${stack0}[AX_CLASS_SYMBOL] ? ${stack0} : sec.box(${stack0});`)
-					js.push(`${idnt}     ${stack0} = temp['$Bg${mn.name}'];`)
-					js.push(`${idnt}     if (${stack0} === undefined || typeof ${stack0} === 'function') {`)
-					js.push(`${idnt}         ${stack0} = temp.axGetProperty(${getname(param(0))});`)
-					js.push(`${idnt}     }`)
+					
+					if(needFastCheck()) {
+						js.push(`${idnt} if (!${emitIsAX(stack0)}) {`)
+						js.push(`${idnt}     ${stack0} = ${stack0}['${mn.name}'];`)
+						js.push(`${idnt} } else {`)
+
+						moveIdnt(1);
+					}
+
+					js.push(`${idnt} temp = ${stack0}[AX_CLASS_SYMBOL] ? ${stack0} : sec.box(${stack0});`)
+					js.push(`${idnt} ${stack0} = temp['$Bg${mn.name}'];`)
+					js.push(`${idnt} if (${stack0} === undefined || typeof ${stack0} === 'function') {`)
+					js.push(`${idnt}     ${stack0} = temp.axGetProperty(${getname(param(0))});`)
 					js.push(`${idnt} }`)
+
+					if(needFastCheck()) {
+						moveIdnt(-1)
+						js.push(`${idnt} }`)
+					}
 
 					if(isSafe) {
 						moveIdnt(-1);
@@ -1101,11 +1141,21 @@ export function compile(methodInfo: MethodInfo, optimise: OPT_FLAGS = DEFAULT_OP
 				case Bytecode.SETPROPERTY:
 					var mn = abc.getMultiname(param(0))
 					js.push(`${idnt} // ${mn}`)
-					js.push(`${idnt} if (!${emitIsAX(stack1)}){`)
-					js.push(`${idnt}     ${stack1}['${mn.name}'] = ${stack0};`)
-					js.push(`${idnt} } else {`)
-					js.push(`${idnt}     context.setproperty(${getname(param(0))}, ${stack0}, ${stack1});`)
-					js.push(`${idnt} }`)
+					
+					if(needFastCheck()){
+						js.push(`${idnt} if (!${emitIsAX(stack1)}){`)
+						js.push(`${idnt}     ${stack1}['${mn.name}'] = ${stack0};`)
+						js.push(`${idnt} } else {`)
+						moveIdnt(1);
+					}
+
+					js.push(`${idnt} context.setproperty(${getname(param(0))}, ${stack0}, ${stack1});`)
+
+					if(needFastCheck()) {
+						moveIdnt(-1)
+						js.push(`${idnt} }`)
+					}
+
 					break
 				case Bytecode.SETPROPERTY_DYN:
                     var mn = abc.getMultiname(param(0));

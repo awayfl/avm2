@@ -82,6 +82,10 @@ export function emitIsAX(name: string) {
 	return `(${name} != undefined && ${name}[AX_CLASS_SYMBOL])`	
 }
 
+export function needFastCheck() {
+	return !!BOX2D_PREFERENCE.prefer;
+}
+
 export function emitIsAXOrPrimitive(name: string, explictNull = false): string {
 	if(!BOX2D_PREFERENCE.prefer) {
 		return 'true';
