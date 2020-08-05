@@ -1,14 +1,4 @@
 import { MethodInfo } from "./../abc/lazy/MethodInfo"
-import { Bytecode } from '../Bytecode';
-
-const BODY_TEMPALTE_CTR = [
-	'        /* TinyConstructor */',
-	'        context.savedScope.superConstructor.call(this);'
-]
-const BODY_TEMPALTE_EMPY = [
-	'        /* TinyConstructor */',
-	'        /* Method is empty */'
-]
 
 /**
  * Generate tiny constructor for nested class when it only call super
@@ -31,16 +21,20 @@ export class TinyConstructor {
 		// increase scope? oh
 		if(body.maxScopeDepth - body.initScopeDepth > 1) return false;
 
-		// method use multinames
+		// method use 6 opcodes
 		if(body.code.length > 6) return false;
 
 		return true;
 	}
 
-	getBody(method: MethodInfo): string[] | null {
+	getBody(method: MethodInfo): Function | null {
 		if(!this.test(method)) {
 			return null;
 		}
-		return BODY_TEMPALTE_CTR;
+		return function (context: any) {
+			return function tiny_constryctor() {
+				context.savedScope.superConstructor.call(this);
+			}
+		};
 	}
 }

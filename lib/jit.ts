@@ -26,6 +26,7 @@ import { namespaceTypeNames } from './abc/lazy/NamespaceType'
 import { affilate, Instruction } from "./gen/affiliate"
 import { TinyConstructor } from "./gen/TinyConstructor";
 import { TweenCallSaver } from "./gen/CallBlockSaver";
+import { Stat } from "./gen/Stat";
 
 import {
 	ComplexGenerator, 
@@ -120,6 +121,8 @@ export function compile(methodInfo: MethodInfo, options: ICompilerOptions = {opt
 		optimise = DEFAULT_OPT, scope
 	} = options;
 
+	Stat.begin("");
+
 	// kill cache when instruction set a far that this
 	const SAFE_INS_DIST = 4;
 	const fastCall = undefined;/* =  
@@ -146,6 +149,18 @@ export function compile(methodInfo: MethodInfo, options: ICompilerOptions = {opt
 	
 	const USE_OPT = (opt) => {
 		return optimise & OPT_FLAGS.ALLOW_CUSTOM_OPTIMISER && !!opt;
+	}
+
+	if(USE_OPT(tinyCtr)) {
+		const b = tinyCtr.getBody(methodInfo);
+		if( typeof b === 'function') {
+			Stat.drop();
+
+			return {
+				names: [], 
+				compiled: b
+			}
+		}
 	}
 
 	const prefix = ("" + (SCRIPT_ID++)).padLeft("0", 4);
@@ -209,24 +224,6 @@ export function compile(methodInfo: MethodInfo, options: ICompilerOptions = {opt
 	Super: ${superClass || '-'}
 */\n\n`
 
-
-	if(USE_OPT(tinyCtr)) {
-		const b = tinyCtr.getBody(methodInfo);
-		if(b) {
-			const isShort = path.indexOf("/") == -1;
-			const w = 
-				scriptHeader 
-				+ '    return function compiled_constructor() { \n'
-				+ b.join("\n")  
-				+ '    }'
-
-				return {
-					names: [], 
-					compiled: generateFunc(w, (isShort ? "__tiny__/" : "") + fullPath, !(optimise & OPT_FLAGS.USE_NEW_FUCTION))
-				}
-		}
-	}
-
 	const {
 		error,
 		jumps,
@@ -237,6 +234,7 @@ export function compile(methodInfo: MethodInfo, options: ICompilerOptions = {opt
 
 	// if affilate a generate error, broadcast it
 	if(error) {
+		Stat.drop();
 		return {error};
 	}
 
@@ -1383,6 +1381,8 @@ export function compile(methodInfo: MethodInfo, options: ICompilerOptions = {opt
 
 	// reset saver
 	USE_OPT(blockSaver) && blockSaver.reset();
+
+	Stat.end();
 
 	return {
 		names: names,
