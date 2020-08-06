@@ -48,8 +48,10 @@ export class b2Mat22
     
     public SetM(m:b2Mat22) : void
     {
-        this.col1.SetV(m.col1);
-        this.col2.SetV(m.col2);
+		//@ts-ignore
+		this.col1.SetV(m.col1 || m.$Bgcol1);
+		//@ts-ignore
+        this.col2.SetV(m.col2 || m.$Bgcol2);
     }
     
     public AddM(m:b2Mat22) : void
