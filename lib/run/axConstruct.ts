@@ -210,9 +210,6 @@ export function axConstruct(argArray?: any[]) {
 	// mark object that it is AX object, not a regular class
 	object[IS_AX_CLASS] = true;
 
-	if(object.adaptee && object.adaptee.timeline){
-		object.adaptee.timeline.resetScripts();
-	}
 	object.axInitializer.apply(object,argArray);
 	if (object.adaptee instanceof MovieClip || object.adaptee instanceof Sprite)
 		OrphanManager.addOrphan(object);
