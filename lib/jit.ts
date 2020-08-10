@@ -1090,20 +1090,44 @@ export function compile(methodInfo: MethodInfo, options: ICompilerOptions = {opt
 					}
 
 					break
-				case Bytecode.GETPROPERTY_DYN:
+				case Bytecode.GETPROPERTY_DYN:{
 					var mn = abc.getMultiname(param(0));
 					
 					if(USE_OPT(blockSaver) && blockSaver.markToSafe(mn)) {
 						js.push(`${idnt} /* Mark lookup to safe call, ${blockSaver.constructor.name} */`)
 					}
 
+					const runtime = mn.isRuntimeName() && mn.isRuntimeNamespace();
+					const target = runtime ? stack2: stack1;
+					
 					js.push(`${idnt} // ${mn}`);
-					if (mn.isRuntimeName() && mn.isRuntimeNamespace()) {
-						js.push(`${idnt} ${stack2} = context.getpropertydyn(context.runtimename(${getname(param(0))}, ${stack0}, ${stack1}), ${stack2});`)
+					js.push(`${idnt} {`);
+					moveIdnt(1);
+
+					if (runtime) {
+						js.push(`${idnt} const rm = context.runtimename(${getname(param(0))}, ${stack0}, ${stack1});`);
 					} else {
-						js.push(`${idnt} ${stack1} = context.getpropertydyn(context.runtimename(${getname(param(0))}, ${stack0}), ${stack1});`)
+						js.push(`${idnt} const rm = context.runtimename(${getname(param(0))}, ${stack0});`);
 					}
+					js.push(`${idnt} const b_obj = ${target}[AX_CLASS_SYMBOL] ? ${target} : sec.box(${target});\n`);
+					js.push(`${idnt} if (typeof rm === 'number') {`);
+					js.push(`${idnt}     ${target} = b_obj.axGetNumericProperty(rm);`);
+					js.push(`${idnt} } else {`);
+
+					moveIdnt(1);
+					js.push(`${idnt} ${target} = b_obj['$Bg' + rm.name];`)
+					js.push(`${idnt} if (${target} === undefined || typeof ${target} === 'function') {`)
+					js.push(`${idnt}     ${target} = b_obj.axGetProperty(rm);`)
+					js.push(`${idnt} }`)
+
+					moveIdnt(-1)
+					js.push(`${idnt} }`);
+
+					moveIdnt(-1);
+					js.push(`${idnt} }`);
+
 					break
+				}
 				case Bytecode.SETPROPERTY:
 					var mn = abc.getMultiname(param(0))
 					js.push(`${idnt} // ${mn}`)
