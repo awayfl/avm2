@@ -159,7 +159,12 @@ export class Multiname {
       if (!anyName && this.name !== mn.name) {
         return false;
       }
-      var uri = this.namespaces[0].uri;
+	  var uri = this.namespaces[0].uri;
+
+	  // 80pro: not sure about this. seems like its needed to match for xml nodes that have uri==""
+	  if(uri=="" || uri=="default")
+		  return true;
+		  
       for (var i = mn.namespaces.length; i--;) {
         if (mn.namespaces[i].uri === uri) {
           return true;
