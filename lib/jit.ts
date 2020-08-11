@@ -90,15 +90,6 @@ const DEFAULT_OPT =
 	OPT_FLAGS.SKIP_NULL_COERCE | 
 	OPT_FLAGS.SKIP_DOMAIN_MEM;
 
-// lex generator
-const lexGen = new ComplexGenerator([
-	new PhysicsLex({box2D: false}), // generate static aliases for Physics engine
-	new TopLevelLex() // generate alias for TopLevel props
-]);
-
-const blockSaver = new TweenCallSaver();
-
-const tinyCtr = new TinyConstructor();
 
 const CLASS_NAME_METHOD_NAME: StringMap<number> = {};
 
@@ -121,18 +112,51 @@ export function compile(methodInfo: MethodInfo, options: ICompilerOptions = {opt
 		optimise = DEFAULT_OPT, scope
 	} = options;
 
+	// lex generator
+	const lexGen = new ComplexGenerator([
+		new PhysicsLex({box2D: false}), // generate static aliases for Physics engine
+		new TopLevelLex() // generate alias for TopLevel props
+	]);
+
+	const blockSaver = new TweenCallSaver();
+
+	const tinyCtr = new TinyConstructor();
+
 	Stat.begin("");
 
+	const checkNameToCall = (mn: Multiname, propname: string, lex = false) => {
+		if(!scope) {
+			return false;
+		}
+
+		const obj = scope.findScopeProperty(mn, true, false);
+		if(!lex) {
+			return obj && typeof obj[propname] === 'function';
+		}
+
+		return obj && obj[mn.getMangledName()] && typeof obj[mn.getMangledName()][propname] === 'function';
+	}
+
 	// kill cache when instruction set a far that this
-	const SAFE_INS_DIST = 4;
-	const fastCall = undefined;/* =  
+	const SAFE_INS_DIST = 20;
+	const fastCall =  
 	{
 		_active: {},
-		mark(stackAlias: string, mangled: boolean, index: number) {
-			this._active[stackAlias] = {mangled, index};
+		mark(stackAlias: string, mangled: boolean, index: number, multiname: Multiname = null, lex = false) {
+			this._active[stackAlias] = {mangled, index, multiname, lex};
 		},
-		sureThatFast(stackAlias: string): any {
-			return this._active[stackAlias];
+		sureThatFast(stackAlias: string, method?: string): any {
+			const d = this._active[stackAlias];
+
+			if(!d || (method && !d.multiname) ) {
+				return null;
+			}
+
+			if(method && checkNameToCall(d.multiname, method, d.lex)) {
+				d.func = true;
+			}
+
+			return d;
 		},
 		kill(stackAlias: string,) {
 			delete this._active[stackAlias];
@@ -145,7 +169,7 @@ export function compile(methodInfo: MethodInfo, options: ICompilerOptions = {opt
 				}
 			}
 		}
-	}*/
+	}
 	
 	const USE_OPT = (opt) => {
 		return optimise & OPT_FLAGS.ALLOW_CUSTOM_OPTIMISER && !!opt;
@@ -842,14 +866,19 @@ export function compile(methodInfo: MethodInfo, options: ICompilerOptions = {opt
 						js.push(`${idnt} ${stackF(param(0))} = context.getdefinitionbyname(${scope}, ${obj}, [${pp.join(", ")}]);`)
 					}
 					else {
-						if(USE_OPT(fastCall) && fastCall.sureThatFast(`${obj}`)) 
+						let d;
+						if(USE_OPT(fastCall) && (d = fastCall.sureThatFast(`${obj}`, mn.getMangledName()))) 
 						{
-							const n = fastCall.sureThatFast(`${obj}`).mangled ? Multiname.getPublicMangledName(mn.name) : mn.name;
+							const n = d.mangled ? Multiname.getPublicMangledName(mn.name) : mn.name;
 							fastCall.kill(`${obj}`);
 
 							js.push(`${idnt} /* We sure that this safe call */ `)
-							js.push(`${idnt} ${stackF(param(0))} = ${obj}['${n}'](${pp.join(", ")});`)
 
+							if(d.func) {
+								js.push(`${idnt} ${stackF(param(0))} = ${obj}['${n}'](${pp.join(", ")});`)
+							} else {
+								js.push(`${idnt} ${stackF(param(0))} = ${obj}.axCallProperty(${getname(param(1))}, [${pp.join(", ")}], false);`);
+							}
 							break;
 						}
 
@@ -863,9 +892,20 @@ export function compile(methodInfo: MethodInfo, options: ICompilerOptions = {opt
 						}
 
 						js.push(`${idnt} // ${mn}`)
-						js.push(`${idnt} temp = ${obj}[AX_CLASS_SYMBOL] ? ${obj} : sec.box(${obj});`)
-						js.push(`${idnt} ${stackF(param(0))} = (typeof temp['$Bg${mn.name}'] === 'function')? temp['$Bg${mn.name}'](${pp.join(", ")}) : temp.axCallProperty(${getname(param(1))}, [${pp.join(", ")}], false);`)
-						
+						js.push(`${idnt} {`)
+
+						moveIdnt(1);
+						js.push(`${idnt} let t = ${obj};`)
+						js.push(`${idnt} const m = ${obj}['$Bg${mn.name}'] || (t = sec.box(${obj}), t['$Bg${mn.name}']);`)
+						js.push(`${idnt} if( typeof m === 'function' ) { `);
+						js.push(`${idnt}     ${stackF(param(0))} = m.call(t, ${pp.join(", ")});`);
+						js.push(`${idnt} } else {  `);
+						js.push(`${idnt}     ${stackF(param(0))} = ${obj}.axCallProperty(${getname(param(1))}, [${pp.join(", ")}], false);`);
+						js.push(`${idnt} }`);
+
+						moveIdnt(-1);
+						js.push(`${idnt} }`);
+
 						if(needFastCheck()) {
 							moveIdnt(-1);
 							js.push(`${idnt} }`)
@@ -911,9 +951,20 @@ export function compile(methodInfo: MethodInfo, options: ICompilerOptions = {opt
 						moveIdnt(1)
 					}
 
-					js.push(`${idnt} temp = ${obj}[AX_CLASS_SYMBOL] ? ${obj} : sec.box(${obj});`)
-					js.push(`${idnt} (typeof temp['$Bg${mn.name}'] === 'function')? temp['$Bg${mn.name}'](${pp.join(", ")}) : temp.axCallProperty(${getname(param(1))}, [${pp.join(", ")}], false);`)
-					
+					js.push(`${idnt} // ${mn}`)
+					js.push(`${idnt} {`)
+
+					moveIdnt(1);
+					js.push(`${idnt} let t = ${obj};`)
+					js.push(`${idnt} const m = ${obj}['$Bg${mn.name}'] || (t = sec.box(${obj}), t['$Bg${mn.name}']);`)
+					js.push(`${idnt} if( typeof m === 'function' ) { `);
+					js.push(`${idnt}     m.call(t, ${pp.join(", ")});`);
+					js.push(`${idnt} } else {  `);
+					js.push(`${idnt}    ${obj}.axCallProperty(${getname(param(1))}, [${pp.join(", ")}], false);`);
+					js.push(`${idnt} }`);
+
+					moveIdnt(-1);
+					js.push(`${idnt} }`);
 					if(needFastCheck()) {
 						moveIdnt(-1)
 						js.push(`${idnt} }`)
@@ -942,7 +993,7 @@ export function compile(methodInfo: MethodInfo, options: ICompilerOptions = {opt
 
 						if(USE_OPT(fastCall)) {
 							const mangled = (lexGen.getGenerator(mn) instanceof TopLevelLex);
-							fastCall.mark(`${stackN}`, mangled, i);
+							fastCall.mark(`${stackN}`, mangled, i, mn);
 						}
 						break;
 					}
@@ -1051,16 +1102,18 @@ export function compile(methodInfo: MethodInfo, options: ICompilerOptions = {opt
 						
 						moveIdnt(1);
 					}
-
-					if(USE_OPT(fastCall) && fastCall.sureThatFast(stack0)) 
 					{
-						const n = fastCall.sureThatFast(stack0).mangled ? Multiname.getPublicMangledName(mn.name) : mn.name;
-						fastCall.kill(stack0);
+						let d; 
+						if(USE_OPT(fastCall) && (d = fastCall.sureThatFast(stack0, mn.name))) 
+						{
+							const n = d.mangled ? Multiname.getPublicMangledName(mn.name) : mn.name;
+							fastCall.kill(stack0);
 
-						js.push(`${idnt} /* We sure that this safe call */ `)
-						js.push(`${idnt} ${stack0} = ${stack0}['${n}'];`)
+							js.push(`${idnt} /* We sure that this safe call */ `)
+							js.push(`${idnt} ${stack0} = ${stack0}['${n}'];`)
 
-						break;
+							break;
+						}
 					}
 					
 					js.push(`${idnt} // ${mn}`)
@@ -1090,20 +1143,44 @@ export function compile(methodInfo: MethodInfo, options: ICompilerOptions = {opt
 					}
 
 					break
-				case Bytecode.GETPROPERTY_DYN:
+				case Bytecode.GETPROPERTY_DYN:{
 					var mn = abc.getMultiname(param(0));
 					
 					if(USE_OPT(blockSaver) && blockSaver.markToSafe(mn)) {
 						js.push(`${idnt} /* Mark lookup to safe call, ${blockSaver.constructor.name} */`)
 					}
 
+					const runtime = mn.isRuntimeName() && mn.isRuntimeNamespace();
+					const target = runtime ? stack2: stack1;
+					
 					js.push(`${idnt} // ${mn}`);
-					if (mn.isRuntimeName() && mn.isRuntimeNamespace()) {
-						js.push(`${idnt} ${stack2} = context.getpropertydyn(context.runtimename(${getname(param(0))}, ${stack0}, ${stack1}), ${stack2});`)
+					js.push(`${idnt} {`);
+					moveIdnt(1);
+
+					if (runtime) {
+						js.push(`${idnt} const rm = context.runtimename(${getname(param(0))}, ${stack0}, ${stack1});`);
 					} else {
-						js.push(`${idnt} ${stack1} = context.getpropertydyn(context.runtimename(${getname(param(0))}, ${stack0}), ${stack1});`)
+						js.push(`${idnt} const rm = context.runtimename(${getname(param(0))}, ${stack0});`);
 					}
+					js.push(`${idnt} const b_obj = ${target}[AX_CLASS_SYMBOL] ? ${target} : sec.box(${target});\n`);
+					js.push(`${idnt} if (typeof rm === 'number') {`);
+					js.push(`${idnt}     ${target} = b_obj.axGetNumericProperty(rm);`);
+					js.push(`${idnt} } else {`);
+
+					moveIdnt(1);
+					js.push(`${idnt} ${target} = b_obj['$Bg' + rm.name];`)
+					js.push(`${idnt} if (${target} === undefined || typeof ${target} === 'function') {`)
+					js.push(`${idnt}     ${target} = b_obj.axGetProperty(rm);`)
+					js.push(`${idnt} }`)
+
+					moveIdnt(-1)
+					js.push(`${idnt} }`);
+
+					moveIdnt(-1);
+					js.push(`${idnt} }`);
+
 					break
+				}
 				case Bytecode.SETPROPERTY:
 					var mn = abc.getMultiname(param(0))
 					js.push(`${idnt} // ${mn}`)
@@ -1175,9 +1252,9 @@ export function compile(methodInfo: MethodInfo, options: ICompilerOptions = {opt
 
 						if(fastCall) {
 							const mangled = (lexGen.getGenerator(mn) instanceof TopLevelLex);
-							fastCall.mark(`${stackN}`, mangled, i);
+							const _mn = mn;
+							fastCall.mark(`${stackN}`, mangled, i, _mn, true);
 						}
-
 					} else {
 						js.push(`${idnt} // ${mn}`)
 						js.push(`${idnt} temp = ${scope}.findScopeProperty(${getname(param(0))}, true, false);`)
@@ -1207,6 +1284,12 @@ export function compile(methodInfo: MethodInfo, options: ICompilerOptions = {opt
 						js.push(`${idnt} // SKIP_NULL_COERCE`);
 						break;
 					}
+
+					if(lastZ.name === Bytecode.ASTYPELATE) {
+						js.push(`${idnt} // SKIP DOUBLED COERCE AFTER ASTYPELATE`);
+						break;
+					}
+
 					js.push(`${idnt} ${stack0} = ${emitIsAX(stack0)} ? ${scope}.getScopeProperty(${getname(param(0))}, true, false).axCoerce(${stack0}): ${stack0};`)
 					break
 				case Bytecode.COERCE_A:
@@ -1407,6 +1490,7 @@ export class Context {
 
 	public readonly emptyArray: any;
 	public readonly AX_CLASS_SYMBOL = IS_AX_CLASS;
+	public static readonly HAS_NEXT_INFO = new HasNext2Info(null,0);
 
 	constructor(mi: MethodInfo, savedScope: Scope, names: Multiname[]) {
 		this.mi = mi;
@@ -1587,10 +1671,9 @@ export class Context {
 		return (scope.object === b && scope.isWith == true) ? scope : new Scope(scope, b, true)
 	}
 
-
 	hasnext2(obj, name) {
-		let info = new HasNext2Info(null, 0)
-		info.next(this.sec.box(obj), name)
+		const info = Context.HAS_NEXT_INFO;
+		info.next(obj, name)
 		return [info.object, info.index]
 	}
 
