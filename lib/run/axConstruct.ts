@@ -107,7 +107,6 @@ export function axConstruct(argArray?: any[]) {
 	}
 
 	if (timeline) {
-		FrameScriptManager._constructor_queueLevel++;
 		var newMC = new MovieClip(timeline);
 		object.adaptee = newMC;
 
