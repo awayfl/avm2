@@ -122,7 +122,7 @@ var tmpAttr = new Multiname(null, 0, CONSTANT.QNameA, [Namespace.PUBLIC], null, 
 export function describeType(sec: AXSecurityDomain, value: any, flags: number): ASXML {
   // Ensure that the XML classes have been initialized:
   tmpName.name = 'XML';
-  var xmlClass = <AXXMLClass>sec.application.getClass(tmpName);
+  var xmlClass = <AXXMLClass>sec.system.getClass(Multiname.FromSimpleName('XML'));
   var classDescription: any = describeTypeJSON(sec, value, flags);
   var x: ASXML = xmlClass.Create('<type/>');
   tmpAttr.name = 'name';
@@ -143,7 +143,7 @@ export function describeType(sec: AXSecurityDomain, value: any, flags: number): 
   var instanceDescription: any = describeTypeJSON(sec, value,
                                                   flags | DescribeTypeFlags.USE_ITRAITS);
   if (instanceDescription) {
-    var e: ASXML = xmlClass.Create('<factory/>');
+    var e: ASXML = sec.AXXML.Create('<factory/>');
     tmpAttr.name = 'type';
     e.setProperty(tmpAttr, instanceDescription.$Bgname);
     if (describeTraits(e, instanceDescription.$Bgtraits)) {
