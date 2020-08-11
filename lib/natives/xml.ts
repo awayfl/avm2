@@ -2648,8 +2648,9 @@ export class ASXML extends ASObject implements XMLType {
         if (mn.isAnyName()) {
           return;
         }
-        var uri = '';
-        if (mn.namespaces.length === 1) {
+		var uri = '';
+		// 80pro - added the "&& mn.namespaces[0]"" , because it appears sometimes mn.namespaces[0] can be undefined
+        if (mn.namespaces.length === 1 && mn.namespaces[0]) {
           uri = mn.namespaces[0].uri;
         }
         a = createXML(sec, ASXMLKind.Attribute, uri, mn.name);
