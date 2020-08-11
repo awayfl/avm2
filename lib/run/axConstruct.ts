@@ -156,7 +156,7 @@ export function axConstruct(argArray?: any[]) {
 			targetTimeline.keyframe_indices = [timeline.keyframe_indices[0]];	
 		}
 		newMC.reset();
-		FrameScriptManager.execute_as3_constructors();
+		FrameScriptManager.execute_as3_constructors_recursiv(newMC);
 	}
 
 
@@ -211,6 +211,7 @@ export function axConstruct(argArray?: any[]) {
 	object[IS_AX_CLASS] = true;
 
 	object.axInitializer.apply(object,argArray);
+	object.constructorHasRun=true;
 	if (object.adaptee instanceof MovieClip || object.adaptee instanceof Sprite)
 		OrphanManager.addOrphan(object);
 	return object;
