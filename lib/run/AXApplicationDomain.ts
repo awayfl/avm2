@@ -100,8 +100,9 @@ export class AXApplicationDomain {
       var global: AXGlobal = this.findProperty(mn, strict, execute);
       if (global) {
         return global.axGetProperty(mn);
-      }
-      this.sec.throwError('ReferenceError', Errors.DefinitionNotFoundError, mn.name);
+	  }
+	  if(mn.name!="void")
+      	this.sec.throwError('ReferenceError', Errors.DefinitionNotFoundError, mn.name);
     }
   
     public findDefiningScript(mn: Multiname, execute: boolean): ScriptInfo {
