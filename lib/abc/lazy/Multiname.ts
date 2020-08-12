@@ -34,7 +34,25 @@ export class Multiname {
       public mutable: boolean = false
     ) {
       // ...
-    }
+	}
+
+	/**
+	 * Drop field for RT name
+	 * @see https://github.com/awayfl/avm2/issues/4
+	 */
+	public drop() {
+		if(!this.mutable || !this.isRuntimeName) {
+			// throw "DROP allowed only foe runtime name";
+			return;
+		}
+
+		this.numeric = false;
+		this.name = undefined;
+		this.namespaces = [];
+		this.scope = null;
+		this.numericValue = NaN;
+		this.resolved = {};
+	}
 
     public key(): string {
         if (this._key)

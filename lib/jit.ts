@@ -1012,6 +1012,37 @@ export function compile(methodInfo: MethodInfo, options: ICompilerOptions = {opt
 					js.push(`${idnt} // ${abc.classes[param(0)]}`)
 					js.push(`${idnt} ${stack0} = sec.createClass(context.abc.classes[${param(0)}], ${stack0}, ${scope});`)
 					break
+
+				case Bytecode.GETDESCENDANTS:
+				{
+					const mn = abc.getMultiname(param(0));
+					js.push(`${idnt} // ${mn}`);
+
+					if(mn.isRuntimeName()) {
+						const runtime = mn.isRuntimeName() && mn.isRuntimeNamespace();
+						const target = runtime ? stack2: stack1;
+						
+						js.push(`${idnt} {`);
+						moveIdnt(1);
+
+						if (runtime) {
+							js.push(`${idnt} const rn = context.runtimename(${getname(param(0))}, ${stack0}, ${stack1});`);
+						} else {
+							js.push(`${idnt} const rn = context.runtimename(${getname(param(0))}, ${stack0});`);
+						}
+
+						js.push(`${idnt} ${target} = ${target}.descendants(rn);`)
+
+						moveIdnt(-1);
+						js.push(`${idnt}}`);
+						break;
+
+					} else {
+						js.push(`${idnt} ${stack0} = ${stack0}.descendants(${getname(param(0))});`);
+					}
+
+					break
+				}
 				case Bytecode.NEWARRAY: {
 					let pp = []
 
