@@ -612,6 +612,11 @@ export function affilate(methodInfo: MethodInfo): IAffilerResult & IAffilerError
 				ins.returnTypeId = lastType =  ++ type;
 
 				break
+			case Bytecode.GETDESCENDANTS:
+				ins = (new Instruction(oldi, z, [u30()], 0))
+				ins.returnTypeId = lastType =  ++ type;
+
+				break
 			case Bytecode.NEWARRAY:
 				var argnum = u30()
 				ins = (new Instruction(oldi, z, [argnum], -argnum + 1))
