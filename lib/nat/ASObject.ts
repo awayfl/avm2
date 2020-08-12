@@ -425,7 +425,10 @@ export class ASObject implements IMetaobjectProtocol {
         if (index === 0) {
             // Gather all enumerable keys since we're starting a new iteration.
             defineNonEnumerableProperty(self, "axEnumerableKeys", self.axGetEnumerableKeys());
-        }
+		}
+		
+		rn.drop();
+
         var axEnumerableKeys = self.axEnumerableKeys;
         while (index < axEnumerableKeys.length) {
             rn.name = axEnumerableKeys[index];
