@@ -1704,7 +1704,8 @@ export class Context {
 
 	hasnext2(obj, name) {
 		const info = Context.HAS_NEXT_INFO;
-		info.next(obj, name)
+
+		info.next( obj[IS_AX_CLASS] ? obj : this.sec.box(obj), name)
 		return [info.object, info.index]
 	}
 
