@@ -40,10 +40,13 @@ export class OrphanManager {
 		for (var i = 0; i < OrphanManager.orphans.length; i++) {
 			
 			//if((<AwayMovieClip>OrphanManager.orphans[i].adaptee).isAsset(AwayMovieClip)){
-			if(OrphanManager.orphans[i].adaptee.update)
+			if(OrphanManager.orphans[i].adaptee.update){
 				OrphanManager.orphans[i].adaptee.update();
+				FrameScriptManager.execute_as3_constructors_recursiv(OrphanManager.orphans[i].adaptee);
+			}
 			else if(OrphanManager.orphans[i].adaptee.advanceFrame){
 				OrphanManager.orphans[i].adaptee.advanceFrame();
+				FrameScriptManager.execute_as3_constructors_recursiv(OrphanManager.orphans[i].adaptee);
 			}
 			// }
 			// else{
