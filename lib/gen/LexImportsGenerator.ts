@@ -81,7 +81,7 @@ export abstract class LexImportsGenerator implements ILexGenerator {
 		return alias;
 	}
 
-	public genHeader(ident: string): string {
+	public genHeader(ident: string = ""): string {
 		if (!this.imports.length) {
 			return "";
 		}
@@ -96,7 +96,7 @@ export abstract class LexImportsGenerator implements ILexGenerator {
 		return header.join("\n");
 	}
 
-	public genBody(ident: string): string {
+	public genBody(ident: string = ""): string {
 		return "";
 	}
 

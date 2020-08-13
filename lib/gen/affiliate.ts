@@ -704,6 +704,8 @@ export function affilate(methodInfo: MethodInfo): IAffilerResult & IAffilerError
 				ins.returnTypeId = PRIMITIVE_TYPE.STRING;
 
 				break
+			case Bytecode.ESC_XATTR:
+			case Bytecode.ESC_XELEM:
 			case Bytecode.CONVERT_I:
 			case Bytecode.CONVERT_D:
 			case Bytecode.CONVERT_B:

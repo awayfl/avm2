@@ -23,9 +23,14 @@ import { InstanceInfo } from './abc/lazy/InstanceInfo'
 import { ClassInfo } from './abc/lazy/ClassInfo'
 import { MethodTraitInfo } from './abc/lazy/MethodTraitInfo'
 import { namespaceTypeNames } from './abc/lazy/NamespaceType'
+import { escapeAttributeValue, escapeElementValue } from "./natives/xml";
+
+// generators
 import { affilate, Instruction } from "./gen/affiliate"
 import { TinyConstructor } from "./gen/TinyConstructor";
 import { TweenCallSaver } from "./gen/CallBlockSaver";
+import { FastCall, ICallEntry } from "./gen/FastCall";
+
 import { Stat } from "./gen/Stat";
 
 import {
@@ -124,53 +129,9 @@ export function compile(methodInfo: MethodInfo, options: ICompilerOptions = {opt
 
 	Stat.begin("");
 
-	const checkNameToCall = (mn: Multiname, propname: string, lex = false) => {
-		if(!scope) {
-			return false;
-		}
 
-		const obj = scope.findScopeProperty(mn, true, false);
-		if(!lex) {
-			return obj && typeof obj[propname] === 'function';
-		}
+	const fastCall = new FastCall(lexGen, scope);  
 
-		return obj && obj[mn.getMangledName()] && typeof obj[mn.getMangledName()][propname] === 'function';
-	}
-
-	// kill cache when instruction set a far that this
-	const SAFE_INS_DIST = 20;
-	const fastCall =  
-	{
-		_active: {},
-		mark(stackAlias: string, mangled: boolean, index: number, multiname: Multiname = null, lex = false) {
-			this._active[stackAlias] = {mangled, index, multiname, lex};
-		},
-		sureThatFast(stackAlias: string, method?: string): any {
-			const d = this._active[stackAlias];
-
-			if(!d || (method && !d.multiname) ) {
-				return null;
-			}
-
-			if(method && checkNameToCall(d.multiname, method, d.lex)) {
-				d.func = true;
-			}
-
-			return d;
-		},
-		kill(stackAlias: string,) {
-			delete this._active[stackAlias];
-		},
-		killFar(index: number) {
-			const keys = Object.keys(this._active);
-			for(let k of keys) {
-				if(index - this._active[k].index >= SAFE_INS_DIST) {
-					delete this._active[k];	
-				}
-			}
-		}
-	}
-	
 	const USE_OPT = (opt) => {
 		return optimise & OPT_FLAGS.ALLOW_CUSTOM_OPTIMISER && !!opt;
 	}
@@ -869,15 +830,15 @@ export function compile(methodInfo: MethodInfo, options: ICompilerOptions = {opt
 						let d;
 						if(USE_OPT(fastCall) && (d = fastCall.sureThatFast(`${obj}`, mn.getMangledName()))) 
 						{
-							const n = d.mangled ? Multiname.getPublicMangledName(mn.name) : mn.name;
+							const n = d.isMangled ? Multiname.getPublicMangledName(mn.name) : mn.name;
 							fastCall.kill(`${obj}`);
 
 							js.push(`${idnt} /* We sure that this safe call */ `)
 
-							if(d.func) {
+							if(d.isFunc) {
 								js.push(`${idnt} ${stackF(param(0))} = ${obj}['${n}'](${pp.join(", ")});`)
 							} else {
-								js.push(`${idnt} ${stackF(param(0))} = ${obj}.axCallProperty(${getname(param(1))}, [${pp.join(", ")}], false);`);
+								js.push(`${idnt} ${stackF(param(0))} = /*fast*/${obj}.axCallProperty(${getname(param(1))}, [${pp.join(", ")}], false);`);
 							}
 							break;
 						}
@@ -931,16 +892,18 @@ export function compile(methodInfo: MethodInfo, options: ICompilerOptions = {opt
 						pp.push(stackF(param(0) - j))
 
 					let obj = pp.shift();
-
-					if(USE_OPT(fastCall) && fastCall.sureThatFast(`${obj}`)) 
 					{
-						const n = fastCall.sureThatFast(`${obj}`) ? Multiname.getPublicMangledName(mn.name) : mn.name;
+						let d: ICallEntry;
+						if(USE_OPT(fastCall) && (d = fastCall.sureThatFast(obj))) 
+						{
+							const n = fastCall.sureThatFast(obj).isMangled ? Multiname.getPublicMangledName(mn.name) : mn.name;
 
-						js.push(`${idnt} /* We sure that this safe call */ `)
-						js.push(`${idnt} ${obj}['${n}'](${pp.join(", ")});`)
+							js.push(`${idnt} /* We sure that this safe call */ `)
+							js.push(`${idnt} ${obj}['${n}'](${pp.join(", ")});`)
 
-						fastCall.kill(`${obj}`);
-						break;
+							fastCall.kill(`${obj}`);
+							break;
+						}
 					}
 
 					if(needFastCheck()) {
@@ -993,7 +956,7 @@ export function compile(methodInfo: MethodInfo, options: ICompilerOptions = {opt
 
 						if(USE_OPT(fastCall)) {
 							const mangled = (lexGen.getGenerator(mn) instanceof TopLevelLex);
-							fastCall.mark(`${stackN}`, mangled, i, mn);
+							fastCall.mark(stackN, i, mangled, mn);
 						}
 						break;
 					}
@@ -1134,10 +1097,10 @@ export function compile(methodInfo: MethodInfo, options: ICompilerOptions = {opt
 						moveIdnt(1);
 					}
 					{
-						let d; 
+						let d:ICallEntry; 
 						if(USE_OPT(fastCall) && (d = fastCall.sureThatFast(stack0, mn.name))) 
 						{
-							const n = d.mangled ? Multiname.getPublicMangledName(mn.name) : mn.name;
+							const n = d.isMangled ? Multiname.getPublicMangledName(mn.name) : mn.name;
 							fastCall.kill(stack0);
 
 							js.push(`${idnt} /* We sure that this safe call */ `)
@@ -1283,8 +1246,7 @@ export function compile(methodInfo: MethodInfo, options: ICompilerOptions = {opt
 
 						if(fastCall) {
 							const mangled = (lexGen.getGenerator(mn) instanceof TopLevelLex);
-							const _mn = mn;
-							fastCall.mark(`${stackN}`, mangled, i, _mn, true);
+							fastCall.mark(stackN, i, mangled, mn, true);
 						}
 					} else {
 						js.push(`${idnt} // ${mn}`)
@@ -1333,6 +1295,14 @@ export function compile(methodInfo: MethodInfo, options: ICompilerOptions = {opt
 					}
 					js.push(`${idnt} ${stack0} = context.axCoerceString(${stack0});`)
 					break
+				
+				case Bytecode.ESC_XELEM:
+					js.push(`${idnt} ${stack0} = context.escXElem(${stack0});`);
+					break
+				case Bytecode.ESC_XATTR:
+					js.push(`${idnt} ${stack0} = context.escXAttr(${stack0});`);
+					break
+					
 				case Bytecode.CONVERT_I:
 					js.push(`${idnt} ${stack0} |= 0;`)
 					break
@@ -1443,7 +1413,10 @@ export function compile(methodInfo: MethodInfo, options: ICompilerOptions = {opt
 		// close while
 		js.push(`${moveIdnt(-1)} }`)
 	}
+
 	js.push(`${moveIdnt(-1)} }`)
+
+	moveIdnt(-1);
 
 
 	const locals = [];
@@ -1470,8 +1443,9 @@ export function compile(methodInfo: MethodInfo, options: ICompilerOptions = {opt
 
 	const header = ["const AX_CLASS_SYMBOL = context.AX_CLASS_SYMBOL;"];
 	
+
 	if(USE_OPT(lexGen)) {
-		header.push(lexGen.genHeader());
+		header.push(lexGen.genHeader(idnt));
 	}
 
 	const w = 
@@ -1546,8 +1520,17 @@ export class Context {
 
 		return this.domain.internal_memoryView;
 	}
+
+	escXElem(value: string): string {
+		return escapeElementValue(this.sec, value);
+	}
+
+	escXAttr(value: string): string {
+		return escapeAttributeValue(value);
+	}
+
 	/**
-	 * Execute JS hoo
+	 * Execute JS hook
 	 */
 	executeHook(context: any, name: string) {
 		let hook = METHOD_HOOKS[name];
