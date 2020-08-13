@@ -1,5 +1,6 @@
 import { Multiname } from "./../abc/lazy/Multiname";
 import { getExtClassField } from "../ext/external";
+import { IGenerator } from './IGenerator';
 
 export interface IImportDefinition {
 	name: Multiname;
@@ -10,12 +11,13 @@ export interface IImportGenOptions {
 	findProp?: boolean;
 }
 
-export interface ILexGenerator {
+export interface ILexGenerator extends IGenerator {
 	/**
 	 * Test Multiname to support import generation
 	 */
 	test(mn: Multiname): boolean;
 
+	findAliases(mn: Multiname, findProp: boolean): IImportDefinition[];
 	/**
 	 * Generate import alias if can be generated
 	 * @throws lex import can't be generated
@@ -27,21 +29,6 @@ export interface ILexGenerator {
 	 * @throws lex import can't be generated
 	 */
 	getPropStrictAlias(mn: Multiname, options?: IImportGenOptions): string;
-
-	/**
-	 * Generate header (before method anotation) of imports when it exist, or return empty string
-	 */
-	genHeader(): string;
-
-	/**
-	 * Generate body (after method annotations), return empty string
-	 */
-	genBody(): string;
-
-	/**
-	 * Reset lexer
-	 */
-	reset(): void;
 }
 
 export abstract class LexImportsGenerator implements ILexGenerator {
@@ -56,6 +43,12 @@ export abstract class LexImportsGenerator implements ILexGenerator {
 
 	protected _genAlias(mn: Multiname, options?: IImportGenOptions): string {
 		return mn.namespace.uri.replace(/\./g, "_") + "__" + mn.name;
+	}
+
+	findAliases(mn: Multiname, findProp: boolean): IImportDefinition[] {
+		return this.imports.filter((e) => {
+			return e.name === mn && (findProp ? findProp === e.options.findProp : true)
+		});
 	}
 
 	public getLexAlias(mn: Multiname, options?: IImportGenOptions): string {
@@ -88,22 +81,22 @@ export abstract class LexImportsGenerator implements ILexGenerator {
 		return alias;
 	}
 
-	public genHeader(): string {
+	public genHeader(ident: string): string {
 		if (!this.imports.length) {
 			return "";
 		}
 
-		let header = [`\n/* ${this.constructor.name} */`];
+		let header = [`\n${ident} /* ${this.constructor.name} */`];
 
 		for (let def of this.imports) {
-			header.push(this._genEntry(def));
+			header.push(ident + ' ' + this._genEntry(def));
 		}
 
 		header.push("\n");
 		return header.join("\n");
 	}
 
-	public genBody(): string {
+	public genBody(ident: string): string {
 		return "";
 	}
 
@@ -146,6 +139,17 @@ export class ComplexGenerator implements ILexGenerator {
 
 		return !!this.getGenerator(mn);
 	}
+
+	findAliases(mn: Multiname, findProp: boolean): IImportDefinition[] {
+		let res = [];
+
+		for(let g of this.generators) {
+			res = res.concat(g.findAliases(mn, findProp));
+		}
+
+		return res;
+	}
+
 	/**
 	 * Return generator that will used for propstrict generation 
 	 */
@@ -169,21 +173,21 @@ export class ComplexGenerator implements ILexGenerator {
 		return gen.getPropStrictAlias(mn, options);
 	}
 
-	public genHeader(): string {
+	public genHeader(ident: string): string {
 		let header = "";
 
 		for (let g of this.generators) {
-			header += g.genHeader();
+			header += g.genHeader(ident);
 		}
 
 		return header;
 	}
 
-	public genBody(): string {
+	public genBody(ident: string): string {
 		let header = "";
 
 		for (let g of this.generators) {
-			header += g.genHeader();
+			header += g.genHeader(ident);
 		}
 
 		return header;
@@ -299,7 +303,9 @@ export class TopLevelLex extends LexImportsGenerator {
 
 	protected _genAlias(mn: Multiname, options: IImportGenOptions): string {
 		const uri = mn.namespace.uri.split(/\./g);
-
+		if(!(<any>options).nameAlias) {
+			throw "Name alias required for generatin Toplevel exports!";
+		}
 		return `${uri.join('_')}__${mn.name}${options.findProp ? '' : '_def'}`;
 	}
 }
