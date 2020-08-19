@@ -99,12 +99,15 @@ export class Scope {
         if (mn.mutable || scopeOnly) 
             return this._findScopeProperty(mn, strict, scopeOnly)
         
-        if (mn.scope === this.object)
+        if (mn.scope === this.object && !this.isWith)
             return mn.value
 
-        let value = this._findScopeProperty(mn, strict, scopeOnly)
-        mn.value = value
-        mn.scope = this.object
+		let value = this._findScopeProperty(mn, strict, scopeOnly)
+		
+		if(!this.isWith) {
+			mn.value = value
+			mn.scope = this.object
+		}
         return value
     }
 

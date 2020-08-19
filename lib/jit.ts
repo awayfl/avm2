@@ -47,6 +47,7 @@ import {
 	IS_EXTERNAL_CLASS,
 	needFastCheck
 } from "./ext/external";
+import { TRAIT } from './abc/lazy/TRAIT'
 
 
 const METHOD_HOOKS: StringMap<{path: string, place: "begin" | "return", hook: Function}> = {};
@@ -171,6 +172,14 @@ export function compile(methodInfo: MethodInfo, options: ICompilerOptions = {opt
 		if(methodInfo.trait instanceof MethodTraitInfo ){
 			methodName = (<Multiname>methodInfo.trait.name).name;
 			methodType = namespaceTypeNames[(<Multiname>methodInfo.trait.name).namespace.type];
+		}
+
+		if(methodInfo.trait && methodInfo.trait.kind === TRAIT.Getter) {
+			methodName = "get_" + methodName;
+		}
+
+		if(methodInfo.trait && methodInfo.trait.kind === TRAIT.Setter) {
+			methodName = "set_" + methodName;
 		}
 
 		if(methodInfo.isConstructor) {
@@ -859,7 +868,7 @@ export function compile(methodInfo: MethodInfo, options: ICompilerOptions = {opt
 						js.push(`${idnt} let t = ${obj};`)
 						js.push(`${idnt} const m = ${obj}['$Bg${mn.name}'] || (t = sec.box(${obj}), t['$Bg${mn.name}']);`)
 						js.push(`${idnt} if( typeof m === 'function' ) { `);
-						js.push(`${idnt}     ${stackF(param(0))} = m.call(t, ${pp.join(", ")});`);
+						js.push(`${idnt}     ${stackF(param(0))} = m.call(t${pp.length ? ", " : ""}${pp.join(", ")});`);
 						js.push(`${idnt} } else {  `);
 						js.push(`${idnt}     ${stackF(param(0))} = ${obj}.axCallProperty(${getname(param(1))}, [${pp.join(", ")}], false);`);
 						js.push(`${idnt} }`);
@@ -921,7 +930,7 @@ export function compile(methodInfo: MethodInfo, options: ICompilerOptions = {opt
 					js.push(`${idnt} let t = ${obj};`)
 					js.push(`${idnt} const m = ${obj}['$Bg${mn.name}'] || (t = sec.box(${obj}), t['$Bg${mn.name}']);`)
 					js.push(`${idnt} if( typeof m === 'function' ) { `);
-					js.push(`${idnt}     m.call(t, ${pp.join(", ")});`);
+					js.push(`${idnt}     m.call(t${pp.length ? ", ":""}${pp.join(", ")});`);
 					js.push(`${idnt} } else {  `);
 					js.push(`${idnt}    ${obj}.axCallProperty(${getname(param(1))}, [${pp.join(", ")}], false);`);
 					js.push(`${idnt} }`);
@@ -1687,6 +1696,10 @@ export class Context {
 
 	hasnext2(obj, name) {
 		const info = Context.HAS_NEXT_INFO;
+
+		if(obj == undefined) {
+			return [null, 0];
+		}
 
 		info.next( obj[IS_AX_CLASS] ? obj : this.sec.box(obj), name)
 		return [info.object, info.index]
