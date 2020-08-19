@@ -2517,7 +2517,7 @@ export class ASXML extends ASObject implements XMLType {
 
     for (var i = 0; i < namespaceDeclarations.length; i++) {
       var namespace = namespaceDeclarations[i];
-      if (namespace.uri === '') {
+      if (namespace.uri === '' || namespace.uri === 'default') {
         continue;
       }
       var attributeName = namespace.prefix ? 'xmlns:' + namespace.prefix : 'xmlns';
