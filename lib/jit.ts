@@ -357,7 +357,7 @@ export function compile(methodInfo: MethodInfo, options: ICompilerOptions = {opt
 			args.push("...args");
 		}
 
-		js0.push(`${idnt} return function compiled_${methodName}(${args.join(', ')}) {`);
+		js0.push(`${idnt} return function compiled_${methodName.replace(/([^a-z0-9]+)/gi, "_")}(${args.join(', ')}) {`);
 
 		moveIdnt(1);
 
@@ -375,7 +375,7 @@ export function compile(methodInfo: MethodInfo, options: ICompilerOptions = {opt
 	} 
 	else 
 	{	
-		js0.push(`${idnt} return function compiled_${methodName}() {`)
+		js0.push(`${idnt} return function compiled_${methodName.replace(/([^a-z0-9]+)/gi, "_")}() {`)
 
 		for (let i: number = 0; i < params.length; i++)
 			if (params[i].hasOptionalValue()) {
