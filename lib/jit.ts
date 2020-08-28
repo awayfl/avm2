@@ -69,15 +69,13 @@ export function UNSAFE_attachMethodHook(
 	};
 }
 
-function generateFunc(body: string, path: string, useEval = false) {
+function generateFunc(body: string, path: string) {
 	body += `\n//# sourceURL=http://jit/${path}.js`;
 
-	if (useEval) {
-		body = "(function(context) {\n" + body + "\n})";
-		return eval(body);
-
-	} else {
-		return  new Function("context", body);
+	try {
+	return  new Function("context", body);
+	} catch (e) {
+		throw new Error("Compiler error:\n\n" + body);
 	}
 }
 
@@ -334,34 +332,47 @@ export function compile(methodInfo: MethodInfo, options: ICompilerOptions = {opt
 	moveIdnt(1);
 
 	if(optimise & OPT_FLAGS.USE_ES_PARAMS) {
-		const args = [];		
-		
+		const args = [];
 		for (let i = 0; i < params.length; i++) {
 			let p = params[i];
-			let arg = "local" + (i + 1);
+			let arg = { name: "local" + (i + 1), value: null, type: "" };
 
 			if (p.hasOptionalValue()){
 				switch (p.optionalValueKind) {
 					case CONSTANT.Utf8:
-						arg += ` = ${JSON.stringify(abc.getString(p.optionalValueIndex))}`;
+						arg.value = `${JSON.stringify(abc.getString(p.optionalValueIndex))}`;
 						break
 					default:
-						arg += ` = ${p.getOptionalValue()}`
+						arg.value = `${p.getOptionalValue()}`
 				}
 			}
 
-			args.push(arg);
+			const t = p.getType();
+			t && (arg.type = t.name);
+
+			args[i] = arg;
 		}
 
 		if(methodInfo.needsRest()) {
-			args.push("...args");
+			args.push({name: "...args" });
 		}
 
-		js0.push(`${idnt} return function compiled_${methodName.replace(/([^a-z0-9]+)/gi, "_")}(${args.join(', ')}) {`);
+		const argsFilled = args.map((e) => e.value ? `${e.name} = ${e.value}` : e.name).join(', ');
+		const mname =  methodName.replace(/([^a-z0-9]+)/gi, "_");
+		js0.push(`${idnt} ${" ".repeat(mname.length + 25)}// ${args.map(e => e.type).join(', ')}`);
+		js0.push(`${idnt} return function compiled_${mname}(${argsFilled}) {`);
 
 		moveIdnt(1);
 
 		js0.push(`${idnt} let local0 = this === context.jsGlobal ? context.savedScope.global.object : this;`)
+
+		for(let a of args) {
+			if(a.type === 'String') {
+				const name = a.name;
+				js0.push(`${idnt} /* Force string coerce */`)
+				js0.push(`${idnt} ${name} = (${name} && typeof ${name} !=='string') ? ${name}.toString() : ${name};`)
+			}
+		}
 
 		if(methodInfo.needsRest()) {
 			js0.push(`${idnt} let local${params.length + 1} = context.sec.createArrayUnsafe(args);`);
@@ -1465,7 +1476,7 @@ export function compile(methodInfo: MethodInfo, options: ICompilerOptions = {opt
 
 	const hasError = w.indexOf(underrun) > -1;
 
-	const compiled = generateFunc(w, fullPath, !(optimise & OPT_FLAGS.USE_NEW_FUCTION))
+	const compiled = generateFunc(w, fullPath)
 
 	let underrunLine = -1;
 
