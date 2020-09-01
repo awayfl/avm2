@@ -1,4 +1,4 @@
-import { IAVMHandler, AVMVERSION, AVMStage, SWFFile, PromiseWrapper, release, SWFParser } from "@awayfl/swf-loader"
+import { IAVMHandler, AVMVERSION, AVMStage, SWFFile, release } from "@awayfl/swf-loader"
 import { AVM2LoadLibrariesFlags } from "./AVM2LoadLibrariesFlags";
 
 import {initSystem} from "./natives/system";

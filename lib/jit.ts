@@ -79,6 +79,15 @@ function generateFunc(body: string, path: string) {
 	}
 }
 
+function escape(name: string) {
+	return JSON.stringify(name);
+}
+
+const validTest = /^[a-zA-Z_$][0-9a-zA-Z_$]*$/
+function validate(name: string) {
+	return validTest.test(name);
+}
+
 export const enum OPT_FLAGS {
 	USE_ES_PARAMS = 1, // use es7 style of compiled function to avoid use arguments
 	USE_NEW_FUCTION = 2, // use eval instead of new Function
@@ -107,13 +116,16 @@ export interface ICompilerProcess {
 export interface ICompilerOptions {
 	scope?: Scope;
 	optimise?: OPT_FLAGS;
+	encrupted?: boolean
 }
 
 let SCRIPT_ID = 0;
 
-export function compile(methodInfo: MethodInfo, options: ICompilerOptions = {optimise: DEFAULT_OPT}): ICompilerProcess {
+export function compile(methodInfo: MethodInfo, options: ICompilerOptions = {}): ICompilerProcess {
 	const {
-		optimise = DEFAULT_OPT, scope
+		optimise = DEFAULT_OPT, 
+		scope,
+		encrupted = false
 	} = options;
 
 	// lex generator
@@ -207,6 +219,15 @@ export function compile(methodInfo: MethodInfo, options: ICompilerOptions = {opt
 		fullPath = path + "/" + methodName;
 	}
 
+	const validMethodName = validate(methodName);
+	const validPathName = validate(path.replace("/","_"));
+
+	if(!validMethodName && !validPathName) {
+		return {
+			error: `Invalid method (${methodName}) and path (${path}) name, falling to interpret`
+		}
+	}
+
 	const hookMethodPath = `${path}${isMemeber ? "::" : "."}${methodName}`
 	const scriptHeader = 
 `/*
@@ -215,7 +236,6 @@ export function compile(methodInfo: MethodInfo, options: ICompilerOptions = {opt
 	Type:  ${methodType}
 	Super: ${superClass || '-'}
 */\n\n`
-
 	const {
 		error,
 		jumps,
@@ -340,7 +360,7 @@ export function compile(methodInfo: MethodInfo, options: ICompilerOptions = {opt
 			if (p.hasOptionalValue()){
 				switch (p.optionalValueKind) {
 					case CONSTANT.Utf8:
-						arg.value = `${JSON.stringify(abc.getString(p.optionalValueIndex))}`;
+						arg.value = `${escape(abc.getString(p.optionalValueIndex))}`;
 						break
 					default:
 						arg.value = `${p.getOptionalValue()}`
@@ -642,7 +662,7 @@ export function compile(methodInfo: MethodInfo, options: ICompilerOptions = {opt
 					js.push(`${idnt} ${stackN} = ${abc.doubles[param(0)]};`)
 					break
 				case Bytecode.PUSHSTRING:
-					js.push(`${idnt} ${stackN} = ${JSON.stringify(abc.getString(param(0)))};`)
+					js.push(`${idnt} ${stackN} = ${escape(abc.getString(param(0)))};`)
 					break
 				case Bytecode.PUSHNAN:
 					js.push(`${idnt} ${stackN} = NaN;`)
@@ -1495,7 +1515,7 @@ export function compile(methodInfo: MethodInfo, options: ICompilerOptions = {opt
 	return {
 		names: names,
 		compiled,
-		error : hasError ? `STACK UNDERRUN at http://jit/${prefix}_${funcName || 'unknown'}.js:${underrunLine}` : undefined
+		error : hasError ? `STACK UNDERRUN at http://jit/${path}.js:${underrunLine}` : null
 	};
 }
 

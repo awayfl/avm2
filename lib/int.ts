@@ -148,14 +148,20 @@ export function interpret(methodInfo: MethodInfo, savedScope: Scope, callee: AXF
 	
     if (methodInfo.compiled == null && methodInfo.error == null && methodInfo.getBody() != null) {
         let r = compile(methodInfo, {scope: savedScope})
-        if (r.error) {
+
+		if (r.error) {
             methodInfo.error = r.error;
         } else {
           methodInfo.compiled = r.compiled;
           methodInfo.names = r.names
         }
     }
-    return methodInfo.compiled ? methodInfo.compiled(new Context(methodInfo, savedScope, methodInfo.names)) : _interpret(methodInfo, savedScope, callee)
+	
+	if (methodInfo.compiled && !methodInfo.error) {
+		return methodInfo.compiled(new Context(methodInfo, savedScope, methodInfo.names))
+	}
+
+	return _interpret(methodInfo, savedScope, callee);
 }
 
 class InterpreterFrame {
