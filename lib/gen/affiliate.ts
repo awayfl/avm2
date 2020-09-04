@@ -2,6 +2,7 @@
 import {Bytecode} from "./../Bytecode";
 import { ExceptionInfo } from './../abc/lazy/ExceptionInfo'
 import { MethodInfo } from "./../abc/lazy/MethodInfo"
+import { COMPILATION_FAIL_REASON } from '../flags';
 
 const BytecodeName = Bytecode
 
@@ -41,7 +42,9 @@ export class Instruction {
 	}
 }
 export interface IAffilerError {
-	error: string;
+	error: {
+		message: string, reason: COMPILATION_FAIL_REASON
+	};
 }
 
 export interface IAffilerResult {
@@ -53,26 +56,32 @@ export interface IAffilerResult {
 /**
  * Propogade stack for calculation real stack size for every instruction
  */
-export function propagateStack(position: number, stack: number, q: Array<Instruction>) {
+export function propagateStack(position: number, stack: number, q: Array<Instruction>): number {
 	let v = stack;
 	let l = q.length;
+	let minStack = stack;
 
 	for (let i = 0; i < l; i++) {
 		if (q[i].position >= position) {
 			if (q[i].stack >= 0)
-				return
+				return minStack;
 
 			q[i].stack = v;
 			v += q[i].delta;
 
+			if(v < minStack) minStack = v;
+
 			for (let j = 0; j < q[i].refs.length; j++) {
-				propagateStack(q[i].refs[j], v, q)
+				const s = propagateStack(q[i].refs[j], v, q)
+				if(s < minStack) minStack = s;
 			}
 
 			if (q[i].terminal)
-				return
+				return minStack;
 		}
 	}
+
+	return minStack;
 }
 
 /**
@@ -143,7 +152,7 @@ export function propogateTree(q: Array<Instruction>, jumps: number[]): void {
  * Affilate instruction set from method info
  * @param methodInfo 
  */
-export function affilate(methodInfo: MethodInfo): IAffilerResult & IAffilerError {
+export function affilate(methodInfo: MethodInfo): IAffilerResult | IAffilerError {
 	const abc = methodInfo.abc;
 	const body = methodInfo.getBody();
 	const code = body.code;
@@ -798,13 +807,18 @@ export function affilate(methodInfo: MethodInfo): IAffilerResult & IAffilerError
 				break;
 			default:
 				//console.log(`UNKNOWN BYTECODE ${code[i - 1].toString(16)} ${BytecodeName[code[i - 1]]} at ${oldi} (method:`, methodInfo.index());
-				return { error: `UNKNOWN BYTECODE ${code[i - 1].toString(16)} ${BytecodeName[code[i - 1]]} at ${oldi}` } as any;
+				return { 
+					error: {
+						message: `UNKNOWN BYTECODE ${code[i - 1].toString(16)} ${BytecodeName[code[i - 1]]} at ${oldi}`,
+						reason: COMPILATION_FAIL_REASON.UNKNOW_BYTECODE,
+					}
+				} as any
 		}
 
 		q.push(ins);
 	}
 
-	propagateStack(0, 0, q);
+	let minStack = propagateStack(0, 0, q);
 	propagateScope(0, 0, q);
 
 	const jumps: number[] = [0];
@@ -869,7 +883,9 @@ export function affilate(methodInfo: MethodInfo): IAffilerResult & IAffilerError
 			// IMPORTANT! Catch block push error on top of stack
 			// this is why stack should start from 1 instead of 0
 
-			propagateStack(block.target, stack + 1, q);
+			const s = propagateStack(block.target, stack + 1, q);
+			if(s < minStack) minStack = s;
+
 			// IMPORTANT! SCOPE SHOULD BE PROPOGADED TOO
 			propagateScope(block.target, scope, q);
 
@@ -879,11 +895,16 @@ export function affilate(methodInfo: MethodInfo): IAffilerResult & IAffilerError
 
 	propogateTree(q, jumps);
 
+	const error = minStack < 0 ? {
+		message: "Stack underrun while preprocess, stack:" + minStack, 
+		reason: COMPILATION_FAIL_REASON.UNDERRUN
+	}: null;
+
 	return {
 		set: q,
 		jumps,
 		catchStart,
 		catchEnd,
-		error: undefined
+		error
 	};
 }

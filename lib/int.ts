@@ -1,7 +1,4 @@
 import { assert } from "@awayjs/graphics";
-
-
-
 import { Scope } from "./run/Scope";
 import { interpreterWriter, executionWriter, sliceArguments } from "./run/writers";
 import { AXFunction } from "./run/AXFunction";
@@ -33,6 +30,10 @@ import { isValidASValue } from './run/initializeAXBasePrototype';
 import { AXClass } from './run/AXClass';
 import { axCoerceName } from "./run/axCoerceName";
 import { compile, Context } from "./jit";
+import { COMPILATION_STATE } from './flags';
+
+const MAX_REPORTED_FAILINGS = 100;
+let FAILINGS = 0;
 
 /**
  * Helps the interpreter allocate fewer Scope objects.
@@ -145,22 +146,30 @@ export function interpret(methodInfo: MethodInfo, savedScope: Scope, callee: AXF
 			throw e;
 		}
 	}
-	
-    if (methodInfo.compiled == null && methodInfo.error == null && methodInfo.getBody() != null) {
-        let r = compile(methodInfo, {scope: savedScope})
 
+	// empty function for empty body
+	if(methodInfo.getBody() == null) {
+		return function() {};
+	}
+
+	// Try to compile
+    if (methodInfo.state === COMPILATION_STATE.PENDING) {
+		const r = compile(methodInfo, {scope: savedScope})
+		
 		if (r.error) {
             methodInfo.error = r.error;
         } else {
           methodInfo.compiled = r.compiled;
-          methodInfo.names = r.names
+          methodInfo.names = r.names;
         }
     }
 	
-	if (methodInfo.compiled && !methodInfo.error) {
+	if (methodInfo.state === COMPILATION_STATE.COMPILLED) {
+		methodInfo.useCount ++;
 		return methodInfo.compiled(new Context(methodInfo, savedScope, methodInfo.names))
 	}
 
+	methodInfo.useCount ++;
 	return _interpret(methodInfo, savedScope, callee);
 }
 
@@ -282,8 +291,13 @@ class InterpreterFrame {
 }
 
 function _interpret(methodInfo: MethodInfo, savedScope: Scope, callee: AXFunction) {
-  if (methodInfo.error != null) {
-      console.error("interpret: (" + methodInfo.error + ")")
+  if (methodInfo.error && methodInfo.useCount <= 1) {
+	FAILINGS ++; 
+	if(FAILINGS < MAX_REPORTED_FAILINGS) {
+	  console.error("[INTERPRET] Compilation failed", methodInfo.error.reason, methodInfo.error.message);
+	} else {
+		console.debug("[INTERPRET] To many compiler failings:", FAILINGS);
+	}
   }
 
   return function () {

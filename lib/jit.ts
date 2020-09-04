@@ -24,9 +24,10 @@ import { ClassInfo } from './abc/lazy/ClassInfo'
 import { MethodTraitInfo } from './abc/lazy/MethodTraitInfo'
 import { namespaceTypeNames } from './abc/lazy/NamespaceType'
 import { escapeAttributeValue, escapeElementValue } from "./natives/xml";
+import { COMPILER_DEFAULT_OPT, COMPILER_OPT_FLAGS, COMPILATION_FAIL_REASON} from "./flags";
 
 // generators
-import { affilate, Instruction } from "./gen/affiliate"
+import { affilate, Instruction, IAffilerResult, IAffilerError } from "./gen/affiliate"
 import { TinyConstructor } from "./gen/TinyConstructor";
 import { TweenCallSaver } from "./gen/CallBlockSaver";
 import { FastCall, ICallEntry } from "./gen/FastCall";
@@ -88,26 +89,12 @@ function validate(name: string) {
 	return validTest.test(name);
 }
 
-export const enum OPT_FLAGS {
-	USE_ES_PARAMS = 1, // use es7 style of compiled function to avoid use arguments
-	USE_NEW_FUCTION = 2, // use eval instead of new Function
-	SKIP_NULL_COERCE = 4, // skip coerce for nulled constant objects
-	SKIP_DOMAIN_MEM = 8, // skip compilation of domain memory instructions
-	ALLOW_CUSTOM_OPTIMISER = 16 // allow use custom optimiser classe for mutate codegenerator
-}
-
-const DEFAULT_OPT = 
-	OPT_FLAGS.ALLOW_CUSTOM_OPTIMISER |
-	OPT_FLAGS.USE_NEW_FUCTION | 
-	OPT_FLAGS.USE_ES_PARAMS | 
-	OPT_FLAGS.SKIP_NULL_COERCE | 
-	OPT_FLAGS.SKIP_DOMAIN_MEM;
-
-
 const CLASS_NAME_METHOD_NAME: StringMap<number> = {};
 
 export interface ICompilerProcess {
-	error?: string;
+	error?: {
+		message: string, reason: COMPILATION_FAIL_REASON
+	};
 	source?: string;
 	compiling?: Promise<Function> | undefined;
 	compiled?: Function;
@@ -115,7 +102,7 @@ export interface ICompilerProcess {
 }
 export interface ICompilerOptions {
 	scope?: Scope;
-	optimise?: OPT_FLAGS;
+	optimise?: COMPILER_OPT_FLAGS;
 	encrupted?: boolean
 }
 
@@ -123,7 +110,7 @@ let SCRIPT_ID = 0;
 
 export function compile(methodInfo: MethodInfo, options: ICompilerOptions = {}): ICompilerProcess {
 	const {
-		optimise = DEFAULT_OPT, 
+		optimise = COMPILER_DEFAULT_OPT, 
 		scope,
 		encrupted = false
 	} = options;
@@ -144,7 +131,7 @@ export function compile(methodInfo: MethodInfo, options: ICompilerOptions = {}):
 	const fastCall = new FastCall(lexGen, scope);  
 
 	const USE_OPT = (opt) => {
-		return optimise & OPT_FLAGS.ALLOW_CUSTOM_OPTIMISER && !!opt;
+		return optimise & COMPILER_OPT_FLAGS.ALLOW_CUSTOM_OPTIMISER && !!opt;
 	}
 
 	if(USE_OPT(tinyCtr)) {
@@ -224,7 +211,10 @@ export function compile(methodInfo: MethodInfo, options: ICompilerOptions = {}):
 
 	if(!validMethodName && !validPathName) {
 		return {
-			error: `Invalid method (${methodName}) and path (${path}) name, falling to interpret`
+			error: {
+				message: `Invalid method (${methodName}) and path (${path}) name, falling to interpret`,
+				reason: COMPILATION_FAIL_REASON.MANGLED_CLASSNAME
+			}
 		}
 	}
 
@@ -242,12 +232,16 @@ export function compile(methodInfo: MethodInfo, options: ICompilerOptions = {}):
 		catchStart,
 		catchEnd,
 		set : q
-	} = affilate(methodInfo);
+	} = affilate(methodInfo) as IAffilerResult & IAffilerError;
 
 	// if affilate a generate error, broadcast it
 	if(error) {
 		Stat.drop();
-		return {error};
+
+		// if a error is not debuggable, drop compilation
+		if(error.reason !== COMPILATION_FAIL_REASON.UNDERRUN || !(optimise & COMPILER_OPT_FLAGS.DEBUG_UNDERRUN)) {
+			return { error };
+		}
 	}
 
 	const abc = methodInfo.abc;
@@ -351,7 +345,7 @@ export function compile(methodInfo: MethodInfo, options: ICompilerOptions = {}):
 	// shift function body
 	moveIdnt(1);
 
-	if(optimise & OPT_FLAGS.USE_ES_PARAMS) {
+	if(optimise & COMPILER_OPT_FLAGS.USE_ES_PARAMS) {
 		const args = [];
 		for (let i = 0; i < params.length; i++) {
 			let p = params[i];
@@ -1313,7 +1307,7 @@ export function compile(methodInfo: MethodInfo, options: ICompilerOptions = {}):
 					js.push(`${idnt} return;`)
 					break
 				case Bytecode.COERCE:
-					if(optimise & OPT_FLAGS.SKIP_NULL_COERCE && (lastZ.name === Bytecode.PUSHNULL || lastZ.name === Bytecode.PUSHUNDEFINED)) {
+					if(optimise & COMPILER_OPT_FLAGS.SKIP_NULL_COERCE && (lastZ.name === Bytecode.PUSHNULL || lastZ.name === Bytecode.PUSHUNDEFINED)) {
 						js.push(`${idnt} // SKIP_NULL_COERCE`);
 						break;
 					}
@@ -1329,7 +1323,7 @@ export function compile(methodInfo: MethodInfo, options: ICompilerOptions = {}):
 					js.push(`${idnt} ;`)
 					break
 				case Bytecode.COERCE_S:
-					if(optimise & OPT_FLAGS.SKIP_NULL_COERCE && (lastZ.name === Bytecode.PUSHNULL || lastZ.name === Bytecode.PUSHUNDEFINED)) {
+					if(optimise & COMPILER_OPT_FLAGS.SKIP_NULL_COERCE && (lastZ.name === Bytecode.PUSHNULL || lastZ.name === Bytecode.PUSHUNDEFINED)) {
 						js.push(`${idnt} // SKIP_NULL_COERCE`);
 						break;
 					}
@@ -1369,7 +1363,7 @@ export function compile(methodInfo: MethodInfo, options: ICompilerOptions = {}):
 					break
 	
 				default:
-					if(!(optimise & OPT_FLAGS.SKIP_DOMAIN_MEM)) {
+					if(!(optimise & COMPILER_OPT_FLAGS.SKIP_DOMAIN_MEM)) {
 						switch(z.name){
 								//http://docs.redtamarin.com/0.4.1T124/avm2/intrinsics/memory/package.html#si32()
 							case Bytecode.SI8:
@@ -1420,7 +1414,7 @@ export function compile(methodInfo: MethodInfo, options: ICompilerOptions = {}):
 					if((z.name <= Bytecode.LI8 && z.name >= Bytecode.SF64)) {
 						js.push(`${idnt} //unknown instruction ${BytecodeName[q[i].name]}`)
 						//console.log(`unknown instruction ${BytecodeName[q[i].name]} (method N${methodInfo.index()})`)
-						return { error: "unhandled instruction " + z }
+						return { error:  {message: "unhandled instruction " + z, reason: COMPILATION_FAIL_REASON.UNHANDLED_INSTRUCTION }}
 					}
 			}
 		}
@@ -1471,7 +1465,7 @@ export function compile(methodInfo: MethodInfo, options: ICompilerOptions = {}):
 		}
 		// todo: this is not 100% correct yet:
 		locals.push(`    let local${l.index} =  undefined`);
-		if(!(optimise & OPT_FLAGS.USE_ES_PARAMS)) {
+		if(!(optimise & COMPILER_OPT_FLAGS.USE_ES_PARAMS)) {
 			if(l.index==params.length+1 && !l.die){
 				locals.push(`    if(arguments && arguments.length) { local${l.index} = context.sec.createArrayUnsafe(Array.from(arguments).slice(${params.length})); }`);
 				locals.push(`    else { local${l.index} = context.emptyArray; }`);
@@ -1512,10 +1506,18 @@ export function compile(methodInfo: MethodInfo, options: ICompilerOptions = {}):
 
 	Stat.end();
 
+	let errorMessage = null;
+	if(hasError) {
+		errorMessage = {
+			message:`STACK UNDERRUN at http://jit/${path}.js:${underrunLine}`,
+			reason: COMPILATION_FAIL_REASON.UNDERRUN,
+		}
+	}
+
 	return {
 		names: names,
 		compiled,
-		error : hasError ? `STACK UNDERRUN at http://jit/${path}.js:${underrunLine}` : null
+		error : errorMessage
 	};
 }
 

@@ -10,6 +10,8 @@ import { ClassInfo } from "./ClassInfo";
 import { METHOD } from "./METHOD";
 import { Multiname } from './Multiname';
 import { ScriptInfo } from './ScriptInfo';
+import { COMPILATION_STATE, COMPILATION_FAIL_REASON } from '../../flags';
+
 
 export class MethodInfo {
     public trait: MethodTraitInfo = null;
@@ -24,7 +26,20 @@ export class MethodInfo {
 
 	public compiled:Function = null;
     public names:Multiname[];
-	public error:string = null;
+	public error: {message: string, reason: COMPILATION_FAIL_REASON} = null;
+	public useCount: number = 0;
+
+	public get state(): COMPILATION_STATE {
+		if(this.error || this.getBody() == null) {
+			return COMPILATION_STATE.FAILED;
+		}
+
+		if(this.compiled) {
+			return COMPILATION_STATE.COMPILLED;
+		}
+
+		return COMPILATION_STATE.PENDING;
+	}
 
     constructor(
       public abc: ABCFile,
