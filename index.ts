@@ -56,3 +56,6 @@ export {PREF_BOX2D_VERSION, BOX2D_PREFERENCE} from "./lib/external";
 
 export { Natives } from "./lib/nat/Natives";
 export { UNSAFE_attachMethodHook } from "./lib/jit";
+
+export { transformASValueToJS } from "./lib/nat/transformASValueToJS";
+export { transformJSValueToAS } from "./lib/nat/transformJSValueToAS";
