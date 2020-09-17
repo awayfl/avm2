@@ -12,6 +12,12 @@ export class ActiveLoaderContext {
 	public static loaderContext: any;
 }
 
+interface IAwayApplicationDomain {
+	hasSymbolForClass(className: string): boolean;
+	getSymbolDefinition(clasName:string): any;
+	getSymbolAdaptee(clasName:string): any;
+}
+
 // todo: move OrphanManager elsewhere and add strong type
 // maybe eve solve the orphan-issue in otherway alltogether
 export class OrphanManager {
@@ -167,44 +173,34 @@ export function axConstruct(argArray?: any[]) {
 	//	UNSAFE! Need check more clea because assets can has nested class defenetion, like as `BitmapAsset : FlexBitmap: Bitmap`
 
 	const name = (<Multiname>_this.superClass?.classInfo?.instanceInfo?.name)?.name;
-	const appDom = ActiveLoaderContext.loaderContext?.applicationDomain;
-	const lookup: IAssetLookup = name ? ASSET_LOOKUP[name] : null;
+	const appDom:IAwayApplicationDomain = ActiveLoaderContext.loaderContext?.applicationDomain;
+//	const lookup: IAssetLookup = name ? ASSET_LOOKUP[name] : null;
 
-	if(lookup) {
-		let asset: AssetBase = null;
+	const mn =  (<Multiname>_this.classInfo.instanceInfo.name);
+	const instName = mn.name;
+	const fullName = mn.uri ? mn.uri + "." + instName : instName;
 
-		const instName = (<Multiname>_this.classInfo.instanceInfo.name).name;
-		const paths = [
-			instName, 
-			(<Multiname>_this.classInfo.instanceInfo.name).uri + "." + instName
-		];
+	if(instName.includes("EmbeddedSounds")) {
+		debugger;
+	}
 
-		const method = appDom ? appDom[lookup.lookupMethod ?? "getDefinition" ] : null;
-		
-		if(!method) {
+	if(appDom && appDom.hasSymbolForClass(fullName)) {
+		const asset: AssetBase = appDom.getSymbolAdaptee(fullName);
+
+		if(!asset) {
 			console.warn(`error: could not get asset ${name} for class ${instName}, no ActiveLoaderContext.loaderContext`);
-		} else {
+		}/* else {
 
-			for(let i = 0; i < paths.length && !asset; i ++) {
-				try {
-					asset = method.call(appDom, paths[i]);
-				} catch {};
+			const isAsset = asset.isAsset && lookup.allowType.some((type) => asset.isAsset(type));
+
+			if(!isAsset) {
+				console.warn(`error: invalid asset type for class ${instName} of type ${name},
+					recieved: ${asset ?? asset.assetType}, expected [${ lookup.allowType.map((e) => e.assetType).join()}]`);
+				
+				asset = null;
 			}
-
-			if(!asset) {
-				console.warn(`error: could not get asset ${name} for class ${instName}, no ActiveLoaderContext.loaderContext`);
-			} else {
-
-				const isAsset = asset.isAsset && lookup.allowType.some((type) => asset.isAsset(type));
-
-				if(!isAsset) {
-					console.warn(`error: invalid asset type for class ${instName} of type ${name},
-						recieved: ${asset ?? asset.assetType}, expected [${ lookup.allowType.map((e) => e.assetType).join()}]`);
-					
-					asset = null;
-				}
-			}
-		}
+		}*/
+	
 
 		asset && (object.adaptee = asset);
 	}
