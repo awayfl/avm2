@@ -1,4 +1,4 @@
-import { MovieClip, SceneImage2D, FrameScriptManager, Sprite } from '@awayjs/scene';
+import { MovieClip, SceneImage2D, FrameScriptManager, Sprite, DisplayObjectContainer } from '@awayjs/scene';
 import { AssetBase, WaveAudio } from '@awayjs/core';
 import { BitmapImage2D } from '@awayjs/stage';
 import { AXClass, IS_AX_CLASS } from './AXClass';
@@ -180,10 +180,6 @@ export function axConstruct(argArray?: any[]) {
 	const instName = mn.name;
 	const fullName = mn.uri ? mn.uri + "." + instName : instName;
 
-	if(instName.includes("EmbeddedSounds")) {
-		debugger;
-	}
-
 	if(appDom && appDom.hasSymbolForClass(fullName)) {
 		const asset: AssetBase = appDom.getSymbolAdaptee(fullName);
 
@@ -200,9 +196,14 @@ export function axConstruct(argArray?: any[]) {
 				asset = null;
 			}
 		}*/
-	
 
-		asset && (object.adaptee = asset);
+		if(asset) {
+			if(asset instanceof MovieClip) {
+				object.adaptee.graphics = asset.graphics;
+			} else {
+				object.adaptee = asset;
+			}
+		}
 	}
 
 	// mark object that it is AX object, not a regular class
