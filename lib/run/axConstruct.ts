@@ -121,47 +121,49 @@ export function axConstruct(argArray?: any[]) {
 
 		
 		let foundUIComponent:boolean=false;
-		let symbolClass:any=(<any>this)._symbol.symbolClass; 
-		while(symbolClass && !foundUIComponent){
-			if(symbolClass.name?.name=="UIComponent"){
-				foundUIComponent=true;
+		if((<any>this)._symbol){				
+			let symbolClass:any=(<any>this)._symbol.symbolClass; 
+			while(symbolClass && !foundUIComponent){
+				if(symbolClass.name?.name=="UIComponent"){
+					foundUIComponent=true;
+				}
+				else if(symbolClass.name?.name=="MovieClip"){
+					symbolClass=null;
+				}
+				else if(symbolClass.name?.name=="Sprite"){
+					foundUIComponent=true;
+				}
+				else if(symbolClass.superClass){
+					symbolClass=symbolClass.superClass;
+				}
+				else{
+					symbolClass=null;
+				}
 			}
-			else if(symbolClass.name?.name=="MovieClip"){
-				symbolClass=null;
-			}
-			else if(symbolClass.name?.name=="Sprite"){
-				foundUIComponent=true;
-			}
-			else if(symbolClass.superClass){
-				symbolClass=symbolClass.superClass;
-			}
-			else{
-				symbolClass=null;
-			}
-		}
-		// 	hack to BadIceCreamFont compiledClip:
-		//	the compiledClip "BadIcecreamFont" seem to behave different to other classes
-		//	it seem to always stick to frame 0,
-		//
-		//	DANGER!!!
-		//	MAY PRODUCE SIDE EFFECTS 
+			// 	hack to BadIceCreamFont compiledClip:
+			//	the compiledClip "BadIcecreamFont" seem to behave different to other classes
+			//	it seem to always stick to frame 0,
+			//
+			//	DANGER!!!
+			//	MAY PRODUCE SIDE EFFECTS 
 
-		const cn = (<any>this)._symbol.className;
-		const freezeOnFirstFrame = foundUIComponent || (cn && (
-			//anyThis._symbol.className == "BadIcecreamFont" ||
-			cn.includes('Font'))
-		);
+			const cn = (<any>this)._symbol.className;
+			const freezeOnFirstFrame = foundUIComponent || (cn && (
+				//anyThis._symbol.className == "BadIcecreamFont" ||
+				cn.includes('Font'))
+			);
 
-		if(freezeOnFirstFrame) {
-			const timeline = newMC.timeline;
-			const targetTimeline = timeline;
+			if(freezeOnFirstFrame) {
+				const timeline = newMC.timeline;
+				const targetTimeline = timeline;
 
-			targetTimeline.frame_command_indices = <any>[timeline.frame_command_indices[0]];
-			targetTimeline.frame_recipe = <any>[timeline.frame_recipe[0]];
-			targetTimeline.keyframe_constructframes = [timeline.keyframe_constructframes[0]];
-			targetTimeline.keyframe_durations = <any>[timeline.keyframe_durations[0]];
-			targetTimeline.keyframe_firstframes = [timeline.keyframe_firstframes[0]];
-			targetTimeline.keyframe_indices = [timeline.keyframe_indices[0]];	
+				targetTimeline.frame_command_indices = <any>[timeline.frame_command_indices[0]];
+				targetTimeline.frame_recipe = <any>[timeline.frame_recipe[0]];
+				targetTimeline.keyframe_constructframes = [timeline.keyframe_constructframes[0]];
+				targetTimeline.keyframe_durations = <any>[timeline.keyframe_durations[0]];
+				targetTimeline.keyframe_firstframes = [timeline.keyframe_firstframes[0]];
+				targetTimeline.keyframe_indices = [timeline.keyframe_indices[0]];	
+			}
 		}
 		newMC.reset();
 		FrameScriptManager.execute_as3_constructors_recursiv(newMC);
