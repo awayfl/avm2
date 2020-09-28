@@ -12,6 +12,27 @@ import { NamespaceType } from '../abc/lazy/NamespaceType';
 import { Multiname } from '../abc/lazy/Multiname';
 import { describeType as describeTypeIntern} from '../natives/describeType';
 
+
+const getQualifiedClassName = function(_: AXSecurityDomain, value: any):string {
+  release || checkValue(value);
+  var valueType = typeof value;
+  switch (valueType) {
+	case 'undefined':
+	  return 'void';
+	case 'object':
+	  if (value === null) {
+		return 'null';
+	  }
+	  return value.classInfo.instanceInfo.name.toFQNString(false);
+	case 'number':
+	  return (value | 0) === value ? 'int' : 'Number';
+	case 'string':
+	  return 'String';
+	case 'boolean':
+	  return 'Boolean';
+  }
+  release || assertUnreachable('invalid value type ' + valueType);
+}
 /**
  * Other natives can live in this module
  */
@@ -89,24 +110,7 @@ export var Natives = {
      * Returns the fully qualified class name of an object.
      */
     getQualifiedClassName(_: AXSecurityDomain, value: any):string {
-      release || checkValue(value);
-      var valueType = typeof value;
-      switch (valueType) {
-        case 'undefined':
-          return 'void';
-        case 'object':
-          if (value === null) {
-            return 'null';
-          }
-          return value.classInfo.instanceInfo.name.toFQNString(false);
-        case 'number':
-          return (value | 0) === value ? 'int' : 'Number';
-        case 'string':
-          return 'String';
-        case 'boolean':
-          return 'Boolean';
-      }
-      release || assertUnreachable('invalid value type ' + valueType);
+		return getQualifiedClassName(_, value);
     },
 
     /**
@@ -123,7 +127,7 @@ export var Natives = {
       var axClass = value.sec.AXClass.axIsType(value) ?
                     (<AXClass>value).superClass :
                     value.axClass.superClass;
-      return this.getQualifiedClassName(sec, axClass);
+      return getQualifiedClassName(sec, axClass);
     },
     /**
      * Returns the class with the specified name, or |null| if no such class exists.
