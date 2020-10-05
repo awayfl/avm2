@@ -36,7 +36,7 @@ import { nativeFunctions } from './nativeFunctions';
 import { jsGlobal } from '@awayfl/swf-loader';
 
 
-import { ASDate } from "../natives/Date";
+import { ASDate } from "../natives/date";
 import { ASProxy } from "../natives/proxy";
 import { Dictionary } from "../natives/dictionary";
 import { ByteArray } from "../natives/byteArray";
