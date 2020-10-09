@@ -7,6 +7,7 @@ import { flashlog, release } from "@awayfl/swf-loader";
 import { interpret } from "../../int";
 import { getNative } from "../../nat/getNative";
 import { getMethodOrAccessorNative } from "../../nat/getMethodOrAccessorNative";
+import { assert } from '@awayjs/graphics';
 
 
 export function createMethodForTrait(methodTraitInfo: MethodTraitInfo, scope: Scope) {
@@ -55,8 +56,10 @@ export function createMethodForTrait(methodTraitInfo: MethodTraitInfo, scope: Sc
         result.isInterpreted = wrapped.isInterpreted;
         return result;
       })(method, methodInfo);
-    }
-  
+	}
+	
+	assert(method, "Not found method:" + methodTraitInfo.toString())
+
     methodTraitInfo.method = method;
     method.methodInfo = methodInfo;
     if (!release) {
