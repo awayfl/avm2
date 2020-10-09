@@ -253,7 +253,8 @@ const ALLOWED_TOP_LEVEL_NAMES: String[] = [
 const NOT_ALLOWED: String[] = [
 	'getDefinitionByName',
 	'SetIntervalTimer',
-	'setTimeout'
+	'setTimeout',
+	':trace'
 ]
 
 interface ITopGenOptions extends IImportGenOptions {
@@ -262,7 +263,7 @@ interface ITopGenOptions extends IImportGenOptions {
 
 export class TopLevelLex extends LexImportsGenerator {
 	public test(mn: Multiname) {
-		const uri = mn.namespace?.uri;
+		const uri = mn.namespace?.uri || "";
 		const name = mn.name;
 
 		if (typeof uri  === 'undefined') {
@@ -276,7 +277,7 @@ export class TopLevelLex extends LexImportsGenerator {
 		} 
 
 		if(
-			ALLOWED_TOP_LEVEL_NAMES.indexOf(name) > -1 || // trace, Math
+			(ALLOWED_TOP_LEVEL_NAMES.indexOf(name) > -1 && !uri) || // trace, Math
 			ALLOWED_TOP_LEVEL_NAMES.indexOf(uri) > -1)
 		{
 			return true;
