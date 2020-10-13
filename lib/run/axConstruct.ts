@@ -76,20 +76,20 @@ type IAsseLookupTable = StringMap<IAssetLookup>;
 const ASSET_LOOKUP: IAsseLookupTable = {
 	"Sound": {
 		allowType: [WaveAudio],
-		lookupMethod: "getAwayJSAudio",
+		lookupMethod: "getSymbolDefinition",
 	},
 	"BitmapData": {
 		allowType: [SceneImage2D, BitmapImage2D],
-		lookupMethod: "getDefinition",
+		lookupMethod: "getSymbolDefinition",
 	},
 	"BitmapAsset": {
 		allowType: [SceneImage2D, BitmapImage2D],
-		lookupMethod: "getDefinition",
+		lookupMethod: "getSymbolDefinition",
 		passToConstructor: true
 	},
 	"Bitmap": {
 		allowType: [SceneImage2D, BitmapImage2D],
-		lookupMethod: "getDefinition",
+		lookupMethod: "getSymbolDefinition",
 	},
 }
 /**
