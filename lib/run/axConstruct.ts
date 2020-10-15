@@ -182,7 +182,7 @@ export function axConstruct(argArray?: any[]) {
 	const instName = mn.name;
 	const fullName = mn.uri ? mn.uri + "." + instName : instName;
 
-	if(appDom && appDom.hasSymbolForClass(fullName)) {
+	if(!timeline && appDom && appDom.hasSymbolForClass(fullName)) {
 		const asset: AssetBase = appDom.getSymbolAdaptee(fullName);
 
 		if(!asset) {
