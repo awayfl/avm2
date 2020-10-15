@@ -16,17 +16,16 @@
 * 3. This notice may not be removed or altered from any source distribution.
 */
 
-import { b2ContactID } from "./b2ContactID";
-import { b2Vec2 } from "../Common/Math";
+import { b2ContactID } from './b2ContactID';
+import { b2Vec2 } from '../Common/Math';
 
 /// A manifold point is a contact point belonging to a contact
 /// manifold. It holds details related to the geometry and dynamics
 /// of the contact points.
 /// The point is stored in local coordinates because CCD
 /// requires sub-stepping in which the separation is stale.
-export class b2ManifoldPoint
-{
-	public Reset() : void{
+export class b2ManifoldPoint {
+	public Reset(): void{
 		this.localPoint1.SetZero();
 		this.localPoint2.SetZero();
 		this.separation = 0.0;
@@ -34,7 +33,8 @@ export class b2ManifoldPoint
 		this.tangentImpulse = 0.0;
 		this.id.key = 0;
 	}
-	public Set(m:b2ManifoldPoint) : void{
+
+	public Set(m: b2ManifoldPoint): void{
 		this.localPoint1.SetV(m.localPoint1);
 		this.localPoint2.SetV(m.localPoint2);
 		this.separation = m.separation;
@@ -42,10 +42,11 @@ export class b2ManifoldPoint
 		this.tangentImpulse = m.tangentImpulse;
 		this.id.key = m.id.key;
 	}
-	public localPoint1:b2Vec2 = new b2Vec2();
-	public localPoint2:b2Vec2 = new b2Vec2();
-	public separation:number;
-	public normalImpulse:number;
-	public tangentImpulse:number;
-	public id:b2ContactID = new b2ContactID();
+
+	public localPoint1: b2Vec2 = new b2Vec2();
+	public localPoint2: b2Vec2 = new b2Vec2();
+	public separation: number;
+	public normalImpulse: number;
+	public tangentImpulse: number;
+	public id: b2ContactID = new b2ContactID();
 }

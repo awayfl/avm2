@@ -5,14 +5,14 @@ import { IAsset } from '@awayjs/core';
 
 export interface IPlayerGlobal{
 	createSecurityDomain(
-		avmStage:AVMStage,
-		swfFile:SWFFile,
+		avmStage: AVMStage,
+		swfFile: SWFFile,
 		libraries: AVM2LoadLibrariesFlags
 	): Promise<ISceneGraphFactory>;
-	
+
 	enterFrame();
 
 	resizeStage();
-	
-	addAsset(asset: IAsset, addScene:boolean);
+
+	addAsset(asset: IAsset, addScene: boolean);
 }

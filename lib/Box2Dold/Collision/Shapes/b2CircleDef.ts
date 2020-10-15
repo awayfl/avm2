@@ -16,21 +16,19 @@
 * 3. This notice may not be removed or altered from any source distribution.
 */
 
-import { b2Vec2 } from "../../Common/Math";
-import { b2ShapeDef } from "./b2ShapeDef";
-import { b2Shape } from "./b2Shape";
+import { b2Vec2 } from '../../Common/Math';
+import { b2ShapeDef } from './b2ShapeDef';
+import { b2Shape } from './b2Shape';
 
 /// This structure is used to build circle shapes.
-export class b2CircleDef extends b2ShapeDef
-{
-	constructor()
-	{
+export class b2CircleDef extends b2ShapeDef {
+	constructor() {
 		super();
 
 		this.type = b2Shape.e_circleShape;
 		this.radius = 1.0;
 	}
 
-	public localPosition:b2Vec2 = new b2Vec2(0.0, 0.0);
-	public radius:number;
+	public localPosition: b2Vec2 = new b2Vec2(0.0, 0.0);
+	public radius: number;
 }

@@ -1,5 +1,4 @@
 
-
 /**
  * Make Shumway bug-for-bug compatible with Tamarin.
  */

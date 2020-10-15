@@ -16,20 +16,17 @@
 * 3. This notice may not be removed or altered from any source distribution.
 */
 
-import { b2XForm, b2Vec2 } from "../Common/Math";
+import { b2XForm, b2Vec2 } from '../Common/Math';
 
 // This is used for polygon-vs-circle distance.
-export class b2Point
-{
-	public Support(xf:b2XForm, vX:number, vY:number) : b2Vec2
-	{
+export class b2Point {
+	public Support(xf: b2XForm, vX: number, vY: number): b2Vec2 {
 		return this.p;
 	}
 
-	public GetFirstVertex(xf:b2XForm) : b2Vec2
-	{
+	public GetFirstVertex(xf: b2XForm): b2Vec2 {
 		return this.p;
 	}
-	
-	public p:b2Vec2 = new b2Vec2();
+
+	public p: b2Vec2 = new b2Vec2();
 }

@@ -1,5 +1,4 @@
 
-
 export function axIsTypeString(x): boolean {
-    return typeof x === "string";
-  }
+	return typeof x === 'string';
+}

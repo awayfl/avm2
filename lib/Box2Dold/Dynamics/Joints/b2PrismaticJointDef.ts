@@ -16,14 +16,12 @@
 * 3. This notice may not be removed or altered from any source distribution.
 */
 
-import { b2JointDef, b2Joint } from "../Joints";
-import { b2Body } from "../b2Body";
-import { b2Vec2 } from "../../Common/Math";
+import { b2JointDef, b2Joint } from '../Joints';
+import { b2Body } from '../b2Body';
+import { b2Vec2 } from '../../Common/Math';
 
-export class b2PrismaticJointDef extends b2JointDef
-{
-	constructor()
-	{
+export class b2PrismaticJointDef extends b2JointDef {
+	constructor() {
 		super();
 
 		this.type = b2Joint.e_prismaticJoint;
@@ -38,9 +36,8 @@ export class b2PrismaticJointDef extends b2JointDef
 		this.maxMotorForce = 0.0;
 		this.motorSpeed = 0.0;
 	}
-	
-	public Initialize(b1:b2Body, b2:b2Body, anchor:b2Vec2, axis:b2Vec2) : void
-	{
+
+	public Initialize(b1: b2Body, b2: b2Body, anchor: b2Vec2, axis: b2Vec2): void {
 		this.body1 = b1;
 		this.body2 = b2;
 		this.localAnchor1 = this.body1.GetLocalPoint(anchor);
@@ -50,32 +47,32 @@ export class b2PrismaticJointDef extends b2JointDef
 	}
 
 	/// The local anchor point relative to body1's origin.
-	public localAnchor1:b2Vec2 = new b2Vec2();
+	public localAnchor1: b2Vec2 = new b2Vec2();
 
 	/// The local anchor point relative to body2's origin.
-	public localAnchor2:b2Vec2 = new b2Vec2();
+	public localAnchor2: b2Vec2 = new b2Vec2();
 
 	/// The local translation axis in body1.
-	public localAxis1:b2Vec2 = new b2Vec2();
+	public localAxis1: b2Vec2 = new b2Vec2();
 
 	/// The constrained angle between the bodies: body2_angle - body1_angle.
-	public referenceAngle:number;
+	public referenceAngle: number;
 
 	/// Enable/disable the joint limit.
-	public enableLimit:boolean;
+	public enableLimit: boolean;
 
 	/// The lower translation limit, usually in meters.
-	public lowerTranslation:number;
+	public lowerTranslation: number;
 
 	/// The upper translation limit, usually in meters.
-	public upperTranslation:number;
+	public upperTranslation: number;
 
 	/// Enable/disable the joint motor.
-	public enableMotor:boolean;
+	public enableMotor: boolean;
 
 	/// The maximum motor torque, usually in N-m.
-	public maxMotorForce:number;
+	public maxMotorForce: number;
 
 	/// The desired motor speed in radians per second.
-	public motorSpeed:number;
+	public motorSpeed: number;
 }

@@ -1,3 +1,3 @@
-import { ScopeStack } from "../int";
+import { ScopeStack } from '../int';
 
 export var scopeStacks: ScopeStack[] = [];

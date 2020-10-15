@@ -16,20 +16,19 @@
 * 3. This notice may not be removed or altered from any source distribution.
 */
 
-import { b2Vec2 } from "../../Common/Math";
+import { b2Vec2 } from '../../Common/Math';
 
-export class b2ContactConstraintPoint
-{
-	public localAnchor1:b2Vec2=new b2Vec2();
-	public localAnchor2:b2Vec2=new b2Vec2();
-	public r1:b2Vec2=new b2Vec2();
-	public r2:b2Vec2=new b2Vec2();
-	public normalImpulse:number;
-	public tangentImpulse:number;
-	public positionImpulse:number;
-	public normalMass:number;
-	public tangentMass:number;
-	public equalizedMass:number;
-	public separation:number;
-	public velocityBias:number;
+export class b2ContactConstraintPoint {
+	public localAnchor1: b2Vec2=new b2Vec2();
+	public localAnchor2: b2Vec2=new b2Vec2();
+	public r1: b2Vec2=new b2Vec2();
+	public r2: b2Vec2=new b2Vec2();
+	public normalImpulse: number;
+	public tangentImpulse: number;
+	public positionImpulse: number;
+	public normalMass: number;
+	public tangentMass: number;
+	public equalizedMass: number;
+	public separation: number;
+	public velocityBias: number;
 }

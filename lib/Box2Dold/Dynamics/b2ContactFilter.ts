@@ -16,29 +16,27 @@
 * 3. This notice may not be removed or altered from any source distribution.
 */
 
-import { b2FilterData } from "../Collision/Shapes/b2FilterData";
-import { b2Shape } from "../Collision/Shapes/b2Shape";
+import { b2FilterData } from '../Collision/Shapes/b2FilterData';
+import { b2Shape } from '../Collision/Shapes/b2Shape';
 
 /// Implement this class to provide collision filtering. In other words, you can implement
 /// this class if you want finer control over contact creation.
-export class b2ContactFilter
-{
+export class b2ContactFilter {
 
 	/// Return true if contact calculations should be performed between these two shapes.
 	/// @warning for performance reasons this is only called when the AABBs begin to overlap.
-	public ShouldCollide(shape1:b2Shape, shape2:b2Shape) : boolean{
-		var filter1:b2FilterData = shape1.GetFilterData();
-		var filter2:b2FilterData = shape2.GetFilterData();
-		
-		if (filter1.groupIndex == filter2.groupIndex && filter1.groupIndex != 0)
-		{
+	public ShouldCollide(shape1: b2Shape, shape2: b2Shape): boolean {
+		const filter1: b2FilterData = shape1.GetFilterData();
+		const filter2: b2FilterData = shape2.GetFilterData();
+
+		if (filter1.groupIndex == filter2.groupIndex && filter1.groupIndex != 0) {
 			return filter1.groupIndex > 0;
 		}
-		
-		var collide:boolean = (filter1.maskBits & filter2.categoryBits) != 0 && (filter1.categoryBits & filter2.maskBits) != 0;
+
+		const collide: boolean = (filter1.maskBits & filter2.categoryBits) != 0 && (filter1.categoryBits & filter2.maskBits) != 0;
 		return collide;
 	}
-	
-	public static b2_defaultFilter:b2ContactFilter = new b2ContactFilter();
-	
+
+	public static b2_defaultFilter: b2ContactFilter = new b2ContactFilter();
+
 }

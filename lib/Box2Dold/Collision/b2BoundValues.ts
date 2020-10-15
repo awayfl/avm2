@@ -16,7 +16,7 @@
 * 3. This notice may not be removed or altered from any source distribution.
 */
 
-export class b2BoundValues{
-	public lowerValues:number[] = [0,0];
-	public upperValues:number[] = [0,0];
+export class b2BoundValues {
+	public lowerValues: number[] = [0,0];
+	public upperValues: number[] = [0,0];
 }

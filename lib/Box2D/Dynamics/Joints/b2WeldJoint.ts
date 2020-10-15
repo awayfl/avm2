@@ -1,8 +1,8 @@
-﻿import { b2Joint, b2WeldJointDef } from "../Joints";
-import { b2Vec2, b2Vec3, b2Mat33, b2Math, b2Mat22 } from "../../Common/Math";
-import { b2Settings } from "../../Common/b2Settings";
-import { b2Body } from "../b2Body";
-import { b2TimeStep } from "../b2TimeStep";
+﻿import { b2Joint, b2WeldJointDef } from '../Joints';
+import { b2Vec2, b2Vec3, b2Mat33, b2Math, b2Mat22 } from '../../Common/Math';
+import { b2Settings } from '../../Common/b2Settings';
+import { b2Body } from '../b2Body';
+import { b2TimeStep } from '../b2TimeStep';
 
 // Point-to-point constraint
 // Cdot = v2 - v1
@@ -20,36 +20,33 @@ import { b2TimeStep } from "../b2TimeStep";
  * A weld joint essentially glues two bodies together. A weld joint may
  * distort somewhat because the island constraint solver is approximate.
  */
-export class b2WeldJoint extends b2Joint
-{
+export class b2WeldJoint extends b2Joint {
 	/** @inheritDoc */
-	public GetAnchorA():b2Vec2{
+	public GetAnchorA(): b2Vec2 {
 		return this.m_bodyA.GetWorldPoint(this.m_localAnchorA);
 	}
+
 	/** @inheritDoc */
-	public GetAnchorB():b2Vec2{
+	public GetAnchorB(): b2Vec2 {
 		return this.m_bodyB.GetWorldPoint(this.m_localAnchorB);
 	}
-	
+
 	/** @inheritDoc */
-	public GetReactionForce(inv_dt:number):b2Vec2
-	{
+	public GetReactionForce(inv_dt: number): b2Vec2 {
 		return new b2Vec2(inv_dt * this.m_impulse.x, inv_dt * this.m_impulse.y);
 	}
 
 	/** @inheritDoc */
-	public GetReactionTorque(inv_dt:number):number
-	{
+	public GetReactionTorque(inv_dt: number): number {
 		return inv_dt * this.m_impulse.z;
 	}
-	
+
 	//--------------- Internals Below -------------------
 
 	/** @private */
-	constructor(def:b2WeldJointDef)
-	{
+	constructor(def: b2WeldJointDef) {
 		super(def);
-		
+
 		this.m_localAnchorA.SetV(def.localAnchorA);
 		this.m_localAnchorB.SetV(def.localAnchorB);
 		this.m_referenceAngle = def.referenceAngle;
@@ -58,25 +55,25 @@ export class b2WeldJoint extends b2Joint
 		this.m_mass = new b2Mat33();
 	}
 
-	public InitVelocityConstraints(step:b2TimeStep) : void {
-		var tMat:b2Mat22;
-		var tX:number;
-		
-		var bA:b2Body = this.m_bodyA;
-		var bB:b2Body= this.m_bodyB;
+	public InitVelocityConstraints(step: b2TimeStep): void {
+		let tMat: b2Mat22;
+		let tX: number;
+
+		const bA: b2Body = this.m_bodyA;
+		const bB: b2Body = this.m_bodyB;
 
 		// Compute the effective mass matrix.
 		//b2Vec2 rA = b2Mul(bA->m_xf.R, m_localAnchorA - bA->GetLocalCenter());
 		tMat = bA.m_xf.R;
-		var rAX:number = this.m_localAnchorA.x - bA.m_sweep.localCenter.x;
-		var rAY:number = this.m_localAnchorA.y - bA.m_sweep.localCenter.y;
+		let rAX: number = this.m_localAnchorA.x - bA.m_sweep.localCenter.x;
+		let rAY: number = this.m_localAnchorA.y - bA.m_sweep.localCenter.y;
 		tX =  (tMat.col1.x * rAX + tMat.col2.x * rAY);
 		rAY = (tMat.col1.y * rAX + tMat.col2.y * rAY);
 		rAX = tX;
 		//b2Vec2 rB = b2Mul(bB->m_xf.R, m_localAnchorB - bB->GetLocalCenter());
 		tMat = bB.m_xf.R;
-		var rBX:number = this.m_localAnchorB.x - bB.m_sweep.localCenter.x;
-		var rBY:number = this.m_localAnchorB.y - bB.m_sweep.localCenter.y;
+		let rBX: number = this.m_localAnchorB.x - bB.m_sweep.localCenter.x;
+		let rBY: number = this.m_localAnchorB.y - bB.m_sweep.localCenter.y;
 		tX =  (tMat.col1.x * rBX + tMat.col2.x * rBY);
 		rBY = (tMat.col1.y * rBX + tMat.col2.y * rBY);
 		rBX = tX;
@@ -90,11 +87,11 @@ export class b2WeldJoint extends b2Joint
 		//     [  -r1y*iA*r1x-r2y*iB*r2x, mA+r1x^2*iA+mB+r2x^2*iB,           r1x*iA+r2x*iB]
 		//     [          -r1y*iA-r2y*iB,           r1x*iA+r2x*iB,                   iA+iB]
 
-		var mA:number = bA.m_invMass
-		var mB:number = bB.m_invMass;
-		var iA:number = bA.m_invI
-		var iB:number = bB.m_invI;
-		
+		const mA: number = bA.m_invMass;
+		const mB: number = bB.m_invMass;
+		const iA: number = bA.m_invI;
+		const iB: number = bB.m_invI;
+
 		this.m_mass.col1.x = mA + mB + rAY * rAY * iA + rBY * rBY * iB;
 		this.m_mass.col2.x = -rAY * rAX * iA - rBY * rBX * iB;
 		this.m_mass.col3.x = -rAY * iA - rBY * iB;
@@ -104,9 +101,8 @@ export class b2WeldJoint extends b2Joint
 		this.m_mass.col1.z = this.m_mass.col3.x;
 		this.m_mass.col2.z = this.m_mass.col3.y;
 		this.m_mass.col3.z = iA + iB;
-		
-		if (step.warmStarting)
-		{
+
+		if (step.warmStarting) {
 			// Scale impulses to support a variable time step.
 			this.m_impulse.x *= step.dtRatio;
 			this.m_impulse.y *= step.dtRatio;
@@ -119,59 +115,54 @@ export class b2WeldJoint extends b2Joint
 			bB.m_linearVelocity.x += mB * this.m_impulse.x;
 			bB.m_linearVelocity.y += mB * this.m_impulse.y;
 			bB.m_angularVelocity += iB * (rBX * this.m_impulse.y - rBY * this.m_impulse.x + this.m_impulse.z);
-		}
-		else
-		{
+		} else {
 			this.m_impulse.SetZero();
 		}
 
 	}
-	
-	
-	
-	public SolveVelocityConstraints(step:b2TimeStep): void{
+
+	public SolveVelocityConstraints(step: b2TimeStep): void{
 		//B2_NOT_USED(step);
-		var tMat:b2Mat22;
-		var tX:number;
+		let tMat: b2Mat22;
+		let tX: number;
 
-		var bA:b2Body = this.m_bodyA;
-		var bB:b2Body= this.m_bodyB;
+		const bA: b2Body = this.m_bodyA;
+		const bB: b2Body = this.m_bodyB;
 
-		var vA:b2Vec2 = bA.m_linearVelocity;
-		var wA:number = bA.m_angularVelocity;
-		var vB:b2Vec2 = bB.m_linearVelocity;
-		var wB:number = bB.m_angularVelocity;
+		const vA: b2Vec2 = bA.m_linearVelocity;
+		let wA: number = bA.m_angularVelocity;
+		const vB: b2Vec2 = bB.m_linearVelocity;
+		let wB: number = bB.m_angularVelocity;
 
-		var mA:number = bA.m_invMass
-		var mB:number = bB.m_invMass;
-		var iA:number = bA.m_invI
-		var iB:number = bB.m_invI;
+		const mA: number = bA.m_invMass;
+		const mB: number = bB.m_invMass;
+		const iA: number = bA.m_invI;
+		const iB: number = bB.m_invI;
 
 		//b2Vec2 rA = b2Mul(bA->m_xf.R, m_localAnchorA - bA->GetLocalCenter());
 		tMat = bA.m_xf.R;
-		var rAX:number = this.m_localAnchorA.x - bA.m_sweep.localCenter.x;
-		var rAY:number = this.m_localAnchorA.y - bA.m_sweep.localCenter.y;
+		let rAX: number = this.m_localAnchorA.x - bA.m_sweep.localCenter.x;
+		let rAY: number = this.m_localAnchorA.y - bA.m_sweep.localCenter.y;
 		tX =  (tMat.col1.x * rAX + tMat.col2.x * rAY);
 		rAY = (tMat.col1.y * rAX + tMat.col2.y * rAY);
 		rAX = tX;
 		//b2Vec2 rB = b2Mul(bB->m_xf.R, m_localAnchorB - bB->GetLocalCenter());
 		tMat = bB.m_xf.R;
-		var rBX:number = this.m_localAnchorB.x - bB.m_sweep.localCenter.x;
-		var rBY:number = this.m_localAnchorB.y - bB.m_sweep.localCenter.y;
+		let rBX: number = this.m_localAnchorB.x - bB.m_sweep.localCenter.x;
+		let rBY: number = this.m_localAnchorB.y - bB.m_sweep.localCenter.y;
 		tX =  (tMat.col1.x * rBX + tMat.col2.x * rBY);
 		rBY = (tMat.col1.y * rBX + tMat.col2.y * rBY);
 		rBX = tX;
 
-		
 		// Solve point-to-point constraint
-		var Cdot1X:number = vB.x - wB * rBY - vA.x + wA * rAY;
-		var Cdot1Y:number = vB.y + wB * rBX - vA.y - wA * rAX;
-		var Cdot2:number = wB - wA;
-		var impulse:b2Vec3 = new b2Vec3();
+		const Cdot1X: number = vB.x - wB * rBY - vA.x + wA * rAY;
+		const Cdot1Y: number = vB.y + wB * rBX - vA.y - wA * rAX;
+		const Cdot2: number = wB - wA;
+		const impulse: b2Vec3 = new b2Vec3();
 		this.m_mass.Solve33(impulse, -Cdot1X, -Cdot1Y, -Cdot2);
-		
+
 		this.m_impulse.Add(impulse);
-		
+
 		vA.x -= mA * impulse.x;
 		vA.y -= mA * impulse.y;
 		wA -= iA * (rAX * impulse.y - rAY * impulse.x + impulse.z);
@@ -187,28 +178,27 @@ export class b2WeldJoint extends b2Joint
 		bB.m_angularVelocity = wB;
 
 	}
-	
-	public SolvePositionConstraints(baumgarte:number):boolean
-	{
+
+	public SolvePositionConstraints(baumgarte: number): boolean {
 		//B2_NOT_USED(baumgarte);
-				var tMat:b2Mat22;
-		var tX:number;
-		
-		var bA:b2Body = this.m_bodyA;
-		var bB:b2Body= this.m_bodyB;
+		let tMat: b2Mat22;
+		let tX: number;
+
+		const bA: b2Body = this.m_bodyA;
+		const bB: b2Body = this.m_bodyB;
 
 		// Compute the effective mass matrix.
 		//b2Vec2 rA = b2Mul(bA->m_xf.R, m_localAnchorA - bA->GetLocalCenter());
 		tMat = bA.m_xf.R;
-		var rAX:number = this.m_localAnchorA.x - bA.m_sweep.localCenter.x;
-		var rAY:number = this.m_localAnchorA.y - bA.m_sweep.localCenter.y;
+		let rAX: number = this.m_localAnchorA.x - bA.m_sweep.localCenter.x;
+		let rAY: number = this.m_localAnchorA.y - bA.m_sweep.localCenter.y;
 		tX =  (tMat.col1.x * rAX + tMat.col2.x * rAY);
 		rAY = (tMat.col1.y * rAX + tMat.col2.y * rAY);
 		rAX = tX;
 		//b2Vec2 rB = b2Mul(bB->m_xf.R, m_localAnchorB - bB->GetLocalCenter());
 		tMat = bB.m_xf.R;
-		var rBX:number = this.m_localAnchorB.x - bB.m_sweep.localCenter.x;
-		var rBY:number = this.m_localAnchorB.y - bB.m_sweep.localCenter.y;
+		let rBX: number = this.m_localAnchorB.x - bB.m_sweep.localCenter.x;
+		let rBY: number = this.m_localAnchorB.y - bB.m_sweep.localCenter.y;
 		tX =  (tMat.col1.x * rBX + tMat.col2.x * rBY);
 		rBY = (tMat.col1.y * rBX + tMat.col2.y * rBY);
 		rBX = tX;
@@ -222,26 +212,25 @@ export class b2WeldJoint extends b2Joint
 		//     [  -r1y*iA*r1x-r2y*iB*r2x, mA+r1x^2*iA+mB+r2x^2*iB,           r1x*iA+r2x*iB]
 		//     [          -r1y*iA-r2y*iB,           r1x*iA+r2x*iB,                   iA+iB]
 
-		var mA:number = bA.m_invMass
-		var mB:number = bB.m_invMass;
-		var iA:number = bA.m_invI
-		var iB:number = bB.m_invI;
-		
+		const mA: number = bA.m_invMass;
+		const mB: number = bB.m_invMass;
+		let iA: number = bA.m_invI;
+		let iB: number = bB.m_invI;
+
 		//b2Vec2 C1 =  bB->this.m_sweep.c + rB - bA->this.m_sweep.c - rA;
-		var C1X:number =  bB.m_sweep.c.x + rBX - bA.m_sweep.c.x - rAX;
-		var C1Y:number =  bB.m_sweep.c.y + rBY - bA.m_sweep.c.y - rAY;
-		var C2:number = bB.m_sweep.a - bA.m_sweep.a - this.m_referenceAngle;
+		const C1X: number =  bB.m_sweep.c.x + rBX - bA.m_sweep.c.x - rAX;
+		const C1Y: number =  bB.m_sweep.c.y + rBY - bA.m_sweep.c.y - rAY;
+		const C2: number = bB.m_sweep.a - bA.m_sweep.a - this.m_referenceAngle;
 
 		// Handle large detachment.
-		var k_allowedStretch:number = 10.0 * b2Settings.b2_linearSlop;
-		var positionError:number = Math.sqrt(C1X * C1X + C1Y * C1Y);
-		var angularError:number = b2Math.Abs(C2);
-		if (positionError > k_allowedStretch)
-		{
+		const k_allowedStretch: number = 10.0 * b2Settings.b2_linearSlop;
+		const positionError: number = Math.sqrt(C1X * C1X + C1Y * C1Y);
+		const angularError: number = b2Math.Abs(C2);
+		if (positionError > k_allowedStretch) {
 			iA *= 1.0;
 			iB *= 1.0;
 		}
-		
+
 		this.m_mass.col1.x = mA + mB + rAY * rAY * iA + rBY * rBY * iB;
 		this.m_mass.col2.x = -rAY * rAX * iA - rBY * rBX * iB;
 		this.m_mass.col3.x = -rAY * iA - rBY * iB;
@@ -251,10 +240,9 @@ export class b2WeldJoint extends b2Joint
 		this.m_mass.col1.z = this.m_mass.col3.x;
 		this.m_mass.col2.z = this.m_mass.col3.y;
 		this.m_mass.col3.z = iA + iB;
-		
-		var impulse:b2Vec3 = new b2Vec3();
+
+		const impulse: b2Vec3 = new b2Vec3();
 		this.m_mass.Solve33(impulse, -C1X, -C1Y, -C2);
-		
 
 		bA.m_sweep.c.x -= mA * impulse.x;
 		bA.m_sweep.c.y -= mA * impulse.y;
@@ -271,10 +259,10 @@ export class b2WeldJoint extends b2Joint
 
 	}
 
-	private m_localAnchorA:b2Vec2 = new b2Vec2();
-	private m_localAnchorB:b2Vec2 = new b2Vec2();
-	private m_referenceAngle:number;
-	
-	private m_impulse:b2Vec3 = new b2Vec3();
-	private m_mass:b2Mat33 = new b2Mat33();
+	private m_localAnchorA: b2Vec2 = new b2Vec2();
+	private m_localAnchorB: b2Vec2 = new b2Vec2();
+	private m_referenceAngle: number;
+
+	private m_impulse: b2Vec3 = new b2Vec3();
+	private m_mass: b2Mat33 = new b2Mat33();
 }

@@ -16,22 +16,21 @@
 * 3. This notice may not be removed or altered from any source distribution.
 */
 
-import { b2ContactID } from "./b2ContactID";
-import { b2Shape } from "./Shapes/b2Shape";
-import { b2Vec2 } from "../Common/Math";
+import { b2ContactID } from './b2ContactID';
+import { b2Shape } from './Shapes/b2Shape';
+import { b2Vec2 } from '../Common/Math';
 
 /// This structure is used to report contact points.
-export class b2ContactPoint
-{
+export class b2ContactPoint {
 	readonly __fast__ = true;
 
-	public shape1:b2Shape;						///< the first shape
-	public shape2:b2Shape;						///< the second shape
-	public position:b2Vec2 = new b2Vec2();		///< position in world coordinates
-	public velocity:b2Vec2 = new b2Vec2();		///< velocity of point on body2 relative to point on body1 (pre-solver)
-	public normal:b2Vec2 = new b2Vec2();		///< points from shape1 to shape2
-	public separation:number;					///< the separation is negative when shapes are touching
-	public friction:number;						///< the combined friction coefficient
-	public restitution:number;					///< the combined restitution coefficient
-	public id:b2ContactID = new b2ContactID();	///< the contact id identifies the features in contact
+	public shape1: b2Shape;						///< the first shape
+	public shape2: b2Shape;						///< the second shape
+	public position: b2Vec2 = new b2Vec2();		///< position in world coordinates
+	public velocity: b2Vec2 = new b2Vec2();		///< velocity of point on body2 relative to point on body1 (pre-solver)
+	public normal: b2Vec2 = new b2Vec2();		///< points from shape1 to shape2
+	public separation: number;					///< the separation is negative when shapes are touching
+	public friction: number;						///< the combined friction coefficient
+	public restitution: number;					///< the combined restitution coefficient
+	public id: b2ContactID = new b2ContactID();	///< the contact id identifies the features in contact
 }

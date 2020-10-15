@@ -16,17 +16,14 @@
 * 3. This notice may not be removed or altered from any source distribution.
 */
 
-import { b2Vec2, b2Mat22 } from "../Math";
+import { b2Vec2, b2Mat22 } from '../Math';
 
-	
 /// A transform contains translation and rotation. It is used to represent
 /// the position and orientation of rigid frames.
-export class b2XForm
-{
+export class b2XForm {
 	/// The default constructor does nothing (for performance).
-	constructor(pos:b2Vec2=null, r:b2Mat22=null) 
-	{
-		if (pos){
+	constructor(pos: b2Vec2 = null, r: b2Mat22 = null) {
+		if (pos) {
 			this.position.SetV(pos);
 			this.R.SetM(r);
 
@@ -34,22 +31,18 @@ export class b2XForm
 	}
 
 	/// Initialize using a position vector and a rotation matrix.
-	public Initialize(pos:b2Vec2, r:b2Mat22) : void 
-	{
+	public Initialize(pos: b2Vec2, r: b2Mat22): void {
 		this.position.SetV(pos);
 		this.R.SetM(r);
 	}
 
 	/// Set this to the identity transform.
-	public SetIdentity() : void
-	{
+	public SetIdentity(): void {
 		this.position.SetZero();
 		this.R.SetIdentity();
 	}
 
-	
-
-	public Set(x:b2XForm) : void{
+	public Set(x: b2XForm): void{
 
 		this.position.SetV(x.position);
 
@@ -57,6 +50,6 @@ export class b2XForm
 
 	}
 
-	public position:b2Vec2 = new b2Vec2();
-	public R:b2Mat22 = new b2Mat22();
+	public position: b2Vec2 = new b2Vec2();
+	public R: b2Mat22 = new b2Mat22();
 }

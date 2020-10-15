@@ -15,51 +15,44 @@
 * misrepresented as being the original software.
 * 3. This notice may not be removed or altered from any source distribution.
 */
-import { b2XForm, b2Mat22, b2Vec2 } from "../Math";
+import { b2XForm, b2Mat22, b2Vec2 } from '../Math';
 
-	
-	
 /// This describes the motion of a body/shape for TOI computation.
 /// Shapes are defined with respect to the body origin, which may
 /// no coincide with the center of mass. However, to support dynamics
 /// we must interpolate the center of mass position.
-export class b2Sweep
-{
+export class b2Sweep {
 	__fast__ = true;
 
 	/// Get the interpolated transform at a specific time.
 	/// @param t the normalized time in [0,1].
-	public GetXForm(xf:b2XForm, t:number) : void{
-		
+	public GetXForm(xf: b2XForm, t: number): void{
+
 		// center = p + R * localCenter
-		if (1.0 - this.t0 > Number.MIN_VALUE)
-		{
-			var alpha:number = (t - this.t0) / (1.0 - this.t0);
+		if (1.0 - this.t0 > Number.MIN_VALUE) {
+			const alpha: number = (t - this.t0) / (1.0 - this.t0);
 			xf.position.x = (1.0 - alpha) * this.c0.x + alpha * this.c.x;
 			xf.position.y = (1.0 - alpha) * this.c0.y + alpha * this.c.y;
-			var angle:number = (1.0 - alpha) * this.a0 + alpha * this.a;
+			const angle: number = (1.0 - alpha) * this.a0 + alpha * this.a;
 			xf.R.Set(angle);
-		}
-		else
-		{
+		} else {
 			xf.position.SetV(this.c);
 			xf.R.Set(this.a);
 		}
-		
+
 		// Shift to origin
 		//xf->position -= b2Mul(xf->R, localCenter);
-		var tMat:b2Mat22 = xf.R;
+		const tMat: b2Mat22 = xf.R;
 		xf.position.x -= (tMat.col1.x * this.localCenter.x + tMat.col2.x * this.localCenter.y);
 		xf.position.y -= (tMat.col1.y * this.localCenter.x + tMat.col2.y * this.localCenter.y);
-		
+
 	}
 
 	/// Advance the sweep forward, yielding a new initial state.
 	/// @param t the new initial time.
-	public Advance(t:number) : void{
-		if (this.t0 < t && 1.0 - this.t0 > Number.MIN_VALUE)
-		{
-			var alpha:number = (t - this.t0) / (1.0 - this.t0);
+	public Advance(t: number): void{
+		if (this.t0 < t && 1.0 - this.t0 > Number.MIN_VALUE) {
+			const alpha: number = (t - this.t0) / (1.0 - this.t0);
 			//c0 = (1.0f - alpha) * c0 + alpha * c;
 			this.c0.x = (1.0 - alpha) * this.c0.x + alpha * this.c.x;
 			this.c0.y = (1.0 - alpha) * this.c0.y + alpha * this.c.y;
@@ -68,10 +61,10 @@ export class b2Sweep
 		}
 	}
 
-	public localCenter:b2Vec2 = new b2Vec2();	///< local center of mass position
-	public c0:b2Vec2 = new b2Vec2();				///< center world positions
-	public c:b2Vec2 = new b2Vec2();
-	public a0:number
-	public a:number;					///< world angles
-	public t0:number;							///< time interval = [t0,1], where t0 is in [0,1]
+	public localCenter: b2Vec2 = new b2Vec2();	///< local center of mass position
+	public c0: b2Vec2 = new b2Vec2();				///< center world positions
+	public c: b2Vec2 = new b2Vec2();
+	public a0: number
+	public a: number;					///< world angles
+	public t0: number;							///< time interval = [t0,1], where t0 is in [0,1]
 }

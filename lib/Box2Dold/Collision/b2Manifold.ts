@@ -16,37 +16,39 @@
 * 3. This notice may not be removed or altered from any source distribution.
 */
 
-import { b2Settings } from "../Common/b2Settings";
-import { b2ManifoldPoint } from "./b2ManifoldPoint";
-import { b2Vec2 } from "../Common/Math";
+import { b2Settings } from '../Common/b2Settings';
+import { b2ManifoldPoint } from './b2ManifoldPoint';
+import { b2Vec2 } from '../Common/Math';
 
 // A manifold for two touching convex shapes.
-export class b2Manifold
-{
+export class b2Manifold {
 	readonly __fast__ = true;
 
-	constructor(){
+	constructor() {
 		this.points = new Array(b2Settings.b2_maxManifoldPoints);
-		for (var i:number /** int */ = 0; i < b2Settings.b2_maxManifoldPoints; i++){
+		for (let i: number /** int */ = 0; i < b2Settings.b2_maxManifoldPoints; i++) {
 			this.points[i] = new b2ManifoldPoint();
 		}
 		this.normal = new b2Vec2();
 	}
-	public Reset() : void{
-		for (var i:number /** int */ = 0; i < b2Settings.b2_maxManifoldPoints; i++){
+
+	public Reset(): void{
+		for (let i: number /** int */ = 0; i < b2Settings.b2_maxManifoldPoints; i++) {
 			(this.points[i] as b2ManifoldPoint).Reset();
 		}
 		this.normal.SetZero();
 		this.pointCount = 0;
 	}
-	public Set(m:b2Manifold) : void{
+
+	public Set(m: b2Manifold): void{
 		this.pointCount = m.pointCount;
-		for (var i:number /** int */ = 0; i < b2Settings.b2_maxManifoldPoints; i++){
+		for (let i: number /** int */ = 0; i < b2Settings.b2_maxManifoldPoints; i++) {
 			(this.points[i] as b2ManifoldPoint).Set(m.points[i]);
 		}
 		this.normal.SetV(m.normal);
 	}
-	public points:b2ManifoldPoint[];	///< the points of contact
-	public normal:b2Vec2;	///< the shared unit normal vector
-	public pointCount:number /** int */ = 0;	///< the number of manifold points
+
+	public points: b2ManifoldPoint[];	///< the points of contact
+	public normal: b2Vec2;	///< the shared unit normal vector
+	public pointCount: number /** int */ = 0;	///< the number of manifold points
 }

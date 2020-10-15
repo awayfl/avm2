@@ -1,14 +1,13 @@
-import { release } from "@awayfl/swf-loader";
-import { assert } from "@awayjs/graphics";
-import { isValidASValue } from "./initializeAXBasePrototype";
+import { release } from '@awayfl/swf-loader';
+import { assert } from '@awayjs/graphics';
+import { isValidASValue } from './initializeAXBasePrototype';
 
 export function checkValue(value: any) {
-    if (!release) {
-      if (!isValidASValue(value)) {
-        // Stringifying the value is potentially costly, so only do it if necessary,
-        // even in debug mode.
-        assert(false, "Value: " + value + " is not allowed to flow into AS3.");
-      }
-    }
-  }
-  
+	if (!release) {
+		if (!isValidASValue(value)) {
+			// Stringifying the value is potentially costly, so only do it if necessary,
+			// even in debug mode.
+			assert(false, 'Value: ' + value + ' is not allowed to flow into AS3.');
+		}
+	}
+}

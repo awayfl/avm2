@@ -16,11 +16,10 @@
 * 3. This notice may not be removed or altered from any source distribution.
 */
 
-import { b2Vec2 } from "../Common/Math";
-import { b2ContactID } from "./b2ContactID";
+import { b2Vec2 } from '../Common/Math';
+import { b2ContactID } from './b2ContactID';
 
-export class ClipVertex
-{
-	public v:b2Vec2 = new b2Vec2();
-	public id:b2ContactID = new b2ContactID();
+export class ClipVertex {
+	public v: b2Vec2 = new b2Vec2();
+	public id: b2ContactID = new b2ContactID();
 }

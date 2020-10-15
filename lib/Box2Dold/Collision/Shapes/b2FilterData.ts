@@ -17,18 +17,17 @@
 */
 
 /// This holds contact filtering data.
-export class b2FilterData
-{
+export class b2FilterData {
 	__fast__ = true;
 
-	public Copy() : b2FilterData {
-		var copy: b2FilterData = new b2FilterData();
+	public Copy(): b2FilterData {
+		const copy: b2FilterData = new b2FilterData();
 		copy.categoryBits = this.categoryBits;
 		copy.maskBits = this.maskBits;
 		copy.groupIndex = this.groupIndex;
 		return copy;
 	}
-	
+
 	/// The collision category bits. Normally you would just set one bit.
 	public categoryBits: number /** uint */ = 0x0001;
 

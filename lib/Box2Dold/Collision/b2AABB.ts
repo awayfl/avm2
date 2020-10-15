@@ -16,21 +16,20 @@
 * 3. This notice may not be removed or altered from any source distribution.
 */
 
-import { b2Vec2 } from "../Common/Math";
+import { b2Vec2 } from '../Common/Math';
 
 // A manifold for two touching convex shapes.
-export class b2AABB
-{
+export class b2AABB {
 	/// Verify that the bounds are sorted.
-	public IsValid():boolean{
+	public IsValid(): boolean {
 		//b2Vec2 d = upperBound - lowerBound;;
-		var dX:number = this.upperBound.x - this.lowerBound.x;
-		var dY:number = this.upperBound.y - this.lowerBound.y;
-		var valid:boolean = dX >= 0.0 && dY >= 0.0;
+		const dX: number = this.upperBound.x - this.lowerBound.x;
+		const dY: number = this.upperBound.y - this.lowerBound.y;
+		let valid: boolean = dX >= 0.0 && dY >= 0.0;
 		valid = valid && this.lowerBound.IsValid() && this.upperBound.IsValid();
 		return valid;
 	}
 
-	public lowerBound:b2Vec2 = new b2Vec2();	///< the lower vertex
-	public upperBound:b2Vec2 = new b2Vec2();	///< the upper vertex
+	public lowerBound: b2Vec2 = new b2Vec2();	///< the lower vertex
+	public upperBound: b2Vec2 = new b2Vec2();	///< the upper vertex
 }

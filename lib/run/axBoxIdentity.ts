@@ -1,4 +1,4 @@
 
 export function axBoxIdentity(args) {
-    return args[0];
-  }
+	return args[0];
+}

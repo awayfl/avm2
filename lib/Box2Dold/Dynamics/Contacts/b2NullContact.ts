@@ -16,13 +16,12 @@
 * 3. This notice may not be removed or altered from any source distribution.
 */
 
-import { b2Contact } from "./b2Contact";
-import { b2ContactListener } from "../b2ContactListener";
-import { b2Manifold } from "../../Collision/b2Manifold";
+import { b2Contact } from './b2Contact';
+import { b2ContactListener } from '../b2ContactListener';
+import { b2Manifold } from '../../Collision/b2Manifold';
 
-export class b2NullContact extends b2Contact
-{
+export class b2NullContact extends b2Contact {
 	public b2NullContact() {}
-	public Evaluate(l:b2ContactListener): void {}
-	public GetManifolds():b2Manifold[] { return null; }
+	public Evaluate(l: b2ContactListener): void {}
+	public GetManifolds(): b2Manifold[] { return null; }
 }

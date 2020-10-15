@@ -16,7 +16,7 @@
 * 3. This notice may not be removed or altered from any source distribution.
 */
 
-export class b2BufferedPair{
-	public proxyId1:number /** uint */;
-	public proxyId2:number /** uint */;
+export class b2BufferedPair {
+	public proxyId1: number /** uint */;
+	public proxyId2: number /** uint */;
 }

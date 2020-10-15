@@ -16,14 +16,13 @@
 * 3. This notice may not be removed or altered from any source distribution.
 */
 
-export class b2PairCallback
-{
+export class b2PairCallback {
 	//virtual ~b2PairCallback() {}
 
 	// This returns the new pair user data.
-	public PairAdded(proxyUserData1:any, proxyUserData2:any):any{return null};
+	public PairAdded(proxyUserData1: any, proxyUserData2: any): any {return null;}
 
 	// This should free the pair's user data. In extreme circumstances, it is possible
 	// this will be called with null pairUserData because the pair never existed.
-	public PairRemoved(proxyUserData1:any, proxyUserData2:any, pairUserData:any) : void{};
+	public PairRemoved(proxyUserData1: any, proxyUserData2: any, pairUserData: any): void{}
 }

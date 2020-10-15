@@ -1,35 +1,31 @@
-﻿import { b2DistanceProxy } from "./b2DistanceProxy";
-import { b2Transform, b2Vec2, b2Math } from "../Common/Math";
-import { b2Settings } from "../Common/b2Settings";
-import { b2SimplexVertex } from "./b2SimplexVertex";
-import { b2SimplexCache } from "./b2SimplexCache";
+﻿import { b2DistanceProxy } from './b2DistanceProxy';
+import { b2Transform, b2Vec2, b2Math } from '../Common/Math';
+import { b2Settings } from '../Common/b2Settings';
+import { b2SimplexVertex } from './b2SimplexVertex';
+import { b2SimplexCache } from './b2SimplexCache';
 
-export class b2Simplex
-{
+export class b2Simplex {
 	__fast__: boolean = true;
-		
-	constructor()
-	{
+
+	constructor() {
 		this.m_vertices[0] = this.m_v1;
 		this.m_vertices[1] = this.m_v2;
 		this.m_vertices[2] = this.m_v3;
 	}
 
-	public ReadCache(cache:b2SimplexCache, 
-				proxyA:b2DistanceProxy, transformA:b2Transform,
-				proxyB:b2DistanceProxy, transformB:b2Transform):void
-	{
+	public ReadCache(cache: b2SimplexCache,
+		proxyA: b2DistanceProxy, transformA: b2Transform,
+		proxyB: b2DistanceProxy, transformB: b2Transform): void {
 		b2Settings.b2Assert(0 <= cache.count && cache.count <= 3);
-		
-		var wALocal:b2Vec2;
-		var wBLocal:b2Vec2;
-		
+
+		let wALocal: b2Vec2;
+		let wBLocal: b2Vec2;
+
 		// Copy data from cache.
 		this.m_count = cache.count;
-		var vertices:Array<b2SimplexVertex> = this.m_vertices;
-		for (var i:number /** int */ = 0; i < this.m_count; i++)
-		{
-			var v:b2SimplexVertex = vertices[i];
+		const vertices: Array<b2SimplexVertex> = this.m_vertices;
+		for (let i: number /** int */ = 0; i < this.m_count; i++) {
+			var v: b2SimplexVertex = vertices[i];
 			v.indexA = cache.indexA[i];
 			v.indexB = cache.indexB[i];
 			wALocal = proxyA.GetVertex(v.indexA);
@@ -39,23 +35,20 @@ export class b2Simplex
 			v.w = b2Math.SubtractVV(v.wB, v.wA);
 			v.a = 0;
 		}
-		
+
 		// Compute the new simplex metric, if it substantially different than
 		// old metric then flush the simplex
-		if (this.m_count > 1)
-		{
-			var metric1:number = cache.metric;
-			var metric2:number = this.GetMetric();
-			if (metric2 < .5 * metric1 || 2.0 * metric1 < metric2 || metric2 < Number.MIN_VALUE)
-			{
+		if (this.m_count > 1) {
+			const metric1: number = cache.metric;
+			const metric2: number = this.GetMetric();
+			if (metric2 < .5 * metric1 || 2.0 * metric1 < metric2 || metric2 < Number.MIN_VALUE) {
 				// Reset the simplex
 				this.m_count = 0;
 			}
 		}
-		
+
 		// If the cache is empty or invalid
-		if (this.m_count == 0)
-		{
+		if (this.m_count == 0) {
 			v = vertices[0];
 			v.indexA = 0;
 			v.indexB = 0;
@@ -68,48 +61,41 @@ export class b2Simplex
 		}
 	}
 
-	public WriteCache(cache:b2SimplexCache):void
-	{
+	public WriteCache(cache: b2SimplexCache): void {
 		cache.metric = this.GetMetric();
 		cache.count = this.m_count >>> 0;
-		var vertices:Array<b2SimplexVertex> = this.m_vertices;
-		for (var i:number /** int */ = 0; i < this.m_count; i++)
-		{
+		const vertices: Array<b2SimplexVertex> = this.m_vertices;
+		for (let i: number /** int */ = 0; i < this.m_count; i++) {
 			cache.indexA[i] = vertices[i].indexA;
 			cache.indexB[i] = vertices[i].indexB;
 		}
 	}
 
-	public GetSearchDirection():b2Vec2
-	{
-		switch(this.m_count)
-		{
+	public GetSearchDirection(): b2Vec2 {
+		switch (this.m_count) {
 			case 1:
 				return this.m_v1.w.GetNegative();
-				
+
 			case 2:
 			{
-				var e12:b2Vec2 = b2Math.SubtractVV(this.m_v2.w, this.m_v1.w);
-				var sgn:number = b2Math.CrossVV(e12, this.m_v1.w.GetNegative());
-				if (sgn > 0.0)
-				{
+				const e12: b2Vec2 = b2Math.SubtractVV(this.m_v2.w, this.m_v1.w);
+				const sgn: number = b2Math.CrossVV(e12, this.m_v1.w.GetNegative());
+				if (sgn > 0.0) {
 					// Origin is left of e12.
 					return b2Math.CrossFV(1.0, e12);
-				}else {
+				} else {
 					// Origin is right of e12.
 					return b2Math.CrossVF(e12, 1.0);
 				}
 			}
 			default:
-			b2Settings.b2Assert(false);
-			return new b2Vec2();
+				b2Settings.b2Assert(false);
+				return new b2Vec2();
 		}
 	}
 
-	public GetClosestPoint():b2Vec2
-	{
-		switch(this.m_count)
-		{
+	public GetClosestPoint(): b2Vec2 {
+		switch (this.m_count) {
 			case 0:
 				b2Settings.b2Assert(false);
 				return new b2Vec2();
@@ -125,10 +111,8 @@ export class b2Simplex
 		}
 	}
 
-	public GetWitnessPoints(pA:b2Vec2, pB:b2Vec2):void
-	{
-		switch(this.m_count)
-		{
+	public GetWitnessPoints(pA: b2Vec2, pB: b2Vec2): void {
+		switch (this.m_count) {
 			case 0:
 				b2Settings.b2Assert(false);
 				break;
@@ -152,26 +136,24 @@ export class b2Simplex
 		}
 	}
 
-	public GetMetric():number
-	{
-		switch (this.m_count)
-		{
-		case 0:
-			b2Settings.b2Assert(false);
-			return 0.0;
+	public GetMetric(): number {
+		switch (this.m_count) {
+			case 0:
+				b2Settings.b2Assert(false);
+				return 0.0;
 
-		case 1:
-			return 0.0;
+			case 1:
+				return 0.0;
 
-		case 2:
-			return b2Math.SubtractVV(this.m_v1.w, this.m_v2.w).Length();
+			case 2:
+				return b2Math.SubtractVV(this.m_v1.w, this.m_v2.w).Length();
 
-		case 3:
-			return b2Math.CrossVV(b2Math.SubtractVV(this.m_v2.w, this.m_v1.w),b2Math.SubtractVV(this.m_v3.w, this.m_v1.w));
+			case 3:
+				return b2Math.CrossVV(b2Math.SubtractVV(this.m_v2.w, this.m_v1.w),b2Math.SubtractVV(this.m_v3.w, this.m_v1.w));
 
-		default:
-			b2Settings.b2Assert(false);
-			return 0.0;
+			default:
+				b2Settings.b2Assert(false);
+				return 0.0;
 		}
 	}
 
@@ -198,95 +180,89 @@ export class b2Simplex
 	// Solution
 	// a1 = d12_1 / d12
 	// a2 = d12_2 / d12
-	public Solve2():void
-	{
-		var w1:b2Vec2 = this.m_v1.w;
-		var w2:b2Vec2 = this.m_v2.w;
-		var e12:b2Vec2 = b2Math.SubtractVV(w2, w1);
-		
+	public Solve2(): void {
+		const w1: b2Vec2 = this.m_v1.w;
+		const w2: b2Vec2 = this.m_v2.w;
+		const e12: b2Vec2 = b2Math.SubtractVV(w2, w1);
+
 		// w1 region
-		var d12_2:number = -(w1.x * e12.x + w1.y * e12.y);
-		if (d12_2 <= 0.0)
-		{
+		const d12_2: number = -(w1.x * e12.x + w1.y * e12.y);
+		if (d12_2 <= 0.0) {
 			// a2 <= 0, so we clamp it to 0
 			this.m_v1.a = 1.0;
 			this.m_count = 1;
 			return;
 		}
-		
+
 		// w2 region
-		var d12_1:number = (w2.x * e12.x + w2.y * e12.y);
-		if (d12_1 <= 0.0)
-		{
+		const d12_1: number = (w2.x * e12.x + w2.y * e12.y);
+		if (d12_1 <= 0.0) {
 			// a1 <= 0, so we clamp it to 0
 			this.m_v2.a = 1.0;
 			this.m_count = 1;
 			this.m_v1.Set(this.m_v2);
 			return;
 		}
-		
+
 		// Must be in e12 region.
-		var inv_d12:number = 1.0 / (d12_1 + d12_2);
+		const inv_d12: number = 1.0 / (d12_1 + d12_2);
 		this.m_v1.a = d12_1 * inv_d12;
 		this.m_v2.a = d12_2 * inv_d12;
 		this.m_count = 2;
 	}
 
-	public Solve3():void
-	{
-		var w1:b2Vec2 = this.m_v1.w;
-		var w2:b2Vec2 = this.m_v2.w;
-		var w3:b2Vec2 = this.m_v3.w;
-		
+	public Solve3(): void {
+		const w1: b2Vec2 = this.m_v1.w;
+		const w2: b2Vec2 = this.m_v2.w;
+		const w3: b2Vec2 = this.m_v3.w;
+
 		// Edge12
 		// [1      1     ][a1] = [1]
 		// [w1.e12 w2.e12][a2] = [0]
 		// a3 = 0
-		var e12:b2Vec2 = b2Math.SubtractVV(w2, w1);
-		var w1e12:number = b2Math.Dot(w1, e12);
-		var w2e12:number = b2Math.Dot(w2, e12);
-		var d12_1:number = w2e12;
-		var d12_2:number = -w1e12;
+		const e12: b2Vec2 = b2Math.SubtractVV(w2, w1);
+		const w1e12: number = b2Math.Dot(w1, e12);
+		const w2e12: number = b2Math.Dot(w2, e12);
+		const d12_1: number = w2e12;
+		const d12_2: number = -w1e12;
 
 		// Edge13
 		// [1      1     ][a1] = [1]
 		// [w1.e13 w3.e13][a3] = [0]
 		// a2 = 0
-		var e13:b2Vec2 = b2Math.SubtractVV(w3, w1);
-		var w1e13:number = b2Math.Dot(w1, e13);
-		var w3e13:number = b2Math.Dot(w3, e13);
-		var d13_1:number = w3e13;
-		var d13_2:number = -w1e13;
+		const e13: b2Vec2 = b2Math.SubtractVV(w3, w1);
+		const w1e13: number = b2Math.Dot(w1, e13);
+		const w3e13: number = b2Math.Dot(w3, e13);
+		const d13_1: number = w3e13;
+		const d13_2: number = -w1e13;
 
 		// Edge23
 		// [1      1     ][a2] = [1]
 		// [w2.e23 w3.e23][a3] = [0]
 		// a1 = 0
-		var e23:b2Vec2 = b2Math.SubtractVV(w3, w2);
-		var w2e23:number = b2Math.Dot(w2, e23);
-		var w3e23:number = b2Math.Dot(w3, e23);
-		var d23_1:number = w3e23;
-		var d23_2:number = -w2e23;
-		
-		// Triangle123
-		var n123:number = b2Math.CrossVV(e12, e13);
+		const e23: b2Vec2 = b2Math.SubtractVV(w3, w2);
+		const w2e23: number = b2Math.Dot(w2, e23);
+		const w3e23: number = b2Math.Dot(w3, e23);
+		const d23_1: number = w3e23;
+		const d23_2: number = -w2e23;
 
-		var d123_1:number = n123 * b2Math.CrossVV(w2, w3);
-		var d123_2:number = n123 * b2Math.CrossVV(w3, w1);
-		var d123_3:number = n123 * b2Math.CrossVV(w1, w2);
+		// Triangle123
+		const n123: number = b2Math.CrossVV(e12, e13);
+
+		const d123_1: number = n123 * b2Math.CrossVV(w2, w3);
+		const d123_2: number = n123 * b2Math.CrossVV(w3, w1);
+		const d123_3: number = n123 * b2Math.CrossVV(w1, w2);
 
 		// w1 region
-		if (d12_2 <= 0.0 && d13_2 <= 0.0)
-		{
+		if (d12_2 <= 0.0 && d13_2 <= 0.0) {
 			this.m_v1.a = 1.0;
 			this.m_count = 1;
 			return;
 		}
 
 		// e12
-		if (d12_1 > 0.0 && d12_2 > 0.0 && d123_3 <= 0.0)
-		{
-			var inv_d12:number = 1.0 / (d12_1 + d12_2);
+		if (d12_1 > 0.0 && d12_2 > 0.0 && d123_3 <= 0.0) {
+			const inv_d12: number = 1.0 / (d12_1 + d12_2);
 			this.m_v1.a = d12_1 * inv_d12;
 			this.m_v2.a = d12_2 * inv_d12;
 			this.m_count = 2;
@@ -294,9 +270,8 @@ export class b2Simplex
 		}
 
 		// e13
-		if (d13_1 > 0.0 && d13_2 > 0.0 && d123_2 <= 0.0)
-		{
-			var inv_d13:number = 1.0 / (d13_1 + d13_2);
+		if (d13_1 > 0.0 && d13_2 > 0.0 && d123_2 <= 0.0) {
+			const inv_d13: number = 1.0 / (d13_1 + d13_2);
 			this.m_v1.a = d13_1 * inv_d13;
 			this.m_v3.a = d13_2 * inv_d13;
 			this.m_count = 2;
@@ -305,8 +280,7 @@ export class b2Simplex
 		}
 
 		// w2 region
-		if (d12_1 <= 0.0 && d23_2 <= 0.0)
-		{
+		if (d12_1 <= 0.0 && d23_2 <= 0.0) {
 			this.m_v2.a = 1.0;
 			this.m_count = 1;
 			this.m_v1.Set(this.m_v2);
@@ -314,8 +288,7 @@ export class b2Simplex
 		}
 
 		// w3 region
-		if (d13_1 <= 0.0 && d23_1 <= 0.0)
-		{
+		if (d13_1 <= 0.0 && d23_1 <= 0.0) {
 			this.m_v3.a = 1.0;
 			this.m_count = 1;
 			this.m_v1.Set(this.m_v3);
@@ -323,9 +296,8 @@ export class b2Simplex
 		}
 
 		// e23
-		if (d23_1 > 0.0 && d23_2 > 0.0 && d123_1 <= 0.0)
-		{
-			var inv_d23:number = 1.0 / (d23_1 + d23_2);
+		if (d23_1 > 0.0 && d23_2 > 0.0 && d123_1 <= 0.0) {
+			const inv_d23: number = 1.0 / (d23_1 + d23_2);
 			this.m_v2.a = d23_1 * inv_d23;
 			this.m_v3.a = d23_2 * inv_d23;
 			this.m_count = 2;
@@ -334,16 +306,16 @@ export class b2Simplex
 		}
 
 		// Must be in triangle123
-		var inv_d123:number = 1.0 / (d123_1 + d123_2 + d123_3);
+		const inv_d123: number = 1.0 / (d123_1 + d123_2 + d123_3);
 		this.m_v1.a = d123_1 * inv_d123;
 		this.m_v2.a = d123_2 * inv_d123;
 		this.m_v3.a = d123_3 * inv_d123;
 		this.m_count = 3;
 	}
 
-	public m_v1:b2SimplexVertex = new b2SimplexVertex();
-	public m_v2:b2SimplexVertex = new b2SimplexVertex();
-	public m_v3:b2SimplexVertex = new b2SimplexVertex();
-	public m_vertices:Array<b2SimplexVertex> = new Array<b2SimplexVertex>(3);
-	public m_count:number /** int */;
+	public m_v1: b2SimplexVertex = new b2SimplexVertex();
+	public m_v2: b2SimplexVertex = new b2SimplexVertex();
+	public m_v3: b2SimplexVertex = new b2SimplexVertex();
+	public m_vertices: Array<b2SimplexVertex> = new Array<b2SimplexVertex>(3);
+	public m_count: number /** int */;
 }

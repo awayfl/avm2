@@ -16,19 +16,18 @@
 * 3. This notice may not be removed or altered from any source distribution.
 */
 
-import { b2BroadPhase } from "./b2BroadPhase";
+import { b2BroadPhase } from './b2BroadPhase';
 
-	
-export class b2Proxy{
-	public GetNext():number /** uint */ { return this.lowerBounds[0]; }
-	public SetNext(next:number /** uint */) : void { this.lowerBounds[0] = next & 0x0000ffff; }
+export class b2Proxy {
+	public GetNext(): number /** uint */ { return this.lowerBounds[0]; }
+	public SetNext(next: number /** uint */): void { this.lowerBounds[0] = next & 0x0000ffff; }
 
-	public IsValid():boolean { return this.overlapCount != b2BroadPhase.b2_invalid; }
+	public IsValid(): boolean { return this.overlapCount != b2BroadPhase.b2_invalid; }
 
-	public lowerBounds:number[] = [0, 0];
-	public upperBounds:number[] = [0, 0];
-	public overlapCount:number /** uint */;
-	public timeStamp:number /** uint */;
-	
-	public userData:any = null;
+	public lowerBounds: number[] = [0, 0];
+	public upperBounds: number[] = [0, 0];
+	public overlapCount: number /** uint */;
+	public timeStamp: number /** uint */;
+
+	public userData: any = null;
 }

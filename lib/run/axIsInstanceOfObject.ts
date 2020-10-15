@@ -1,5 +1,4 @@
 
-
 export function axIsInstanceOfObject(x: any) {
-    return this.dPrototype.isPrototypeOf(this.sec.box(x));
-  }
+	return this.dPrototype.isPrototypeOf(this.sec.box(x));
+}

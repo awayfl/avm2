@@ -16,14 +16,13 @@
 * 3. This notice may not be removed or altered from any source distribution.
 */
 
-import { b2Body } from "./b2Body";
+import { b2Body } from './b2Body';
 
 /// This is called when a body's shape passes outside of the world boundary.
-export class b2BoundaryListener
-{
+export class b2BoundaryListener {
 
 	/// This is called for each body that leaves the world boundary.
 	/// @warning you can't modify the world inside this callback.
-	public Violation(body:b2Body) : void{};
-	
+	public Violation(body: b2Body): void{}
+
 }

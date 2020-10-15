@@ -1,5 +1,4 @@
 
-
 export function axIsCallable(value): boolean {
-    return (value && typeof value.axApply === 'function');
-  }
+	return (value && typeof value.axApply === 'function');
+}

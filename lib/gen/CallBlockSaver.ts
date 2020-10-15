@@ -1,4 +1,4 @@
-import { Multiname } from "../abc/lazy/Multiname";
+import { Multiname } from '../abc/lazy/Multiname';
 
 /**
  * @description Generate safe instruction for null block usage
@@ -11,13 +11,13 @@ export class CallBlockSaver {
 		return false;
 	}
 
-	markToSafe( mn: Multiname) {
+	markToSafe(mn: Multiname) {
 		return this._needSafe = this.test(mn);
 	}
 
 	drop() {
 		// we can drop already used block
-		if(this._used) {
+		if (this._used) {
 			return;
 		}
 		this._needSafe = false;
@@ -25,7 +25,7 @@ export class CallBlockSaver {
 	}
 
 	safe(alias: string) {
-		this._block = {alias};
+		this._block = { alias };
 		this._used = false;
 		return true;
 	}
@@ -35,8 +35,8 @@ export class CallBlockSaver {
 	}
 
 	beginSafeBlock(alias: string) {
-		if(!this.needSafe(alias)) {
-			return "";
+		if (!this.needSafe(alias)) {
+			return '';
 		}
 
 		this._used = true;
@@ -44,11 +44,11 @@ export class CallBlockSaver {
 	}
 
 	endSafeBlock(fallback?: string) {
-		if(!this._used) {
-			return "";
+		if (!this._used) {
+			return '';
 		}
-		
-		const result = fallback ? `} else { ${this._block.alias} = ${fallback}; }` : "}";
+
+		const result = fallback ? `} else { ${this._block.alias} = ${fallback}; }` : '}';
 
 		this._used = false;
 		this._block = undefined;
@@ -64,6 +64,6 @@ export class CallBlockSaver {
 
 export class TweenCallSaver extends CallBlockSaver {
 	test(mn: Multiname) {
-		return mn.namespaces && mn.namespace?.uri && mn.namespace.uri.includes("TweenLite");
-	}	
+		return mn.namespaces && mn.namespace?.uri && mn.namespace.uri.includes('TweenLite');
+	}
 }

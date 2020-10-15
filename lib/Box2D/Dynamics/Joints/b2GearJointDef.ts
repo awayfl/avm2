@@ -1,4 +1,4 @@
-﻿import { b2JointDef, b2Joint } from "../Joints";
+﻿import { b2JointDef, b2Joint } from '../Joints';
 
 /**
 * Gear joint definition. This definition requires two existing
@@ -6,10 +6,8 @@
 * The provided joints must attach a dynamic body to a static body.
 * @see b2GearJoint
 */
-export class b2GearJointDef extends b2JointDef
-{
-	constructor()
-	{
+export class b2GearJointDef extends b2JointDef {
+	constructor() {
 		super();
 
 		this.type = b2Joint.e_gearJoint;
@@ -21,14 +19,14 @@ export class b2GearJointDef extends b2JointDef
 	/**
 	* The first revolute/prismatic joint attached to the gear joint.
 	*/
-	public joint1:b2Joint;
+	public joint1: b2Joint;
 	/**
 	* The second revolute/prismatic joint attached to the gear joint.
 	*/
-	public joint2:b2Joint;
+	public joint2: b2Joint;
 	/**
 	* The gear ratio.
 	* @see b2GearJoint for explanation.
 	*/
-	public ratio:number;
+	public ratio: number;
 }

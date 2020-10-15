@@ -1,6 +1,6 @@
-﻿import { b2Body } from "../b2Body";
-import { b2Vec2 } from "../../Common/Math";
-import { b2JointDef, b2Joint } from "../Joints";
+﻿import { b2Body } from '../b2Body';
+import { b2Vec2 } from '../../Common/Math';
+import { b2JointDef, b2Joint } from '../Joints';
 
 /**
 * Prismatic joint definition. This requires defining a line of
@@ -11,10 +11,8 @@ import { b2JointDef, b2Joint } from "../Joints";
 * anchors and a local axis helps when saving and loading a game.
 * @see b2PrismaticJoint
 */
-export class b2PrismaticJointDef extends b2JointDef
-{
-	constructor()
-	{
+export class b2PrismaticJointDef extends b2JointDef {
+	constructor() {
 		super();
 
 		this.type = b2Joint.e_prismaticJoint;
@@ -29,9 +27,8 @@ export class b2PrismaticJointDef extends b2JointDef
 		this.maxMotorForce = 0.0;
 		this.motorSpeed = 0.0;
 	}
-	
-	public Initialize(bA:b2Body, bB:b2Body, anchor:b2Vec2, axis:b2Vec2) : void
-	{
+
+	public Initialize(bA: b2Body, bB: b2Body, anchor: b2Vec2, axis: b2Vec2): void {
 		this.bodyA = bA;
 		this.bodyB = bB;
 		this.localAnchorA = this.bodyA.GetLocalPoint(anchor);
@@ -43,50 +40,50 @@ export class b2PrismaticJointDef extends b2JointDef
 	/**
 	* The local anchor point relative to bodyA's origin.
 	*/
-	public localAnchorA:b2Vec2 = new b2Vec2();
+	public localAnchorA: b2Vec2 = new b2Vec2();
 
 	/**
 	* The local anchor point relative to bodyB's origin.
 	*/
-	public localAnchorB:b2Vec2 = new b2Vec2();
+	public localAnchorB: b2Vec2 = new b2Vec2();
 
 	/**
 	* The local translation axis in body1.
 	*/
-	public localAxisA:b2Vec2 = new b2Vec2();
+	public localAxisA: b2Vec2 = new b2Vec2();
 
 	/**
 	* The constrained angle between the bodies: bodyB_angle - bodyA_angle.
 	*/
-	public referenceAngle:number;
+	public referenceAngle: number;
 
 	/**
 	* Enable/disable the joint limit.
 	*/
-	public enableLimit:boolean;
+	public enableLimit: boolean;
 
 	/**
 	* The lower translation limit, usually in meters.
 	*/
-	public lowerTranslation:number;
+	public lowerTranslation: number;
 
 	/**
 	* The upper translation limit, usually in meters.
 	*/
-	public upperTranslation:number;
+	public upperTranslation: number;
 
 	/**
 	* Enable/disable the joint motor.
 	*/
-	public enableMotor:boolean;
+	public enableMotor: boolean;
 
 	/**
 	* The maximum motor torque, usually in N-m.
 	*/
-	public maxMotorForce:number;
+	public maxMotorForce: number;
 
 	/**
 	* The desired motor speed in radians per second.
 	*/
-	public motorSpeed:number;
+	public motorSpeed: number;
 }

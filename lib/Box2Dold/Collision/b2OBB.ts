@@ -16,12 +16,11 @@
 * 3. This notice may not be removed or altered from any source distribution.
 */
 
-import { b2Mat22, b2Vec2 } from "../Common/Math";
+import { b2Mat22, b2Vec2 } from '../Common/Math';
 
 /// An oriented bounding box.
-export class b2OBB
-{
-	public R:b2Mat22 = new b2Mat22();		///< the rotation matrix
-	public center:b2Vec2 = new b2Vec2();	///< the local centroid
-	public extents:b2Vec2 = new b2Vec2();	///< the half-widths
+export class b2OBB {
+	public R: b2Mat22 = new b2Mat22();		///< the rotation matrix
+	public center: b2Vec2 = new b2Vec2();	///< the local centroid
+	public extents: b2Vec2 = new b2Vec2();	///< the half-widths
 }

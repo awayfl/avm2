@@ -38,18 +38,18 @@ export class Stat {
 	static begin(name: string) {
 		const now = performance.now();
 		this._currentTask = {
-			name, 
-			start: now, 
-			droped: false, 
-		}
+			name,
+			start: now,
+			droped: false,
+		};
 
-		if(this._firstCompilerRun < 0) {
+		if (this._firstCompilerRun < 0) {
 			this._firstCompilerRun = now;
 		}
 	}
 
 	static drop() {
-		if(!this._currentTask) {
+		if (!this._currentTask) {
 			return;
 		}
 
@@ -58,8 +58,8 @@ export class Stat {
 	}
 
 	static end() {
-		if(!this._currentTask) {
-			return
+		if (!this._currentTask) {
+			return;
 		}
 
 		const now = performance.now();
@@ -67,24 +67,24 @@ export class Stat {
 		const delta = now - start;
 		const sr = this.statRecords;
 
-		if(now - this._lastCompilerStop < this.TASK_DELAY) {
+		if (now - this._lastCompilerStop < this.TASK_DELAY) {
 			this._taskBathTime += delta;
 		} else {
 			this._taskBathTime = 0;
 		}
 
-		sr.runs ++;
+		sr.runs++;
 		sr.drops += +this._currentTask.droped;
 		sr.totalCompileTime += delta;
 		sr.minCompileTime = sr.minCompileTime > delta ? delta : sr.minCompileTime;
 		sr.maxCompileTime = sr.minCompileTime < delta ? delta : sr.minCompileTime;
 		sr.overhead = 100 * sr.totalCompileTime / (this._lastCompilerStop - this._firstCompilerRun);
-	
-		sr.maxCompilerBatchTime = 
-			this._taskBathTime > sr.maxCompilerBatchTime 
-			? this._taskBathTime 
-			: sr.maxCompilerBatchTime;
-		
+
+		sr.maxCompilerBatchTime =
+			this._taskBathTime > sr.maxCompilerBatchTime
+				? this._taskBathTime
+				: sr.maxCompilerBatchTime;
+
 		this._lastCompilerStop = now;
 		this._currentTask = null;
 	}
@@ -98,7 +98,7 @@ export class Stat {
 			totalCompileTime: -0,
 			maxCompilerTaskTime: -Number.MAX_VALUE,
 			overhead: 0
-		})
+		});
 		this._currentTask = null;
 		this._taskBathTime = 0;
 	}

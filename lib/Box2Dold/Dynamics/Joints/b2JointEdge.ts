@@ -16,8 +16,8 @@
 * 3. This notice may not be removed or altered from any source distribution.
 */
 
-import { b2Joint } from "../Joints";
-import { b2Body } from "../b2Body";
+import { b2Joint } from '../Joints';
+import { b2Body } from '../b2Body';
 
 /// A joint edge is used to connect bodies and joints together
 /// in a joint graph where each body is a node and each joint
@@ -25,12 +25,11 @@ import { b2Body } from "../b2Body";
 /// maintained in each attached body. Each joint has two joint
 /// nodes, one for each attached body.
 
-export class b2JointEdge
-{
+export class b2JointEdge {
 
-	public other:b2Body;		///< provides quick access to the other body attached.
-	public joint:b2Joint;		///< the joint
-	public prev:b2JointEdge;	///< the previous joint edge in the body's joint list
-	public next:b2JointEdge;	///< the next joint edge in the body's joint list
-	
+	public other: b2Body;		///< provides quick access to the other body attached.
+	public joint: b2Joint;		///< the joint
+	public prev: b2JointEdge;	///< the previous joint edge in the body's joint list
+	public next: b2JointEdge;	///< the next joint edge in the body's joint list
+
 }

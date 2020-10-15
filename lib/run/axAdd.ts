@@ -1,7 +1,7 @@
-import { AXSecurityDomain } from "./AXSecurityDomain";
-import { release } from "@awayfl/swf-loader";
-import { assert } from "@awayjs/graphics";
-import { isXMLCollection, ASXMLList } from "../natives/xml";
+import { AXSecurityDomain } from './AXSecurityDomain';
+import { release } from '@awayfl/swf-loader';
+import { assert } from '@awayjs/graphics';
+import { isXMLCollection, ASXMLList } from '../natives/xml';
 
 /**
  * ActionScript 3 has different behaviour when deciding whether to call toString or valueOf
@@ -12,12 +12,12 @@ import { isXMLCollection, ASXMLList } from "../natives/xml";
  * AS3 also overloads the `+` operator to concatenate XMLs/XMLLists instead of stringifying them.
  */
 export function axAdd(l: any, r: any, sec: AXSecurityDomain): any {
-    release || assert(!(typeof l === "number" && typeof r === "number"), 'Inline number addition.');
-    if (typeof l === "string" || typeof r === "string") {
-      return String(l) + String(r);
-    }
-    if (isXMLCollection(sec, l) && isXMLCollection(sec, r)) {
-      return ASXMLList.addXML(l, r);
-    }
-    return l + r;
-  }
+	release || assert(!(typeof l === 'number' && typeof r === 'number'), 'Inline number addition.');
+	if (typeof l === 'string' || typeof r === 'string') {
+		return String(l) + String(r);
+	}
+	if (isXMLCollection(sec, l) && isXMLCollection(sec, r)) {
+		return ASXMLList.addXML(l, r);
+	}
+	return l + r;
+}

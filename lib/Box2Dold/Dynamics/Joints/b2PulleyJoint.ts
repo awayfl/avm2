@@ -16,99 +16,92 @@
 * 3. This notice may not be removed or altered from any source distribution.
 */
 
-import { b2Joint, b2PulleyJointDef } from "../Joints";
-import { b2Vec2, b2Math, b2Mat22 } from "../../Common/Math";
-import { b2Body } from "../b2Body";
-import { b2TimeStep } from "../b2TimeStep";
-import { b2Settings } from "../../Common/b2Settings";
+import { b2Joint, b2PulleyJointDef } from '../Joints';
+import { b2Vec2, b2Math, b2Mat22 } from '../../Common/Math';
+import { b2Body } from '../b2Body';
+import { b2TimeStep } from '../b2TimeStep';
+import { b2Settings } from '../../Common/b2Settings';
 
-	
 /// The pulley joint is connected to two bodies and two fixed ground points.
 /// The pulley supports a ratio such that:
 /// length1 + ratio * length2 <= constant
 /// Yes, the force transmitted is scaled by the ratio.
 /// The pulley also enforces a maximum length limit on both sides. This is
 /// useful to prevent one side of the pulley hitting the top.
-	
-export class b2PulleyJoint extends b2Joint
-{
-	public GetAnchor1():b2Vec2{
+
+export class b2PulleyJoint extends b2Joint {
+	public GetAnchor1(): b2Vec2 {
 		return this.m_body1.GetWorldPoint(this.m_localAnchor1);
 	}
-	public GetAnchor2():b2Vec2{
+
+	public GetAnchor2(): b2Vec2 {
 		return this.m_body2.GetWorldPoint(this.m_localAnchor2);
 	}
 
-	public GetReactionForce() :b2Vec2
-	{
+	public GetReactionForce(): b2Vec2 {
 		//b2Vec2 F = this.m_force * this.m_u2;
-		var F:b2Vec2 = this.m_u2.Copy();
+		const F: b2Vec2 = this.m_u2.Copy();
 		F.Multiply(this.m_force);
 		return F;
 	}
 
-	public GetReactionTorque() :number
-	{
+	public GetReactionTorque(): number {
 		return 0.0;
 	}
 
-	public GetGroundAnchor1() :b2Vec2
-	{
+	public GetGroundAnchor1(): b2Vec2 {
 		//return this.m_ground.m_xf.position + this.m_groundAnchor1;
-		var a:b2Vec2 = this.m_ground.m_xf.position.Copy();
+		const a: b2Vec2 = this.m_ground.m_xf.position.Copy();
 		a.Add(this.m_groundAnchor1);
 		return a;
 	}
 
-	public GetGroundAnchor2() :b2Vec2
-	{
+	public GetGroundAnchor2(): b2Vec2 {
 		//return this.m_ground.m_xf.position + this.m_groundAnchor2;
-		var a:b2Vec2 = this.m_ground.m_xf.position.Copy();
+		const a: b2Vec2 = this.m_ground.m_xf.position.Copy();
 		a.Add(this.m_groundAnchor2);
 		return a;
 	}
 
-	public GetLength1() :number
-	{
-		var p:b2Vec2 = this.m_body1.GetWorldPoint(this.m_localAnchor1);
+	public GetLength1(): number {
+		const p: b2Vec2 = this.m_body1.GetWorldPoint(this.m_localAnchor1);
 		//b2Vec2 s = this.m_ground->this.m_xf.position + this.m_groundAnchor1;
-		var sX:number = this.m_ground.m_xf.position.x + this.m_groundAnchor1.x;
-		var sY:number = this.m_ground.m_xf.position.y + this.m_groundAnchor1.y;
+		const sX: number = this.m_ground.m_xf.position.x + this.m_groundAnchor1.x;
+		const sY: number = this.m_ground.m_xf.position.y + this.m_groundAnchor1.y;
 		//b2Vec2 d = p - s;
-		var dX:number = p.x - sX;
-		var dY:number = p.y - sY;
+		const dX: number = p.x - sX;
+		const dY: number = p.y - sY;
 		//return d.Length();
-		return Math.sqrt(dX*dX + dY*dY);
+		return Math.sqrt(dX * dX + dY * dY);
 	}
 
-	public GetLength2() :number
-	{
-		var p:b2Vec2 = this.m_body2.GetWorldPoint(this.m_localAnchor2);
+	public GetLength2(): number {
+		const p: b2Vec2 = this.m_body2.GetWorldPoint(this.m_localAnchor2);
 		//b2Vec2 s = this.m_ground->this.m_xf.position + this.m_groundAnchor2;
-		var sX:number = this.m_ground.m_xf.position.x + this.m_groundAnchor2.x;
-		var sY:number = this.m_ground.m_xf.position.y + this.m_groundAnchor2.y;
+		const sX: number = this.m_ground.m_xf.position.x + this.m_groundAnchor2.x;
+		const sY: number = this.m_ground.m_xf.position.y + this.m_groundAnchor2.y;
 		//b2Vec2 d = p - s;
-		var dX:number = p.x - sX;
-		var dY:number = p.y - sY;
+		const dX: number = p.x - sX;
+		const dY: number = p.y - sY;
 		//return d.Length();
-		return Math.sqrt(dX*dX + dY*dY);
+		return Math.sqrt(dX * dX + dY * dY);
 	}
 
-	public GetRatio():number{
+	public GetRatio(): number {
 		return this.m_ratio;
 	}
 
 	//--------------- Internals Below -------------------
 
-	constructor(def:b2PulleyJointDef){
-		
+	constructor(def: b2PulleyJointDef) {
+
 		// parent
 		super(def);
-		
-		var tMat:b2Mat22;
-		var tX:number;
-		var tY:number;
-		
+
+		let tMat: b2Mat22;
+		let tX: number;
+		let tY: number;
+
 		this.m_ground = this.m_body1.m_world.m_groundBody;
 		//this.m_groundAnchor1 = def->groundAnchor1 - this.m_ground->this.m_xf.position;
 		this.m_groundAnchor1.x = def.groundAnchor1.x - this.m_ground.m_xf.position.x;
@@ -120,125 +113,110 @@ export class b2PulleyJoint extends b2Joint
 		this.m_localAnchor1.SetV(def.localAnchor1);
 		//this.m_localAnchor2 = def->localAnchor2;
 		this.m_localAnchor2.SetV(def.localAnchor2);
-		
+
 		//b2Settings.b2Assert(def.ratio != 0.0);
 		this.m_ratio = def.ratio;
-		
+
 		this.m_constant = def.length1 + this.m_ratio * def.length2;
-		
+
 		this.m_maxLength1 = b2Math.b2Min(def.maxLength1, this.m_constant - this.m_ratio * b2PulleyJoint.b2_minPulleyLength);
 		this.m_maxLength2 = b2Math.b2Min(def.maxLength2, (this.m_constant - b2PulleyJoint.b2_minPulleyLength) / this.m_ratio);
-		
+
 		this.m_force = 0.0;
 		this.m_limitForce1 = 0.0;
 		this.m_limitForce2 = 0.0;
-		
+
 	}
 
-	public InitVelocityConstraints(step:b2TimeStep) : void{
-		var b1:b2Body = this.m_body1;
-		var b2:b2Body = this.m_body2;
-		
-		var tMat:b2Mat22;
-		
+	public InitVelocityConstraints(step: b2TimeStep): void{
+		const b1: b2Body = this.m_body1;
+		const b2: b2Body = this.m_body2;
+
+		let tMat: b2Mat22;
+
 		//b2Vec2 r1 = b2Mul(b1->this.m_xf.R, this.m_localAnchor1 - b1->GetLocalCenter());
 		tMat = b1.m_xf.R;
-		var r1X:number = this.m_localAnchor1.x - b1.m_sweep.localCenter.x;
-		var r1Y:number = this.m_localAnchor1.y - b1.m_sweep.localCenter.y;
-		var tX:number =  (tMat.col1.x * r1X + tMat.col2.x * r1Y);
+		let r1X: number = this.m_localAnchor1.x - b1.m_sweep.localCenter.x;
+		let r1Y: number = this.m_localAnchor1.y - b1.m_sweep.localCenter.y;
+		let tX: number =  (tMat.col1.x * r1X + tMat.col2.x * r1Y);
 		r1Y = (tMat.col1.y * r1X + tMat.col2.y * r1Y);
 		r1X = tX;
 		//b2Vec2 r2 = b2Mul(b2->this.m_xf.R, this.m_localAnchor2 - b2->GetLocalCenter());
 		tMat = b2.m_xf.R;
-		var r2X:number = this.m_localAnchor2.x - b2.m_sweep.localCenter.x;
-		var r2Y:number = this.m_localAnchor2.y - b2.m_sweep.localCenter.y;
+		let r2X: number = this.m_localAnchor2.x - b2.m_sweep.localCenter.x;
+		let r2Y: number = this.m_localAnchor2.y - b2.m_sweep.localCenter.y;
 		tX =  (tMat.col1.x * r2X + tMat.col2.x * r2Y);
 		r2Y = (tMat.col1.y * r2X + tMat.col2.y * r2Y);
 		r2X = tX;
-		
+
 		//b2Vec2 p1 = b1->this.m_sweep.c + r1;
-		var p1X:number = b1.m_sweep.c.x + r1X;
-		var p1Y:number = b1.m_sweep.c.y + r1Y;
+		const p1X: number = b1.m_sweep.c.x + r1X;
+		const p1Y: number = b1.m_sweep.c.y + r1Y;
 		//b2Vec2 p2 = b2->this.m_sweep.c + r2;
-		var p2X:number = b2.m_sweep.c.x + r2X;
-		var p2Y:number = b2.m_sweep.c.y + r2Y;
-		
+		const p2X: number = b2.m_sweep.c.x + r2X;
+		const p2Y: number = b2.m_sweep.c.y + r2Y;
+
 		//b2Vec2 s1 = this.m_ground->this.m_xf.position + this.m_groundAnchor1;
-		var s1X:number = this.m_ground.m_xf.position.x + this.m_groundAnchor1.x;
-		var s1Y:number = this.m_ground.m_xf.position.y + this.m_groundAnchor1.y;
+		const s1X: number = this.m_ground.m_xf.position.x + this.m_groundAnchor1.x;
+		const s1Y: number = this.m_ground.m_xf.position.y + this.m_groundAnchor1.y;
 		//b2Vec2 s2 = this.m_ground->this.m_xf.position + this.m_groundAnchor2;
-		var s2X:number = this.m_ground.m_xf.position.x + this.m_groundAnchor2.x;
-		var s2Y:number = this.m_ground.m_xf.position.y + this.m_groundAnchor2.y;
-		
+		const s2X: number = this.m_ground.m_xf.position.x + this.m_groundAnchor2.x;
+		const s2Y: number = this.m_ground.m_xf.position.y + this.m_groundAnchor2.y;
+
 		// Get the pulley axes.
 		//this.m_u1 = p1 - s1;
 		this.m_u1.Set(p1X - s1X, p1Y - s1Y);
 		//this.m_u2 = p2 - s2;
 		this.m_u2.Set(p2X - s2X, p2Y - s2Y);
-		
-		var length1:number = this.m_u1.Length();
-		var length2:number = this.m_u2.Length();
-		
-		if (length1 > b2Settings.b2_linearSlop)
-		{
+
+		const length1: number = this.m_u1.Length();
+		const length2: number = this.m_u2.Length();
+
+		if (length1 > b2Settings.b2_linearSlop) {
 			//this.m_u1 *= 1.0f / length1;
 			this.m_u1.Multiply(1.0 / length1);
-		}
-		else
-		{
+		} else {
 			this.m_u1.SetZero();
 		}
-		
-		if (length2 > b2Settings.b2_linearSlop)
-		{
+
+		if (length2 > b2Settings.b2_linearSlop) {
 			//this.m_u2 *= 1.0f / length2;
 			this.m_u2.Multiply(1.0 / length2);
-		}
-		else
-		{
+		} else {
 			this.m_u2.SetZero();
 		}
-		
-		var C:number = this.m_constant - length1 - this.m_ratio * length2;
-		if (C > 0.0)
-		{
+
+		const C: number = this.m_constant - length1 - this.m_ratio * length2;
+		if (C > 0.0) {
 			this.m_state = b2PulleyJoint.e_inactiveLimit;
 			this.m_force = 0.0;
-		}
-		else
-		{
+		} else {
 			this.m_state = b2PulleyJoint.e_atUpperLimit;
 			this.m_positionImpulse = 0.0;
 		}
-		
-		if (length1 < this.m_maxLength1)
-		{
+
+		if (length1 < this.m_maxLength1) {
 			this.m_limitState1 = b2PulleyJoint.e_inactiveLimit;
 			this.m_limitForce1 = 0.0;
-		}
-		else
-		{
+		} else {
 			this.m_limitState1 = b2PulleyJoint.e_atUpperLimit;
 			this.m_limitPositionImpulse1 = 0.0;
 		}
-		
-		if (length2 < this.m_maxLength2)
-		{
+
+		if (length2 < this.m_maxLength2) {
 			this.m_limitState2 = b2PulleyJoint.e_inactiveLimit;
 			this.m_limitForce2 = 0.0;
-		}
-		else
-		{
+		} else {
 			this.m_limitState2 = b2PulleyJoint.e_atUpperLimit;
 			this.m_limitPositionImpulse2 = 0.0;
 		}
-		
+
 		// Compute effective mass.
 		//var cr1u1:number = b2Cross(r1, this.m_u1);
-		var cr1u1:number = r1X * this.m_u1.y - r1Y * this.m_u1.x;
+		const cr1u1: number = r1X * this.m_u1.y - r1Y * this.m_u1.x;
 		//var cr2u2:number = b2Cross(r2, this.m_u2);
-		var cr2u2:number = r2X * this.m_u2.y - r2Y * this.m_u2.x;
-		
+		const cr2u2: number = r2X * this.m_u2.y - r2Y * this.m_u2.x;
+
 		this.m_limitMass1 = b1.m_invMass + b1.m_invI * cr1u1 * cr1u1;
 		this.m_limitMass2 = b2.m_invMass + b2.m_invI * cr2u2 * cr2u2;
 		this.m_pulleyMass = this.m_limitMass1 + this.m_ratio * this.m_ratio * this.m_limitMass2;
@@ -248,18 +226,17 @@ export class b2PulleyJoint extends b2Joint
 		this.m_limitMass1 = 1.0 / this.m_limitMass1;
 		this.m_limitMass2 = 1.0 / this.m_limitMass2;
 		this.m_pulleyMass = 1.0 / this.m_pulleyMass;
-		
-		if (step.warmStarting)
-		{
+
+		if (step.warmStarting) {
 			// Warm starting.
 			//b2Vec2 P1 = step.dt * (-this.m_force - this.m_limitForce1) * this.m_u1;
 			//b2Vec2 P1 = step.dt * (-this.m_force - this.m_limitForce1) * this.m_u1;
-			var P1X:number = step.dt * (-this.m_force - this.m_limitForce1) * this.m_u1.x;
-			var P1Y:number = step.dt * (-this.m_force - this.m_limitForce1) * this.m_u1.y;
+			const P1X: number = step.dt * (-this.m_force - this.m_limitForce1) * this.m_u1.x;
+			const P1Y: number = step.dt * (-this.m_force - this.m_limitForce1) * this.m_u1.y;
 			//b2Vec2 P2 = step.dt * (-this.m_ratio * this.m_force - this.m_limitForce2) * this.m_u2;
 			//b2Vec2 P2 = step.dt * (-this.m_ratio * this.m_force - this.m_limitForce2) * this.m_u2;
-			var P2X:number = step.dt * (-this.m_ratio * this.m_force - this.m_limitForce2) * this.m_u2.x;
-			var P2Y:number = step.dt * (-this.m_ratio * this.m_force - this.m_limitForce2) * this.m_u2.y;
+			const P2X: number = step.dt * (-this.m_ratio * this.m_force - this.m_limitForce2) * this.m_u2.x;
+			const P2Y: number = step.dt * (-this.m_ratio * this.m_force - this.m_limitForce2) * this.m_u2.y;
 			//b1.m_linearVelocity += b1.m_invMass * P1;
 			b1.m_linearVelocity.x += b1.m_invMass * P1X;
 			b1.m_linearVelocity.y += b1.m_invMass * P1Y;
@@ -270,65 +247,62 @@ export class b2PulleyJoint extends b2Joint
 			b2.m_linearVelocity.y += b2.m_invMass * P2Y;
 			//b2.m_angularVelocity += b2.m_invI * b2Cross(r2, P2);
 			b2.m_angularVelocity += b2.m_invI * (r2X * P2Y - r2Y * P2X);
-		}
-		else
-		{
+		} else {
 			this.m_force = 0.0;
 			this.m_limitForce1 = 0.0;
 			this.m_limitForce2 = 0.0;
 		}
 	}
-	
-	public SolveVelocityConstraints(step:b2TimeStep) : void{
-		var b1:b2Body = this.m_body1;
-		var b2:b2Body = this.m_body2;
-		
-		var tMat:b2Mat22;
-		
+
+	public SolveVelocityConstraints(step: b2TimeStep): void{
+		const b1: b2Body = this.m_body1;
+		const b2: b2Body = this.m_body2;
+
+		let tMat: b2Mat22;
+
 		//b2Vec2 r1 = b2Mul(b1->this.m_xf.R, this.m_localAnchor1 - b1->GetLocalCenter());
 		tMat = b1.m_xf.R;
-		var r1X:number = this.m_localAnchor1.x - b1.m_sweep.localCenter.x;
-		var r1Y:number = this.m_localAnchor1.y - b1.m_sweep.localCenter.y;
-		var tX:number =  (tMat.col1.x * r1X + tMat.col2.x * r1Y);
+		let r1X: number = this.m_localAnchor1.x - b1.m_sweep.localCenter.x;
+		let r1Y: number = this.m_localAnchor1.y - b1.m_sweep.localCenter.y;
+		let tX: number =  (tMat.col1.x * r1X + tMat.col2.x * r1Y);
 		r1Y = (tMat.col1.y * r1X + tMat.col2.y * r1Y);
 		r1X = tX;
 		//b2Vec2 r2 = b2Mul(b2->this.m_xf.R, this.m_localAnchor2 - b2->GetLocalCenter());
 		tMat = b2.m_xf.R;
-		var r2X:number = this.m_localAnchor2.x - b2.m_sweep.localCenter.x;
-		var r2Y:number = this.m_localAnchor2.y - b2.m_sweep.localCenter.y;
+		let r2X: number = this.m_localAnchor2.x - b2.m_sweep.localCenter.x;
+		let r2Y: number = this.m_localAnchor2.y - b2.m_sweep.localCenter.y;
 		tX =  (tMat.col1.x * r2X + tMat.col2.x * r2Y);
 		r2Y = (tMat.col1.y * r2X + tMat.col2.y * r2Y);
 		r2X = tX;
-		
+
 		// temp vars
-		var v1X:number;
-		var v1Y:number;
-		var v2X:number;
-		var v2Y:number;
-		var P1X:number;
-		var P1Y:number;
-		var P2X:number;
-		var P2Y:number;
-		var Cdot:number;
-		var force:number;
-		var oldForce:number;
-		
-		if (this.m_state == b2PulleyJoint.e_atUpperLimit)
-		{
+		let v1X: number;
+		let v1Y: number;
+		let v2X: number;
+		let v2Y: number;
+		let P1X: number;
+		let P1Y: number;
+		let P2X: number;
+		let P2Y: number;
+		let Cdot: number;
+		let force: number;
+		let oldForce: number;
+
+		if (this.m_state == b2PulleyJoint.e_atUpperLimit) {
 			//b2Vec2 v1 = b1->this.m_linearVelocity + b2Cross(b1->this.m_angularVelocity, r1);
 			v1X = b1.m_linearVelocity.x + (-b1.m_angularVelocity * r1Y);
 			v1Y = b1.m_linearVelocity.y + (b1.m_angularVelocity * r1X);
 			//b2Vec2 v2 = b2->this.m_linearVelocity + b2Cross(b2->this.m_angularVelocity, r2);
 			v2X = b2.m_linearVelocity.x + (-b2.m_angularVelocity * r2Y);
 			v2Y = b2.m_linearVelocity.y + (b2.m_angularVelocity * r2X);
-			
+
 			//Cdot = -b2Dot(this.m_u1, v1) - this.m_ratio * b2Dot(this.m_u2, v2);
 			Cdot = -(this.m_u1.x * v1X + this.m_u1.y * v1Y) - this.m_ratio * (this.m_u2.x * v2X + this.m_u2.y * v2Y);
 			force = -step.inv_dt * this.m_pulleyMass * Cdot;
 			oldForce = this.m_force;
 			this.m_force = b2Math.b2Max(0.0, this.m_force + force);
 			force = this.m_force - oldForce;
-			
+
 			//b2Vec2 P1 = -step.dt * force * this.m_u1;
 			P1X = -step.dt * force * this.m_u1.x;
 			P1Y = -step.dt * force * this.m_u1.y;
@@ -346,20 +320,19 @@ export class b2PulleyJoint extends b2Joint
 			//b2.m_angularVelocity += b2.m_invI * b2Cross(r2, P2);
 			b2.m_angularVelocity += b2.m_invI * (r2X * P2Y - r2Y * P2X);
 		}
-		
-		if (this.m_limitState1 == b2PulleyJoint.e_atUpperLimit)
-		{
+
+		if (this.m_limitState1 == b2PulleyJoint.e_atUpperLimit) {
 			//b2Vec2 v1 = b1->this.m_linearVelocity + b2Cross(b1->this.m_angularVelocity, r1);
 			v1X = b1.m_linearVelocity.x + (-b1.m_angularVelocity * r1Y);
 			v1Y = b1.m_linearVelocity.y + (b1.m_angularVelocity * r1X);
-			
+
 			//float32 Cdot = -b2Dot(this.m_u1, v1);
 			Cdot = -(this.m_u1.x * v1X + this.m_u1.y * v1Y);
 			force = -step.inv_dt * this.m_limitMass1 * Cdot;
 			oldForce = this.m_limitForce1;
 			this.m_limitForce1 = b2Math.b2Max(0.0, this.m_limitForce1 + force);
 			force = this.m_limitForce1 - oldForce;
-			
+
 			//b2Vec2 P1 = -step.dt * force * this.m_u1;
 			P1X = -step.dt * force * this.m_u1.x;
 			P1Y = -step.dt * force * this.m_u1.y;
@@ -369,20 +342,19 @@ export class b2PulleyJoint extends b2Joint
 			//b1.m_angularVelocity += b1->this.m_invI * b2Cross(r1, P1);
 			b1.m_angularVelocity += b1.m_invI * (r1X * P1Y - r1Y * P1X);
 		}
-		
-		if (this.m_limitState2 == b2PulleyJoint.e_atUpperLimit)
-		{
+
+		if (this.m_limitState2 == b2PulleyJoint.e_atUpperLimit) {
 			//b2Vec2 v2 = b2->this.m_linearVelocity + b2Cross(b2->this.m_angularVelocity, r2);
 			v2X = b2.m_linearVelocity.x + (-b2.m_angularVelocity * r2Y);
 			v2Y = b2.m_linearVelocity.y + (b2.m_angularVelocity * r2X);
-			
+
 			//float32 Cdot = -b2Dot(this.m_u2, v2);
 			Cdot = -(this.m_u2.x * v2X + this.m_u2.y * v2Y);
 			force = -step.inv_dt * this.m_limitMass2 * Cdot;
 			oldForce = this.m_limitForce2;
 			this.m_limitForce2 = b2Math.b2Max(0.0, this.m_limitForce2 + force);
 			force = this.m_limitForce2 - oldForce;
-			
+
 			//b2Vec2 P2 = -step.dt * force * this.m_u2;
 			P2X = -step.dt * force * this.m_u2.x;
 			P2Y = -step.dt * force * this.m_u2.y;
@@ -393,44 +365,41 @@ export class b2PulleyJoint extends b2Joint
 			b2.m_angularVelocity += b2.m_invI * (r2X * P2Y - r2Y * P2X);
 		}
 	}
-	
-	
-	
-	public SolvePositionConstraints():boolean{
-		var b1:b2Body = this.m_body1;
-		var b2:b2Body = this.m_body2;
-		
-		var tMat:b2Mat22;
-		
+
+	public SolvePositionConstraints(): boolean {
+		const b1: b2Body = this.m_body1;
+		const b2: b2Body = this.m_body2;
+
+		let tMat: b2Mat22;
+
 		//b2Vec2 s1 = this.m_ground->this.m_xf.position + this.m_groundAnchor1;
-		var s1X:number = this.m_ground.m_xf.position.x + this.m_groundAnchor1.x;
-		var s1Y:number = this.m_ground.m_xf.position.y + this.m_groundAnchor1.y;
+		const s1X: number = this.m_ground.m_xf.position.x + this.m_groundAnchor1.x;
+		const s1Y: number = this.m_ground.m_xf.position.y + this.m_groundAnchor1.y;
 		//b2Vec2 s2 = this.m_ground->this.m_xf.position + this.m_groundAnchor2;
-		var s2X:number = this.m_ground.m_xf.position.x + this.m_groundAnchor2.x;
-		var s2Y:number = this.m_ground.m_xf.position.y + this.m_groundAnchor2.y;
-		
+		const s2X: number = this.m_ground.m_xf.position.x + this.m_groundAnchor2.x;
+		const s2Y: number = this.m_ground.m_xf.position.y + this.m_groundAnchor2.y;
+
 		// temp vars
-		var r1X:number;
-		var r1Y:number;
-		var r2X:number;
-		var r2Y:number;
-		var p1X:number;
-		var p1Y:number;
-		var p2X:number;
-		var p2Y:number;
-		var length1:number;
-		var length2:number;
-		var C:number;
-		var impulse:number;
-		var oldImpulse:number;
-		var oldLimitPositionImpulse:number;
-		
-		var tX:number;
-		
-		var linearError:number = 0.0;
-		
-		if (this.m_state == b2PulleyJoint.e_atUpperLimit)
-		{
+		let r1X: number;
+		let r1Y: number;
+		let r2X: number;
+		let r2Y: number;
+		let p1X: number;
+		let p1Y: number;
+		let p2X: number;
+		let p2Y: number;
+		let length1: number;
+		let length2: number;
+		let C: number;
+		let impulse: number;
+		let oldImpulse: number;
+		let oldLimitPositionImpulse: number;
+
+		let tX: number;
+
+		let linearError: number = 0.0;
+
+		if (this.m_state == b2PulleyJoint.e_atUpperLimit) {
 			//b2Vec2 r1 = b2Mul(b1->this.m_xf.R, this.m_localAnchor1 - b1->GetLocalCenter());
 			tMat = b1.m_xf.R;
 			r1X = this.m_localAnchor1.x - b1.m_sweep.localCenter.x;
@@ -445,70 +414,63 @@ export class b2PulleyJoint extends b2Joint
 			tX =  (tMat.col1.x * r2X + tMat.col2.x * r2Y);
 			r2Y = (tMat.col1.y * r2X + tMat.col2.y * r2Y);
 			r2X = tX;
-			
+
 			//b2Vec2 p1 = b1->this.m_sweep.c + r1;
 			p1X = b1.m_sweep.c.x + r1X;
 			p1Y = b1.m_sweep.c.y + r1Y;
 			//b2Vec2 p2 = b2->this.m_sweep.c + r2;
 			p2X = b2.m_sweep.c.x + r2X;
 			p2Y = b2.m_sweep.c.y + r2Y;
-			
+
 			// Get the pulley axes.
 			//this.m_u1 = p1 - s1;
 			this.m_u1.Set(p1X - s1X, p1Y - s1Y);
 			//this.m_u2 = p2 - s2;
 			this.m_u2.Set(p2X - s2X, p2Y - s2Y);
-			
+
 			length1 = this.m_u1.Length();
 			length2 = this.m_u2.Length();
-			
-			if (length1 > b2Settings.b2_linearSlop)
-			{
+
+			if (length1 > b2Settings.b2_linearSlop) {
 				//this.m_u1 *= 1.0f / length1;
-				this.m_u1.Multiply( 1.0 / length1 );
-			}
-			else
-			{
+				this.m_u1.Multiply(1.0 / length1);
+			} else {
 				this.m_u1.SetZero();
 			}
-			
-			if (length2 > b2Settings.b2_linearSlop)
-			{
+
+			if (length2 > b2Settings.b2_linearSlop) {
 				//this.m_u2 *= 1.0f / length2;
-				this.m_u2.Multiply( 1.0 / length2 );
-			}
-			else
-			{
+				this.m_u2.Multiply(1.0 / length2);
+			} else {
 				this.m_u2.SetZero();
 			}
-			
+
 			C = this.m_constant - length1 - this.m_ratio * length2;
 			linearError = b2Math.b2Max(linearError, -C);
 			C = b2Math.b2Clamp(C + b2Settings.b2_linearSlop, -b2Settings.b2_maxLinearCorrection, 0.0);
 			impulse = -this.m_pulleyMass * C;
-			
+
 			oldImpulse = this.m_positionImpulse;
 			this.m_positionImpulse = b2Math.b2Max(0.0, this.m_positionImpulse + impulse);
 			impulse = this.m_positionImpulse - oldImpulse;
-			
+
 			p1X = -impulse * this.m_u1.x;
 			p1Y = -impulse * this.m_u1.y;
 			p2X = -this.m_ratio * impulse * this.m_u2.x;
 			p2Y = -this.m_ratio * impulse * this.m_u2.y;
-			
+
 			b1.m_sweep.c.x += b1.m_invMass * p1X;
 			b1.m_sweep.c.y += b1.m_invMass * p1Y;
 			b1.m_sweep.a += b1.m_invI * (r1X * p1Y - r1Y * p1X);
 			b2.m_sweep.c.x += b2.m_invMass * p2X;
 			b2.m_sweep.c.y += b2.m_invMass * p2Y;
 			b2.m_sweep.a += b2.m_invI * (r2X * p2Y - r2Y * p2X);
-			
+
 			b1.SynchronizeTransform();
 			b2.SynchronizeTransform();
 		}
-		
-		if (this.m_limitState1 == b2PulleyJoint.e_atUpperLimit)
-		{
+
+		if (this.m_limitState1 == b2PulleyJoint.e_atUpperLimit) {
 			//b2Vec2 r1 = b2Mul(b1->this.m_xf.R, this.m_localAnchor1 - b1->GetLocalCenter());
 			tMat = b1.m_xf.R;
 			r1X = this.m_localAnchor1.x - b1.m_sweep.localCenter.x;
@@ -519,23 +481,20 @@ export class b2PulleyJoint extends b2Joint
 			//b2Vec2 p1 = b1->this.m_sweep.c + r1;
 			p1X = b1.m_sweep.c.x + r1X;
 			p1Y = b1.m_sweep.c.y + r1Y;
-			
+
 			//this.m_u1 = p1 - s1;
 			this.m_u1.Set(p1X - s1X, p1Y - s1Y);
-			
+
 			length1 = this.m_u1.Length();
-			
-			if (length1 > b2Settings.b2_linearSlop)
-			{
+
+			if (length1 > b2Settings.b2_linearSlop) {
 				//this.m_u1 *= 1.0 / length1;
 				this.m_u1.x *= 1.0 / length1;
 				this.m_u1.y *= 1.0 / length1;
-			}
-			else
-			{
+			} else {
 				this.m_u1.SetZero();
 			}
-			
+
 			C = this.m_maxLength1 - length1;
 			linearError = b2Math.b2Max(linearError, -C);
 			C = b2Math.b2Clamp(C + b2Settings.b2_linearSlop, -b2Settings.b2_maxLinearCorrection, 0.0);
@@ -543,21 +502,20 @@ export class b2PulleyJoint extends b2Joint
 			oldLimitPositionImpulse = this.m_limitPositionImpulse1;
 			this.m_limitPositionImpulse1 = b2Math.b2Max(0.0, this.m_limitPositionImpulse1 + impulse);
 			impulse = this.m_limitPositionImpulse1 - oldLimitPositionImpulse;
-			
+
 			//P1 = -impulse * this.m_u1;
 			p1X = -impulse * this.m_u1.x;
 			p1Y = -impulse * this.m_u1.y;
-			
+
 			b1.m_sweep.c.x += b1.m_invMass * p1X;
 			b1.m_sweep.c.y += b1.m_invMass * p1Y;
 			//b1.m_rotation += b1.m_invI * b2Cross(r1, P1);
 			b1.m_sweep.a += b1.m_invI * (r1X * p1Y - r1Y * p1X);
-			
+
 			b1.SynchronizeTransform();
 		}
-		
-		if (this.m_limitState2 == b2PulleyJoint.e_atUpperLimit)
-		{
+
+		if (this.m_limitState2 == b2PulleyJoint.e_atUpperLimit) {
 			//b2Vec2 r2 = b2Mul(b2->this.m_xf.R, this.m_localAnchor2 - b2->GetLocalCenter());
 			tMat = b2.m_xf.R;
 			r2X = this.m_localAnchor2.x - b2.m_sweep.localCenter.x;
@@ -568,23 +526,20 @@ export class b2PulleyJoint extends b2Joint
 			//b2Vec2 p2 = b2->this.m_position + r2;
 			p2X = b2.m_sweep.c.x + r2X;
 			p2Y = b2.m_sweep.c.y + r2Y;
-			
+
 			//this.m_u2 = p2 - s2;
 			this.m_u2.Set(p2X - s2X, p2Y - s2Y);
-			
+
 			length2 = this.m_u2.Length();
-			
-			if (length2 > b2Settings.b2_linearSlop)
-			{
+
+			if (length2 > b2Settings.b2_linearSlop) {
 				//this.m_u2 *= 1.0 / length2;
 				this.m_u2.x *= 1.0 / length2;
 				this.m_u2.y *= 1.0 / length2;
-			}
-			else
-			{
+			} else {
 				this.m_u2.SetZero();
 			}
-			
+
 			C = this.m_maxLength2 - length2;
 			linearError = b2Math.b2Max(linearError, -C);
 			C = b2Math.b2Clamp(C + b2Settings.b2_linearSlop, -b2Settings.b2_maxLinearCorrection, 0.0);
@@ -592,59 +547,57 @@ export class b2PulleyJoint extends b2Joint
 			oldLimitPositionImpulse = this.m_limitPositionImpulse2;
 			this.m_limitPositionImpulse2 = b2Math.b2Max(0.0, this.m_limitPositionImpulse2 + impulse);
 			impulse = this.m_limitPositionImpulse2 - oldLimitPositionImpulse;
-			
+
 			//P2 = -impulse * this.m_u2;
 			p2X = -impulse * this.m_u2.x;
 			p2Y = -impulse * this.m_u2.y;
-			
+
 			//b2.m_sweep.c += b2.m_invMass * P2;
 			b2.m_sweep.c.x += b2.m_invMass * p2X;
 			b2.m_sweep.c.y += b2.m_invMass * p2Y;
 			//b2.m_sweep.a += b2.m_invI * b2Cross(r2, P2);
 			b2.m_sweep.a += b2.m_invI * (r2X * p2Y - r2Y * p2X);
-			
+
 			b2.SynchronizeTransform();
 		}
-		
+
 		return linearError < b2Settings.b2_linearSlop;
 	}
-	
-	
 
-	public m_ground:b2Body;
-	public m_groundAnchor1:b2Vec2 = new b2Vec2();
-	public m_groundAnchor2:b2Vec2 = new b2Vec2();
-	public m_localAnchor1:b2Vec2 = new b2Vec2();
-	public m_localAnchor2:b2Vec2 = new b2Vec2();
+	public m_ground: b2Body;
+	public m_groundAnchor1: b2Vec2 = new b2Vec2();
+	public m_groundAnchor2: b2Vec2 = new b2Vec2();
+	public m_localAnchor1: b2Vec2 = new b2Vec2();
+	public m_localAnchor2: b2Vec2 = new b2Vec2();
 
-	public m_u1:b2Vec2 = new b2Vec2();
-	public m_u2:b2Vec2 = new b2Vec2();
-	
-	public m_constant:number;
-	public m_ratio:number;
-	
-	public m_maxLength1:number;
-	public m_maxLength2:number;
+	public m_u1: b2Vec2 = new b2Vec2();
+	public m_u2: b2Vec2 = new b2Vec2();
+
+	public m_constant: number;
+	public m_ratio: number;
+
+	public m_maxLength1: number;
+	public m_maxLength2: number;
 
 	// Effective masses
-	public m_pulleyMass:number;
-	public m_limitMass1:number;
-	public m_limitMass2:number;
+	public m_pulleyMass: number;
+	public m_limitMass1: number;
+	public m_limitMass2: number;
 
 	// Impulses for accumulation/warm starting.
-	public m_force:number;
-	public m_limitForce1:number;
-	public m_limitForce2:number;
+	public m_force: number;
+	public m_limitForce1: number;
+	public m_limitForce2: number;
 
 	// Position impulses for accumulation.
-	public m_positionImpulse:number;
-	public m_limitPositionImpulse1:number;
-	public m_limitPositionImpulse2:number;
+	public m_positionImpulse: number;
+	public m_limitPositionImpulse1: number;
+	public m_limitPositionImpulse2: number;
 
-	public m_state:number /** int */;
-	public m_limitState1:number /** int */;
-	public m_limitState2:number /** int */;
-	
+	public m_state: number /** int */;
+	public m_limitState1: number /** int */;
+	public m_limitState2: number /** int */;
+
 	// static
-	public static readonly b2_minPulleyLength:number = 2.0;
+	public static readonly b2_minPulleyLength: number = 2.0;
 }

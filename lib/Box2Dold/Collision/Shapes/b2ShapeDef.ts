@@ -16,33 +16,31 @@
 * 3. This notice may not be removed or altered from any source distribution.
 */
 
-import { b2Shape } from "./b2Shape";
-import { b2FilterData } from "./b2FilterData";
-
+import { b2Shape } from './b2Shape';
+import { b2FilterData } from './b2FilterData';
 
 /// A shape definition is used to construct a shape. This class defines an
 /// abstract shape definition. You can reuse shape definitions safely.
-export class b2ShapeDef
-{
+export class b2ShapeDef {
 	/// Holds the shape type for down-casting.
-	public type:number /** int */ = b2Shape.e_unknownShape;
-	
+	public type: number /** int */ = b2Shape.e_unknownShape;
+
 	/// Use this to store application specify shape data.
-	public userData:any = null;
-	
+	public userData: any = null;
+
 	/// The shape's friction coefficient, usually in the range [0,1].
-	public friction:number = 0.2;
-	
+	public friction: number = 0.2;
+
 	/// The shape's restitution (elasticity) usually in the range [0,1].
-	public restitution:number = 0.0;
-	
+	public restitution: number = 0.0;
+
 	/// The shape's density, usually in kg/m^2.
-	public density:number = 0.0;
-	
+	public density: number = 0.0;
+
 	/// A sensor shape collects contact information but never generates a collision
 	/// response.
-	public isSensor:boolean = false;
-	
+	public isSensor: boolean = false;
+
 	/// Contact filtering data.
 	public filter: b2FilterData = new b2FilterData();
 }

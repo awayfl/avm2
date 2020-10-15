@@ -16,24 +16,24 @@
 * 3. This notice may not be removed or altered from any source distribution.
 */
 
-export class b2Bound{
-	public IsLower():boolean { return (this.value & 1) == 0; }
-	public IsUpper():boolean { return (this.value & 1) == 1; }
-	public Swap(b:b2Bound) : void{
-		var tempValue:number /** uint */ = this.value;
-		var tempProxyId:number /** uint */ = this.proxyId;
-		var tempStabbingCount:number /** uint */ = this.stabbingCount;
-		
+export class b2Bound {
+	public IsLower(): boolean { return (this.value & 1) == 0; }
+	public IsUpper(): boolean { return (this.value & 1) == 1; }
+	public Swap(b: b2Bound): void{
+		const tempValue: number /** uint */ = this.value;
+		const tempProxyId: number /** uint */ = this.proxyId;
+		const tempStabbingCount: number /** uint */ = this.stabbingCount;
+
 		this.value = b.value;
 		this.proxyId = b.proxyId;
 		this.stabbingCount = b.stabbingCount;
-		
+
 		b.value = tempValue;
 		b.proxyId = tempProxyId;
 		b.stabbingCount = tempStabbingCount;
 	}
 
-	public value:number /** uint */;
-	public proxyId:number /** uint */;
-	public stabbingCount:number /** uint */;
+	public value: number /** uint */;
+	public proxyId: number /** uint */;
+	public stabbingCount: number /** uint */;
 }

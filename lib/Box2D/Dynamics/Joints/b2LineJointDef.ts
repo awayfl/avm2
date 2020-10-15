@@ -1,6 +1,6 @@
-﻿import { b2JointDef, b2Joint } from "../Joints";
-import { b2Body } from "../b2Body";
-import { b2Vec2 } from "../../Common/Math";
+﻿import { b2JointDef, b2Joint } from '../Joints';
+import { b2Body } from '../b2Body';
+import { b2Vec2 } from '../../Common/Math';
 
 /**
  * Line joint definition. This requires defining a line of
@@ -11,10 +11,8 @@ import { b2Vec2 } from "../../Common/Math";
  * anchors and a local axis helps when saving and loading a game.
  * @see b2LineJoint
  */
-export class b2LineJointDef extends b2JointDef
-{
-	constructor()
-	{
+export class b2LineJointDef extends b2JointDef {
+	constructor() {
 		super();
 
 		this.type = b2Joint.e_lineJoint;
@@ -28,60 +26,58 @@ export class b2LineJointDef extends b2JointDef
 		this.maxMotorForce = 0.0;
 		this.motorSpeed = 0.0;
 	}
-	
-	public Initialize(bA:b2Body, bB:b2Body, anchor:b2Vec2, axis:b2Vec2) : void
-	{
+
+	public Initialize(bA: b2Body, bB: b2Body, anchor: b2Vec2, axis: b2Vec2): void {
 		this.bodyA = bA;
 		this.bodyB = bB;
 		this.localAnchorA = this.bodyA.GetLocalPoint(anchor);
 		this.localAnchorB = this.bodyB.GetLocalPoint(anchor);
 		this.localAxisA = this.bodyA.GetLocalVector(axis);
 	}
-	
+
 	/**
 	* The local anchor point relative to bodyA's origin.
 	*/
-	public localAnchorA:b2Vec2 = new b2Vec2();
+	public localAnchorA: b2Vec2 = new b2Vec2();
 
 	/**
 	* The local anchor point relative to bodyB's origin.
 	*/
-	public localAnchorB:b2Vec2 = new b2Vec2();
+	public localAnchorB: b2Vec2 = new b2Vec2();
 
 	/**
 	* The local translation axis in bodyA.
 	*/
-	public localAxisA:b2Vec2 = new b2Vec2();
+	public localAxisA: b2Vec2 = new b2Vec2();
 
 	/**
 	* Enable/disable the joint limit.
 	*/
-	public enableLimit:boolean;
+	public enableLimit: boolean;
 
 	/**
 	* The lower translation limit, usually in meters.
 	*/
-	public lowerTranslation:number;
+	public lowerTranslation: number;
 
 	/**
 	* The upper translation limit, usually in meters.
 	*/
-	public upperTranslation:number;
+	public upperTranslation: number;
 
 	/**
 	* Enable/disable the joint motor.
 	*/
-	public enableMotor:boolean;
+	public enableMotor: boolean;
 
 	/**
 	* The maximum motor torque, usually in N-m.
 	*/
-	public maxMotorForce:number;
+	public maxMotorForce: number;
 
 	/**
 	* The desired motor speed in radians per second.
 	*/
-	public motorSpeed:number;
+	public motorSpeed: number;
 
-	
 }

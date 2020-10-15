@@ -1,14 +1,14 @@
-import { IAVMHandler, AVMVERSION, AVMStage, SWFFile, release } from "@awayfl/swf-loader"
-import { AVM2LoadLibrariesFlags } from "./AVM2LoadLibrariesFlags";
+import { IAVMHandler, AVMVERSION, AVMStage, SWFFile, release } from '@awayfl/swf-loader';
+import { AVM2LoadLibrariesFlags } from './AVM2LoadLibrariesFlags';
 
-import {initSystem} from "./natives/system";
-import {initlazy} from "./abc/lazy";
+import { initSystem } from './natives/system';
+import { initlazy } from './abc/lazy';
 
 import { IAsset } from '@awayjs/core';
 
-import { IPlayerGlobal } from "./IPlayerGlobal";
+import { IPlayerGlobal } from './IPlayerGlobal';
 import { ISceneGraphFactory } from '@awayjs/scene';
-import { initializeAXBasePrototype } from "./run/initializeAXBasePrototype";
+import { initializeAXBasePrototype } from './run/initializeAXBasePrototype';
 
 export class AVM2Handler implements IAVMHandler {
 
@@ -17,17 +17,17 @@ export class AVM2Handler implements IAVMHandler {
 	private _avmStage: AVMStage;
 	private _factory: ISceneGraphFactory;
 
-	private _playerglobal:IPlayerGlobal;
+	private _playerglobal: IPlayerGlobal;
 
-	constructor(playerglobal:IPlayerGlobal){
-		
-		if(!playerglobal) throw("AVM2Handler must be init with a valid PlayerGlobal-class");
-		this._playerglobal=playerglobal;
+	constructor(playerglobal: IPlayerGlobal) {
+
+		if (!playerglobal) throw ('AVM2Handler must be init with a valid PlayerGlobal-class');
+		this._playerglobal = playerglobal;
 	}
 
-	public init(avmStage: AVMStage, swfFile: SWFFile, callback: (hasInit:boolean)=>void) {
+	public init(avmStage: AVMStage, swfFile: SWFFile, callback: (hasInit: boolean) => void) {
 
-		if(this._avmStage){
+		if (this._avmStage) {
 			callback(false);
 		}
 
@@ -48,26 +48,27 @@ export class AVM2Handler implements IAVMHandler {
 			swfFile,
 			AVM2LoadLibrariesFlags.Builtin | AVM2LoadLibrariesFlags.Playerglobal
 		).then((factory: ISceneGraphFactory) => {
-			release || console.log("playerglobal has init");
-			this._factory=factory;
+			release || console.log('playerglobal has init');
+			this._factory = factory;
 			callback(true);
 		});
 	}
-	public enterFrame(dt:number) {
+
+	public enterFrame(dt: number) {
 		this._playerglobal.enterFrame();
 	}
 
 	public resizeStage() {
 		this._playerglobal.resizeStage();
 	}
-	
+
 	public get factory(): ISceneGraphFactory {
 		if (!this._factory)
-			throw ("AVM2Handler - no Factory get factory");
+			throw ('AVM2Handler - no Factory get factory');
 		return this._factory;
 	}
 
-	public addAsset(asset:IAsset, addScene:boolean) {
-		this._playerglobal.addAsset(asset, addScene)
+	public addAsset(asset: IAsset, addScene: boolean) {
+		this._playerglobal.addAsset(asset, addScene);
 	}
 }

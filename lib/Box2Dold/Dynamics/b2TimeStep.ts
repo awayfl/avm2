@@ -16,12 +16,11 @@
 * 3. This notice may not be removed or altered from any source distribution.
 */
 
-export class b2TimeStep
-{
-	public dt:number;			// time step
-	public inv_dt:number;		// inverse time step (0 if dt == 0).
-	public dtRatio:number;		// dt * inv_dt0
-	public maxIterations:number /** int */;
-	public warmStarting:boolean;
-	public positionCorrection:boolean;
+export class b2TimeStep {
+	public dt: number;			// time step
+	public inv_dt: number;		// inverse time step (0 if dt == 0).
+	public dtRatio: number;		// dt * inv_dt0
+	public maxIterations: number /** int */;
+	public warmStarting: boolean;
+	public positionCorrection: boolean;
 }

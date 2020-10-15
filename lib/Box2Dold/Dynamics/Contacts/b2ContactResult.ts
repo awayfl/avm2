@@ -16,18 +16,17 @@
 * 3. This notice may not be removed or altered from any source distribution.
 */
 
-import { b2Shape } from "../../Collision/Shapes/b2Shape";
-import { b2Vec2 } from "../../Common/Math";
-import { b2ContactID } from "../../Collision/b2ContactID";
+import { b2Shape } from '../../Collision/Shapes/b2Shape';
+import { b2Vec2 } from '../../Common/Math';
+import { b2ContactID } from '../../Collision/b2ContactID';
 
 /// This structure is used to report contact point results.
-export class  b2ContactResult
-{
-	public shape1:b2Shape;						///< the first shape
-	public shape2:b2Shape;						///< the second shape
-	public position:b2Vec2 = new b2Vec2();		///< position in world coordinates
-	public normal:b2Vec2 = new b2Vec2();		///< points from shape1 to shape2
-	public normalImpulse:number;				///< the normal impulse applied to body2
-	public tangentImpulse:number;				///< the tangent impulse applied to body2
-	public id:b2ContactID = new b2ContactID();	///< the contact id identifies the features in contact
+export class  b2ContactResult {
+	public shape1: b2Shape;						///< the first shape
+	public shape2: b2Shape;						///< the second shape
+	public position: b2Vec2 = new b2Vec2();		///< position in world coordinates
+	public normal: b2Vec2 = new b2Vec2();		///< points from shape1 to shape2
+	public normalImpulse: number;				///< the normal impulse applied to body2
+	public tangentImpulse: number;				///< the tangent impulse applied to body2
+	public id: b2ContactID = new b2ContactID();	///< the contact id identifies the features in contact
 }

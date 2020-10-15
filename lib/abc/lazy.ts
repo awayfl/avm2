@@ -1,5 +1,4 @@
 
-
 /**
  * Naming Conventions:
  *
@@ -11,11 +10,10 @@
  * Parsing is a combination of lazy and eager evaluation. String parsing is deferred until
  * it is needed for multiname parsing.
  */
-import {Namespace} from "./lazy/Namespace"
-import {NamespaceType} from "./lazy/NamespaceType"
-import {internNamespace} from "./lazy/internNamespace"
+import { Namespace } from './lazy/Namespace';
+import { NamespaceType } from './lazy/NamespaceType';
+import { internNamespace } from './lazy/internNamespace';
 
-export function initlazy(){
-    Namespace.PUBLIC = internNamespace(NamespaceType.Public, "");
+export function initlazy() {
+	Namespace.PUBLIC = internNamespace(NamespaceType.Public, '');
 }
-

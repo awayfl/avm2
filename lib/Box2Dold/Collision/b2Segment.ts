@@ -16,11 +16,10 @@
 * 3. This notice may not be removed or altered from any source distribution.
 */
 
-import { b2Vec2 } from "../Common/Math";
+import { b2Vec2 } from '../Common/Math';
 
 // A manifold for two touching convex shapes.
-export class b2Segment
-{
+export class b2Segment {
 	/// Ray cast against this segment with another segment.
 	// Collision Detection in Interactive 3D Environments by Gino van den Bergen
 	// From Section 3.4.1
@@ -37,46 +36,43 @@ export class b2Segment
 	// denom = det[-r d]
 	// a = det[b d] / denom
 	// mu2 = det[-r b] / denom
-	public TestSegment(lambda:number[], // float pointer
-								normal:b2Vec2, // pointer
-								segment:b2Segment, 
-								maxLambda:number) : boolean{
+	public TestSegment(lambda: number[], // float pointer
+		normal: b2Vec2, // pointer
+		segment: b2Segment,
+		maxLambda: number): boolean {
 		//b2Vec2 s = segment.p1;
-		var s:b2Vec2 = segment.p1;
+		const s: b2Vec2 = segment.p1;
 		//b2Vec2 r = segment.p2 - s;
-		var rX:number = segment.p2.x - s.x;
-		var rY:number = segment.p2.y - s.y;
+		const rX: number = segment.p2.x - s.x;
+		const rY: number = segment.p2.y - s.y;
 		//b2Vec2 d = this.p2 - this.p1;
-		var dX:number = this.p2.x - this.p1.x;
-		var dY:number = this.p2.y - this.p1.y;
+		const dX: number = this.p2.x - this.p1.x;
+		const dY: number = this.p2.y - this.p1.y;
 		//b2Vec2 n = b2Cross(d, 1.0f);
-		var nX:number = dY;
-		var nY:number = -dX;
-		
-		var k_slop:number = 100.0 * Number.MIN_VALUE;
+		let nX: number = dY;
+		let nY: number = -dX;
+
+		const k_slop: number = 100.0 * Number.MIN_VALUE;
 		//var denom:number = -b2Dot(r, n);
-		var denom:number = -(rX*nX + rY*nY);
-		
+		const denom: number = -(rX * nX + rY * nY);
+
 		// Cull back facing collision and ignore parallel segments.
-		if (denom > k_slop)
-		{
+		if (denom > k_slop) {
 			// Does the segment intersect the infinite line associated with this segment?
 			//b2Vec2 b = s - p1;
-			var bX:number = s.x - this.p1.x;
-			var bY:number = s.y - this.p1.y;
+			const bX: number = s.x - this.p1.x;
+			const bY: number = s.y - this.p1.y;
 			//var a:number = b2Dot(b, n);
-			var a:number = (bX*nX + bY*nY);
-			
-			if (0.0 <= a && a <= maxLambda * denom)
-			{
-				var mu2:number = -rY * bY + rY * bX;
-				
+			let a: number = (bX * nX + bY * nY);
+
+			if (0.0 <= a && a <= maxLambda * denom) {
+				const mu2: number = -rY * bY + rY * bX;
+
 				// Does the segment intersect this segment?
-				if (-k_slop * denom <= mu2 && mu2 <= denom * (1.0 + k_slop))
-				{
+				if (-k_slop * denom <= mu2 && mu2 <= denom * (1.0 + k_slop)) {
 					a /= denom;
 					//n.Normalize();
-					var nLen:number = Math.sqrt(nX*nX + nY*nY);
+					const nLen: number = Math.sqrt(nX * nX + nY * nY);
 					nX /= nLen;
 					nY /= nLen;
 					//*lambda = a;
@@ -87,10 +83,10 @@ export class b2Segment
 				}
 			}
 		}
-		
+
 		return false;
 	}
-	
-	public p1:b2Vec2 = new b2Vec2();	///< the starting point
-	public p2:b2Vec2 = new b2Vec2();	///< the ending point
+
+	public p1: b2Vec2 = new b2Vec2();	///< the starting point
+	public p2: b2Vec2 = new b2Vec2();	///< the ending point
 }

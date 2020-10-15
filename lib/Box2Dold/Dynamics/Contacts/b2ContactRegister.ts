@@ -15,10 +15,9 @@
 * misrepresented as being the original software.
 * 3. This notice may not be removed or altered from any source distribution.
 */
-	
-export class b2ContactRegister
-{
-	public createFcn:Function; // fcn pointer
-	public destroyFcn:Function;// fcn pointer
-	public primary:boolean;
+
+export class b2ContactRegister {
+	public createFcn: Function; // fcn pointer
+	public destroyFcn: Function;// fcn pointer
+	public primary: boolean;
 }

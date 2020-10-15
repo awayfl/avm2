@@ -1,6 +1,6 @@
-﻿import { b2Contact } from "./Contacts";
-import { b2Manifold } from "../Collision/b2Manifold";
-import { b2ContactImpulse } from "./b2ContactImpulse";
+﻿import { b2Contact } from './Contacts';
+import { b2Manifold } from '../Collision/b2Manifold';
+import { b2ContactImpulse } from './b2ContactImpulse';
 
 /**
  * Implement this class to get contact information. You can use these results for
@@ -13,19 +13,18 @@ import { b2ContactImpulse } from "./b2ContactImpulse";
  * many callbacks per time step.
  * @warning You cannot create/destroy Box2D entities inside these callbacks.
  */
-export class b2ContactListener
-{
+export class b2ContactListener {
 	__fast__: boolean = true;
 
 	/**
 	 * Called when two fixtures begin to touch.
 	 */
-	public BeginContact(contact:b2Contact):void { }
+	public BeginContact(contact: b2Contact): void { }
 
 	/**
 	 * Called when two fixtures cease to touch.
 	 */
-	public EndContact(contact:b2Contact):void { }
+	public EndContact(contact: b2Contact): void { }
 
 	/**
 	 * This is called after a contact is updated. This allows you to inspect a
@@ -39,7 +38,7 @@ export class b2ContactListener
 	 * get an EndContact callback. However, you may get a BeginContact callback
 	 * the next step.
 	 */
-	public PreSolve(contact:b2Contact, oldManifold:b2Manifold):void {}
+	public PreSolve(contact: b2Contact, oldManifold: b2Manifold): void {}
 
 	/**
 	 * This lets you inspect a contact after the solver is finished. This is useful
@@ -49,7 +48,7 @@ export class b2ContactListener
 	 * in a separate data structure.
 	 * Note: this is only called for contacts that are touching, solid, and awake.
 	 */
-	public PostSolve(contact:b2Contact, impulse:b2ContactImpulse):void { }
-	
-	public static b2_defaultListener:b2ContactListener = new b2ContactListener();
-};
+	public PostSolve(contact: b2Contact, impulse: b2ContactImpulse): void { }
+
+	public static b2_defaultListener: b2ContactListener = new b2ContactListener();
+}

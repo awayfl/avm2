@@ -1,6 +1,6 @@
-﻿import { b2JointDef, b2Joint } from "../Joints";
-import { b2Vec2 } from "../../Common/Math";
-import { b2Body } from "../b2Body";
+﻿import { b2JointDef, b2Joint } from '../Joints';
+import { b2Vec2 } from '../../Common/Math';
+import { b2Body } from '../b2Body';
 
 /**
 * Revolute joint definition. This requires defining an
@@ -16,10 +16,8 @@ import { b2Body } from "../b2Body";
 * the joints will be broken.
 * @see b2RevoluteJoint
 */
-export class b2RevoluteJointDef extends b2JointDef
-{
-	constructor()
-	{
+export class b2RevoluteJointDef extends b2JointDef {
+	constructor() {
 		super();
 
 		this.type = b2Joint.e_revoluteJoint;
@@ -38,7 +36,7 @@ export class b2RevoluteJointDef extends b2JointDef
 	* Initialize the bodies, anchors, and reference angle using the world
 	* anchor.
 	*/
-	public Initialize(bA:b2Body, bB:b2Body, anchor:b2Vec2) : void{
+	public Initialize(bA: b2Body, bB: b2Body, anchor: b2Vec2): void{
 		this.bodyA = bA;
 		this.bodyB = bB;
 		this.localAnchorA = this.bodyA.GetLocalPoint(anchor);
@@ -49,47 +47,47 @@ export class b2RevoluteJointDef extends b2JointDef
 	/**
 	* The local anchor point relative to bodyA's origin.
 	*/
-	public localAnchorA:b2Vec2 = new b2Vec2();
+	public localAnchorA: b2Vec2 = new b2Vec2();
 
 	/**
 	* The local anchor point relative to bodyB's origin.
 	*/
-	public localAnchorB:b2Vec2 = new b2Vec2();
+	public localAnchorB: b2Vec2 = new b2Vec2();
 
 	/**
 	* The bodyB angle minus bodyA angle in the reference state (radians).
 	*/
-	public referenceAngle:number;
+	public referenceAngle: number;
 
 	/**
 	* A flag to enable joint limits.
 	*/
-	public enableLimit:boolean;
+	public enableLimit: boolean;
 
 	/**
 	* The lower angle for the joint limit (radians).
 	*/
-	public lowerAngle:number;
+	public lowerAngle: number;
 
 	/**
 	* The upper angle for the joint limit (radians).
 	*/
-	public upperAngle:number;
+	public upperAngle: number;
 
 	/**
 	* A flag to enable the joint motor.
 	*/
-	public enableMotor:boolean;
+	public enableMotor: boolean;
 
 	/**
 	* The desired motor speed. Usually in radians per second.
 	*/
-	public motorSpeed:number;
+	public motorSpeed: number;
 
 	/**
 	* The maximum motor torque used to achieve the desired motor speed.
 	* Usually in N-m.
 	*/
-	public maxMotorTorque:number;
-	
+	public maxMotorTorque: number;
+
 }

@@ -16,9 +16,9 @@
 * 3. This notice may not be removed or altered from any source distribution.
 */
 
-import { b2JointDef, b2Joint } from "../Joints";
-import { b2Body } from "../b2Body";
-import { b2Vec2 } from "../../Common/Math";
+import { b2JointDef, b2Joint } from '../Joints';
+import { b2Body } from '../b2Body';
+import { b2Vec2 } from '../../Common/Math';
 
 /// Revolute joint definition. This requires defining an
 /// anchor point where the bodies are joined. The definition
@@ -32,10 +32,8 @@ import { b2Vec2 } from "../../Common/Math";
 /// 2. if you add/remove shapes from a body and recompute the mass,
 ///    the joints will be broken.
 
-export class b2RevoluteJointDef extends b2JointDef
-{
-	constructor()
-	{
+export class b2RevoluteJointDef extends b2JointDef {
+	constructor() {
 		super();
 
 		this.type = b2Joint.e_revoluteJoint;
@@ -52,7 +50,7 @@ export class b2RevoluteJointDef extends b2JointDef
 
 	/// Initialize the bodies, anchors, and reference angle using the world
 	/// anchor.
-	public Initialize(b1:b2Body, b2:b2Body, anchor:b2Vec2) : void{
+	public Initialize(b1: b2Body, b2: b2Body, anchor: b2Vec2): void{
 		this.body1 = b1;
 		this.body2 = b2;
 		this.localAnchor1 = this.body1.GetLocalPoint(anchor);
@@ -61,31 +59,31 @@ export class b2RevoluteJointDef extends b2JointDef
 	}
 
 	/// The local anchor point relative to body1's origin.
-	public localAnchor1:b2Vec2 = new b2Vec2();
+	public localAnchor1: b2Vec2 = new b2Vec2();
 
 	/// The local anchor point relative to body2's origin.
-	public localAnchor2:b2Vec2 = new b2Vec2();
+	public localAnchor2: b2Vec2 = new b2Vec2();
 
 	/// The body2 angle minus body1 angle in the reference state (radians).
-	public referenceAngle:number;
+	public referenceAngle: number;
 
 	/// A flag to enable joint limits.
-	public enableLimit:boolean;
+	public enableLimit: boolean;
 
 	/// The lower angle for the joint limit (radians).
-	public lowerAngle:number;
+	public lowerAngle: number;
 
 	/// The upper angle for the joint limit (radians).
-	public upperAngle:number;
+	public upperAngle: number;
 
 	/// A flag to enable the joint motor.
-	public enableMotor:boolean;
+	public enableMotor: boolean;
 
 	/// The desired motor speed. Usually in radians per second.
-	public motorSpeed:number;
+	public motorSpeed: number;
 
 	/// The maximum motor torque used to achieve the desired motor speed.
 	/// Usually in N-m.
-	public maxMotorTorque:number;
-	
+	public maxMotorTorque: number;
+
 }

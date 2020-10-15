@@ -1,12 +1,11 @@
-import { AXSecurityDomain } from "./run/AXSecurityDomain";
-
+import { AXSecurityDomain } from './run/AXSecurityDomain';
 
 // export interface Function {
 //   axApply(thisArg: any, argArray?: any[]): any;
 //   axCall(thisArg: any): any;
 // }
 
-var $: AXSecurityDomain = null;
+const $: AXSecurityDomain = null;
 
 /*
   *     +--------------------------+
@@ -71,18 +70,3 @@ var $: AXSecurityDomain = null;
   *                            +------------+
   *
   */
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

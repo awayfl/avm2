@@ -1,6 +1,4 @@
 
-
 export function axCoerceUint(x): number {
-    return x >>> 0;
-  }
-  
+	return x >>> 0;
+}

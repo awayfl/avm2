@@ -6,18 +6,17 @@
 * nodes, one for each attached body.
 */
 
-import { b2Body } from "../b2Body";
-import { b2Joint } from "../Joints";
+import { b2Body } from '../b2Body';
+import { b2Joint } from '../Joints';
 
-export class b2JointEdge
-{
-	
+export class b2JointEdge {
+
 	/** Provides quick access to the other body attached. */
-	public other:b2Body;
+	public other: b2Body;
 	/** The joint */
-	public joint:b2Joint;
+	public joint: b2Joint;
 	/** The previous joint edge in the body's joint list */
-	public prev:b2JointEdge;
+	public prev: b2JointEdge;
 	/** The next joint edge in the body's joint list */
-	public next:b2JointEdge;	
+	public next: b2JointEdge;
 }
