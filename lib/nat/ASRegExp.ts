@@ -4,6 +4,8 @@ import { addPrototypeFunctionAlias } from './addPrototypeFunctionAlias';
 import { Errors } from '../errors';
 import { ASArray } from './ASArray';
 
+const WARN_REPORT_TABLE: StringMap<boolean> = {};
+
 export class ASRegExp extends ASObject {
 	private static UNMATCHABLE_PATTERN = '^(?!)$';
 
@@ -80,6 +82,17 @@ export class ASRegExp extends ASObject {
 	// Parses and sanitizes a AS3 RegExp pattern to be used in JavaScript. Silently fails and
 	// returns an unmatchable pattern of the source turns out to be invalid.
 	private _parse(pattern: string): string {
+
+		if (pattern.includes('?<=') && !WARN_REPORT_TABLE['?<=']) {
+			WARN_REPORT_TABLE['?<='] = true;
+
+			console.warn(
+				'[ASRegExp] Pattern inlcude a positive lookbehind, falling to native.' +
+				'But this not compiled on Safari! Sorry!:', pattern);
+
+			return pattern;
+		}
+
 		let result = '';
 		const captureNames = this._captureNames;
 		const parens = [];
@@ -184,14 +197,23 @@ export class ASRegExp extends ASObject {
 					}
 					break;
 				case ' ':
+				{
 					if (this._extended) {
 						break;
 					}
-				default:
+
 					result += char;
 					if (atoms <= 1) {
 						atoms++;
 					}
+					break;
+				}
+				default: {
+					result += char;
+					if (atoms <= 1) {
+						atoms++;
+					}
+				}
 			}
 			// 32767 seams to be the maximum allowed length for RegExps in SpiderMonkey.
 			// Examined by testing.
@@ -216,10 +238,12 @@ export class ASRegExp extends ASObject {
 	}
 
 	axCall(ignoredThisArg: any): any {
+		// eslint-disable-next-line
 		return this.exec.apply(this, arguments);
 	}
 
 	axApply(ignoredThisArg: any, argArray?: any[]): any {
+		// eslint-disable-next-line
 		return this.exec.apply(this, argArray);
 	}
 
