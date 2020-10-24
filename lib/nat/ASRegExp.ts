@@ -83,13 +83,13 @@ export class ASRegExp extends ASObject {
 	// returns an unmatchable pattern of the source turns out to be invalid.
 	private _parse(pattern: string): string {
 
-		if (pattern.includes('?<=') && !WARN_REPORT_TABLE['?<=']) {
-			WARN_REPORT_TABLE['?<='] = true;
+		if (pattern.includes('?<=')) {
 
-			console.warn(
+			WARN_REPORT_TABLE['?<='] || console.warn(
 				'[ASRegExp] Pattern inlcude a positive lookbehind, falling to native.' +
 				'But this not compiled on Safari! Sorry!:', pattern);
 
+			WARN_REPORT_TABLE['?<='] = true;
 			return pattern;
 		}
 
