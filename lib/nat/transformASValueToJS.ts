@@ -27,6 +27,9 @@ export function transformASValueToJS(sec: AXSecurityDomain, value, deep: boolean
 	const resultObject = {};
 	for (var i = 0; i < keys.length; i++) {
 		const key = keys[i];
+		if(key=="__scope__"){
+			continue;
+		}
 		let jsKey = key;
 		if (!isNumeric(key)) {
 			release || assert(key.indexOf('$Bg') === 0);
