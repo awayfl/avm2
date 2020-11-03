@@ -1,4 +1,4 @@
-import { IAVMHandler, AVMVERSION, AVMStage, SWFFile, release } from '@awayfl/swf-loader';
+import { IAVMHandler, AVMVERSION, AVMStage, SWFFile, release, ExternalInterfaceService } from '@awayfl/swf-loader';
 import { AVM2LoadLibrariesFlags } from './AVM2LoadLibrariesFlags';
 
 import { initSystem } from './natives/system';
@@ -50,6 +50,10 @@ export class AVM2Handler implements IAVMHandler {
 		).then((factory: ISceneGraphFactory) => {
 			release || console.log('playerglobal has init');
 			this._factory = factory;
+			if(this._avmStage.config.externalInterfaceID){
+				ExternalInterfaceService.interfaceID = this._avmStage.config.externalInterfaceID;
+
+			}
 			callback(true);
 		});
 	}
