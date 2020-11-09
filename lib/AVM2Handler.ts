@@ -50,7 +50,7 @@ export class AVM2Handler implements IAVMHandler {
 		).then((factory: ISceneGraphFactory) => {
 			release || console.log('playerglobal has init');
 			this._factory = factory;
-			if(this._avmStage.config.externalInterfaceID){
+			if (this._avmStage.config.externalInterfaceID) {
 				ExternalInterfaceService.interfaceID = this._avmStage.config.externalInterfaceID;
 
 			}
