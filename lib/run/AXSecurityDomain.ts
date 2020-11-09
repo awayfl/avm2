@@ -75,6 +75,7 @@ import { ByteArray, ByteArrayDataProvider } from '../natives/byteArray';
 import { Namespace } from '../abc/lazy/Namespace';
 import { IS_EXTERNAL_CLASS } from '../ext/external';
 import { nativeClasses } from '../nat/builtinNativeClasses';
+import { ASClass } from '../nat/ASClass';
 
 /**
  * Provides security isolation between application domains.
@@ -339,7 +340,7 @@ export class AXSecurityDomain {
 		axClass.superClass = superClass;
 		axClass.scope = scope;
 
-		const forceNative = nativeClasses[className] ? (<any>nativeClasses[className]).forceNative : false;
+		const forceNative = nativeClasses[className] ? (<typeof ASClass>nativeClasses[className]).forceNative : false;
 		
 		// Object and Class have their traits initialized earlier to avoid circular dependencies.
 		if (className !== 'Object' && className !== 'Class') {
