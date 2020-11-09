@@ -1,8 +1,6 @@
 import { ASObject } from './ASObject';
 import { ClassInfo } from '../abc/lazy/ClassInfo';
 import { assert } from '@awayjs/graphics';
-import { AXSecurityDomain } from '../run/AXSecurityDomain';
-import { Errors } from '../errors';
 import { release } from '@awayfl/swf-loader';
 
 export class ASClass extends ASObject {
