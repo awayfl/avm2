@@ -1,4 +1,4 @@
-import { MovieClip, SceneImage2D, FrameScriptManager, Sprite, DisplayObjectContainer } from '@awayjs/scene';
+import { MovieClip, SceneImage2D, FrameScriptManager, Sprite, DisplayObjectContainer, SimpleButton } from '@awayjs/scene';
 import { AssetBase, WaveAudio } from '@awayjs/core';
 import { BitmapImage2D } from '@awayjs/stage';
 import { AXClass, IS_AX_CLASS } from './AXClass';
@@ -200,6 +200,11 @@ export function axConstruct(argArray?: any[]) {
 				object.adaptee = asset;
 			}
 		}
+	}
+	// @todo: this is a hack for getting adaptee
+	// for dynamic created SimpleButton
+	if (this.classInfo?.instanceInfo?.name?.name == 'SimpleButton'){
+		object.adaptee = new MovieClip();
 	}
 
 	// mark object that it is AX object, not a regular class
