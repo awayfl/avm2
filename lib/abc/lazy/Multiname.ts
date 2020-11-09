@@ -179,12 +179,14 @@ export class Multiname {
 		}
 	  const uri = this.namespaces[0].uri;
 
-	  // 80pro: not sure about this. seems like its needed to match for xml nodes that have uri==""
+	  // @todo: not sure about this. 
+	  // seems like its needed to match for xml nodes that have uri==""
 	  if (uri == '' || uri == 'default')
 		  return true;
 
 		for (let i = mn.namespaces.length; i--;) {
-			if (mn.namespaces[i].uri === uri) {
+			// @todo: not sure about this. needed for xml
+			if (mn.namespaces[i].uri=='' || mn.namespaces[i].uri === uri) {
 				return true;
 			}
 		}
@@ -197,6 +199,7 @@ export class Multiname {
 			case CONSTANT.RTQNameA:
 			case CONSTANT.RTQNameLA:
 			case CONSTANT.MultinameA:
+			case CONSTANT.MultinameL:
 			case CONSTANT.MultinameLA:
 				return true;
 		}
