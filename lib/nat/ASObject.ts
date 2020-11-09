@@ -285,6 +285,7 @@ export class ASObject implements IMetaobjectProtocol {
 	}
 
 	axGetSuper(mn: Multiname, scope: Scope): any {
+		
 		const name = axCoerceName(mn.name);
 		const namespaces = mn.namespaces;
 		const trait = (<AXClass>scope.parent.object).tPrototype.traits.getTrait(namespaces, name);
@@ -292,11 +293,10 @@ export class ASObject implements IMetaobjectProtocol {
 		if (trait.kind === TRAIT.Getter || trait.kind === TRAIT.GetterSetter) {
 			value = trait.get.call(this);
 		} else {
-			const mangledName = trait.name.getMangledName();
-			value = this[mangledName];
-			if (typeof value === 'function') {
-				return this.axGetMethod(mangledName);
-			}
+			const mangledName = trait.name.getMangledName();			
+			const fun = (<AXClass>scope.parent.object).tPrototype[mangledName];
+			if (fun)
+				return this.sec.AXMethodClosure.Create(<any> this, fun);
 		}
 		release || checkValue(value);
 		return value;
