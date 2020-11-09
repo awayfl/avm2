@@ -12,7 +12,9 @@ export function getNativesForTrait(trait: TraitInfo): Object [] {
 		const instanceInfo = <InstanceInfo>trait.holder;
 		className = instanceInfo.getClassName();
 		var native = builtinNativeClasses[className] || nativeClasses[className];
-		assert (native, 'Class native is not defined: ' + className);
+		if(!native)	return [];
+		// @todo: add option to assert if ASObject.forceNative is
+		//assert (native, 'Class native is not defined: ' + className);
 		natives = [native.prototype];
 		if (native.instanceNatives) {
 			pushMany(natives, native.instanceNatives);
@@ -21,7 +23,9 @@ export function getNativesForTrait(trait: TraitInfo): Object [] {
 		const classInfo = <ClassInfo>trait.holder;
 		className = classInfo.instanceInfo.getClassName();
 		var native = builtinNativeClasses[className] || nativeClasses[className];
-		assert (native, 'Class native is not defined: ' + className);
+		if(!native)	return [];
+		// @todo: add option to assert if ASObject.forceNative is false
+		//assert (native, 'Class native is not defined: ' + className);
 		natives = [native];
 		if (native.classNatives) {
 			pushMany(natives, native.classNatives);

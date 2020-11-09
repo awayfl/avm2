@@ -28,7 +28,8 @@ import { tryLinkNativeClass } from '../nat/tryLinkNativeClass';
 import { getNativeInitializer } from '../nat/getNativeInitializer';
 import { installClassLoaders } from '../nat/installClassLoaders';
 import { installNativeFunctions } from '../nat/installNativeFunctions';
-import { release, isIndex, IndentingWriter, defineNonEnumerableProperty, defineReadOnlyProperty, flashlog, AVMStage } from '@awayfl/swf-loader';
+import { release, isIndex, IndentingWriter, defineNonEnumerableProperty, 
+	defineReadOnlyProperty, flashlog, AVMStage } from '@awayfl/swf-loader';
 import { assert } from '@awayjs/graphics';
 import { checkValue } from './checkValue';
 import { Scope } from './Scope';
@@ -73,6 +74,7 @@ import { initializeAXBasePrototype, AXBasePrototype } from './initializeAXBasePr
 import { ByteArray, ByteArrayDataProvider } from '../natives/byteArray';
 import { Namespace } from '../abc/lazy/Namespace';
 import { IS_EXTERNAL_CLASS } from '../ext/external';
+import { nativeClasses } from '../nat/builtinNativeClasses';
 
 /**
  * Provides security isolation between application domains.
@@ -297,7 +299,7 @@ export class AXSecurityDomain {
 		const instanceInfo = classInfo.instanceInfo;
 		const className = instanceInfo.getName().toFQNString(false);
 		const axClass: AXClass = this.nativeClasses[className] ||
-                              Object.create(this.AXClass.tPrototype);
+									Object.create(this.AXClass.tPrototype);
 		const classScope = new Scope(scope, axClass);
 		if (!this.nativeClasses[className]) {
 			if (instanceInfo.isInterface()) {
@@ -337,9 +339,11 @@ export class AXSecurityDomain {
 		axClass.superClass = superClass;
 		axClass.scope = scope;
 
+		const forceNative = nativeClasses[className] ? (<any>nativeClasses[className]).forceNative : false;
+		
 		// Object and Class have their traits initialized earlier to avoid circular dependencies.
 		if (className !== 'Object' && className !== 'Class') {
-			this.initializeRuntimeTraits(axClass, superClass, classScope);
+			this.initializeRuntimeTraits(axClass, superClass, classScope, forceNative);
 		}
 
 		// Add the |constructor| property on the class dynamic prototype so that all instances can
@@ -359,14 +363,14 @@ export class AXSecurityDomain {
 		return axClass;
 	}
 
-	private initializeRuntimeTraits(axClass: AXClass, superClass: AXClass, scope: Scope) {
+	private initializeRuntimeTraits(axClass: AXClass, superClass: AXClass, scope: Scope, forceNative:boolean = false) {
 		const classInfo = axClass.classInfo;
 		const instanceInfo = classInfo.instanceInfo;
 
 		// Prepare class traits.
 		let classTraits: RuntimeTraits;
 		if (axClass === this.AXClass) {
-			classTraits = instanceInfo.traits.resolveRuntimeTraits(null, null, scope);
+			classTraits = instanceInfo.traits.resolveRuntimeTraits(null, null, scope, forceNative);
 		} else {
 			const rootClassTraits = this.AXClass.classInfo.instanceInfo.runtimeTraits;
 			release || assert(rootClassTraits);
@@ -374,7 +378,7 @@ export class AXSecurityDomain {
 			// referring to global names that would be shadowed if the class scope were active.
 			// Haxe's stdlib uses just such constructs, e.g. Std.parseFloat calls the global
 			// parseFloat.
-			classTraits = classInfo.traits.resolveRuntimeTraits(rootClassTraits, null, scope.parent);
+			classTraits = classInfo.traits.resolveRuntimeTraits(rootClassTraits, null, scope.parent, forceNative);
 		}
 		classInfo.runtimeTraits = classTraits;
 		applyTraits(axClass, classTraits);
@@ -383,7 +387,7 @@ export class AXSecurityDomain {
 		const superInstanceTraits = (superClass && superClass[IS_AX_CLASS]) ? superClass.classInfo.instanceInfo.runtimeTraits : null;
 		const protectedNs = classInfo.abc.getNamespace(instanceInfo.protectedNs);
 		const instanceTraits = instanceInfo.traits.resolveRuntimeTraits(superInstanceTraits,
-			protectedNs, scope);
+			protectedNs, scope, forceNative);
 		instanceInfo.runtimeTraits = instanceTraits;
 		applyTraits(axClass.tPrototype, instanceTraits);
 	}
