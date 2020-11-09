@@ -26,6 +26,8 @@ export class ASObject implements IMetaobjectProtocol {
 	traits: RuntimeTraits;
 	sec: AXSecurityDomain;
 
+	static forceNative?: boolean = false;
+
 	// Declare all instance ASObject fields as statics here so that the TS
 	// compiler can convert ASClass class objects to ASObject instances.
 

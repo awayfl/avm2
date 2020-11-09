@@ -27,7 +27,7 @@ export function transformASValueToJS(sec: AXSecurityDomain, value, deep: boolean
 	const resultObject = {};
 	for (var i = 0; i < keys.length; i++) {
 		const key = keys[i];
-		if(key=="__scope__"){
+		if (key == '__scope__') {
 			continue;
 		}
 		let jsKey = key;
