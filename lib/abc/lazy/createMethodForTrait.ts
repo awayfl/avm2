@@ -37,7 +37,7 @@ export function createMethodForTrait(methodTraitInfo: MethodTraitInfo, scope: Sc
 	}
 	else {
 		if (forceNativeMethods)
-			method = getMethodOrAccessorNative(methodTraitInfo);
+			method = getMethodOrAccessorNative(methodTraitInfo, false);
 		if(!method){
 			method = interpret(methodInfo, scope, null);
 

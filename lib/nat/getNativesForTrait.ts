@@ -4,7 +4,7 @@ import { assert } from '@awayjs/graphics';
 import { release, assertUnreachable, pushMany } from '@awayfl/swf-loader';
 import { ClassInfo } from '../abc/lazy/ClassInfo';
 import { builtinNativeClasses, nativeClasses } from './builtinNativeClasses';
-export function getNativesForTrait(trait: TraitInfo): Object [] {
+export function getNativesForTrait(trait: TraitInfo, throwErrors: boolean): Object [] {
 	let className = null;
 	let natives: Object [];
 
@@ -12,9 +12,8 @@ export function getNativesForTrait(trait: TraitInfo): Object [] {
 		const instanceInfo = <InstanceInfo>trait.holder;
 		className = instanceInfo.getClassName();
 		var native = builtinNativeClasses[className] || nativeClasses[className];
-		if(!native)	return [];
-		// @todo: add option to assert if ASObject.forceNativeMethods is
-		//assert (native, 'Class native is not defined: ' + className);
+		if(!native && !throwErrors)	return [];
+		assert (native, 'Class native is not defined: ' + className);
 		natives = [native.prototype];
 		if (native.instanceNatives) {
 			pushMany(natives, native.instanceNatives);
@@ -23,9 +22,8 @@ export function getNativesForTrait(trait: TraitInfo): Object [] {
 		const classInfo = <ClassInfo>trait.holder;
 		className = classInfo.instanceInfo.getClassName();
 		var native = builtinNativeClasses[className] || nativeClasses[className];
-		if(!native)	return [];
-		// @todo: add option to assert if ASObject.forceNativeMethods is false
-		//assert (native, 'Class native is not defined: ' + className);
+		if(!native && !throwErrors)	return [];
+		assert (native, 'Class native is not defined: ' + className);
 		natives = [native];
 		if (native.classNatives) {
 			pushMany(natives, native.classNatives);

@@ -6,8 +6,8 @@ import { assert } from '@awayjs/graphics';
 /**
  * Searches for a native property in a list of native holders.
  */
-export function getMethodOrAccessorNative(trait: TraitInfo): any {
-	const natives = getNativesForTrait(trait);
+export function getMethodOrAccessorNative(trait: TraitInfo, throwErrors:boolean = true): any {
+	const natives = getNativesForTrait(trait, throwErrors);
 	const name = trait.getName().name;
 	for (let i = 0; i < natives.length; i++) {
 		const native = natives[i];
