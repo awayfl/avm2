@@ -1319,7 +1319,7 @@ export class ASQName extends ASObject implements XMLType {
 	}
 
 	get localName(): string {
-		return this.name.name;
+		return this.name.name!=""?this.name.name:null;
 	}
 
 	get uri(): string {
@@ -2105,7 +2105,7 @@ export class ASXML extends ASObject implements XMLType {
 		if (!this || this.axClass !== this.sec.AXXML) {
 			this.sec.throwError('TypeError', Errors.CheckTypeFailedError, this, 'XML');
 		}
-		return this._name.name;
+		return this._name.name!=""?this._name.name:null;
 	}
 
 	name(): Object {
