@@ -110,7 +110,7 @@ export class Traits {
      * all lookups always get the most recent trait, even if they originate from a super class.
      */
 	resolveRuntimeTraits(superTraits: RuntimeTraits, protectedNs: Namespace,
-		scope: Scope, forceNative: boolean = false): RuntimeTraits {
+		scope: Scope, forceNativeMethods: boolean = false): RuntimeTraits {
 		// Resolve traits so that indexOf works out.
 		this.resolve();
 
@@ -135,18 +135,18 @@ export class Traits {
 
 			switch (trait.kind) {
 				case TRAIT.Method:
-					var method = createMethodForTrait(<MethodTraitInfo>trait, scope, forceNative);
+					var method = createMethodForTrait(<MethodTraitInfo>trait, scope, forceNativeMethods);
 					runtimeTrait.value = method;
 					break;
 				case TRAIT.Getter:
-					runtimeTrait.get = createMethodForTrait(<MethodTraitInfo>trait, scope, forceNative);
+					runtimeTrait.get = createMethodForTrait(<MethodTraitInfo>trait, scope, forceNativeMethods);
 					if (currentTrait && currentTrait.set) {
 						runtimeTrait.set = currentTrait.set;
 						runtimeTrait.kind = TRAIT.GetterSetter;
 					}
 					break;
 				case TRAIT.Setter:
-					runtimeTrait.set = createMethodForTrait(<MethodTraitInfo>trait, scope, forceNative);
+					runtimeTrait.set = createMethodForTrait(<MethodTraitInfo>trait, scope, forceNativeMethods);
 					if (currentTrait && currentTrait.get) {
 						runtimeTrait.get = currentTrait.get;
 						runtimeTrait.kind = TRAIT.GetterSetter;

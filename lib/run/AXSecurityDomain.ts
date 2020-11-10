@@ -340,11 +340,11 @@ export class AXSecurityDomain {
 		axClass.superClass = superClass;
 		axClass.scope = scope;
 
-		const forceNative = nativeClasses[className] ? (<typeof ASClass>nativeClasses[className]).forceNative : false;
+		const forceNativeMethods = nativeClasses[className] ? (<typeof ASClass>nativeClasses[className]).forceNativeMethods : false;
 		
 		// Object and Class have their traits initialized earlier to avoid circular dependencies.
 		if (className !== 'Object' && className !== 'Class') {
-			this.initializeRuntimeTraits(axClass, superClass, classScope, forceNative);
+			this.initializeRuntimeTraits(axClass, superClass, classScope, forceNativeMethods);
 		}
 
 		// Add the |constructor| property on the class dynamic prototype so that all instances can
@@ -364,14 +364,14 @@ export class AXSecurityDomain {
 		return axClass;
 	}
 
-	private initializeRuntimeTraits(axClass: AXClass, superClass: AXClass, scope: Scope, forceNative:boolean = false) {
+	private initializeRuntimeTraits(axClass: AXClass, superClass: AXClass, scope: Scope, forceNativeMethods:boolean = false) {
 		const classInfo = axClass.classInfo;
 		const instanceInfo = classInfo.instanceInfo;
 
 		// Prepare class traits.
 		let classTraits: RuntimeTraits;
 		if (axClass === this.AXClass) {
-			classTraits = instanceInfo.traits.resolveRuntimeTraits(null, null, scope, forceNative);
+			classTraits = instanceInfo.traits.resolveRuntimeTraits(null, null, scope, forceNativeMethods);
 		} else {
 			const rootClassTraits = this.AXClass.classInfo.instanceInfo.runtimeTraits;
 			release || assert(rootClassTraits);
@@ -379,7 +379,7 @@ export class AXSecurityDomain {
 			// referring to global names that would be shadowed if the class scope were active.
 			// Haxe's stdlib uses just such constructs, e.g. Std.parseFloat calls the global
 			// parseFloat.
-			classTraits = classInfo.traits.resolveRuntimeTraits(rootClassTraits, null, scope.parent, forceNative);
+			classTraits = classInfo.traits.resolveRuntimeTraits(rootClassTraits, null, scope.parent, forceNativeMethods);
 		}
 		classInfo.runtimeTraits = classTraits;
 		applyTraits(axClass, classTraits);
@@ -388,7 +388,7 @@ export class AXSecurityDomain {
 		const superInstanceTraits = (superClass && superClass[IS_AX_CLASS]) ? superClass.classInfo.instanceInfo.runtimeTraits : null;
 		const protectedNs = classInfo.abc.getNamespace(instanceInfo.protectedNs);
 		const instanceTraits = instanceInfo.traits.resolveRuntimeTraits(superInstanceTraits,
-			protectedNs, scope, forceNative);
+			protectedNs, scope, forceNativeMethods);
 		instanceInfo.runtimeTraits = instanceTraits;
 		applyTraits(axClass.tPrototype, instanceTraits);
 	}

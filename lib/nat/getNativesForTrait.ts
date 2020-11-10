@@ -13,7 +13,7 @@ export function getNativesForTrait(trait: TraitInfo): Object [] {
 		className = instanceInfo.getClassName();
 		var native = builtinNativeClasses[className] || nativeClasses[className];
 		if(!native)	return [];
-		// @todo: add option to assert if ASObject.forceNative is
+		// @todo: add option to assert if ASObject.forceNativeMethods is
 		//assert (native, 'Class native is not defined: ' + className);
 		natives = [native.prototype];
 		if (native.instanceNatives) {
@@ -24,7 +24,7 @@ export function getNativesForTrait(trait: TraitInfo): Object [] {
 		className = classInfo.instanceInfo.getClassName();
 		var native = builtinNativeClasses[className] || nativeClasses[className];
 		if(!native)	return [];
-		// @todo: add option to assert if ASObject.forceNative is false
+		// @todo: add option to assert if ASObject.forceNativeMethods is false
 		//assert (native, 'Class native is not defined: ' + className);
 		natives = [native];
 		if (native.classNatives) {

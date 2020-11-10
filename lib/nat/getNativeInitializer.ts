@@ -8,7 +8,7 @@ export function getNativeInitializer(classInfo: ClassInfo): AXCallable {
 	const className = classInfo.instanceInfo.getClassName();
 	const asClass = builtinNativeClasses[className] || nativeClasses[className];
 
-	if (methodInfo.isNative() || (<typeof ASClass> asClass)?.forceNative) {
+	if (methodInfo.isNative() || (<typeof ASClass> asClass)?.forceNativeConstructor) {
 		// Use TS constructor as the initializer function.
 		return <any>asClass;
 	}

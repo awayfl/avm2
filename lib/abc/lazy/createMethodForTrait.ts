@@ -9,7 +9,7 @@ import { getNative } from '../../nat/getNative';
 import { getMethodOrAccessorNative } from '../../nat/getMethodOrAccessorNative';
 import { assert } from '@awayjs/graphics';
 
-export function createMethodForTrait(methodTraitInfo: MethodTraitInfo, scope: Scope, forceNative:boolean = false) {
+export function createMethodForTrait(methodTraitInfo: MethodTraitInfo, scope: Scope, forceNativeMethods:boolean = false) {
 	if (methodTraitInfo.method) {
 		return methodTraitInfo.method;
 	}
@@ -36,7 +36,7 @@ export function createMethodForTrait(methodTraitInfo: MethodTraitInfo, scope: Sc
 		}
 	}
 	else {
-		if (forceNative)
+		if (forceNativeMethods)
 			method = getMethodOrAccessorNative(methodTraitInfo);
 		if(!method){
 			method = interpret(methodInfo, scope, null);
