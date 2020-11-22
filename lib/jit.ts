@@ -1,4 +1,4 @@
-import { assert, ShapeTag } from '@awayjs/graphics';
+import { assert } from '@awayjs/graphics';
 import { Scope } from './run/Scope';
 import { HasNext2Info } from './run/HasNext2Info';
 import { AXSecurityDomain } from './run/AXSecurityDomain';
@@ -49,6 +49,7 @@ import {
 	needFastCheck
 } from './ext/external';
 import { TRAIT } from './abc/lazy/TRAIT';
+import { AXCallable } from './run/AXCallable';
 
 const METHOD_HOOKS: StringMap<{path: string, place: 'begin' | 'return', hook: Function}> = {};
 
@@ -111,7 +112,6 @@ export function compile(methodInfo: MethodInfo, options: ICompilerOptions = {}):
 	const {
 		optimise = COMPILER_DEFAULT_OPT,
 		scope,
-		encrupted = false
 	} = options;
 
 	// lex generator
@@ -262,7 +262,6 @@ export function compile(methodInfo: MethodInfo, options: ICompilerOptions = {}):
 	const openTryCatchBlockGroups: ExceptionInfo[][] = [];
 	//	creates a catch condition for a list of ExceptionInfo
 	const createCatchConditions = (catchBlocks: ExceptionInfo[]) => {
-		const createFinally: string[] = [];
 		js.push(`${idnt} catch(e){`);
 
 		moveIdnt(1);
@@ -410,6 +409,7 @@ export function compile(methodInfo: MethodInfo, options: ICompilerOptions = {}):
 			if (params[i].hasOptionalValue())
 				switch (p.optionalValueKind) {
 					case CONSTANT.Utf8:
+						// eslint-disable-next-line max-len
 						js0.push(`${idnt} if (argnum <= ${i}) local${(i + 1)} = context.abc.getString(${p.optionalValueIndex});`);
 						break;
 					default:
@@ -433,7 +433,6 @@ export function compile(methodInfo: MethodInfo, options: ICompilerOptions = {}):
 			write: 0,
 			die: false,
 		};
-		//js0.push(`    let local${i} = ${((i == params.length + 1) ? "context.createArrayUnsafe(Array.from(arguments))" : "undefined")};`);
 	}
 
 	for (let i = 0; i < maxstack; i++)
@@ -516,9 +515,15 @@ export function compile(methodInfo: MethodInfo, options: ICompilerOptions = {}):
 			moveIdnt(1);
 		}
 
+		// eslint-disable-next-line max-len
 		js.push(`${idnt} //${BytecodeName[z.name]} ${z.params.join(' / ')} -> ${z.returnTypeId}`);// + " pos: " + z.position+ " scope:"+z.scope+ " stack:"+z.stack)
 
-		const stackF = (n: number) => ((z.stack - 1 - n) >= 0) ? (`stack${(z.stack - 1 - n)}`) : `/*${underrun} ${z.stack - 1 - n}*/ stack0`;
+		const stackF = (n: number) => {
+			return ((z.stack - 1 - n) >= 0)
+				? `stack${(z.stack - 1 - n)}`
+				: `/*${underrun} ${z.stack - 1 - n}*/ stack0`;
+		};
+
 		const stack0 = stackF(0);
 		const stack1 = stackF(1);
 		const stack2 = stackF(2);
@@ -610,6 +615,7 @@ export function compile(methodInfo: MethodInfo, options: ICompilerOptions = {}):
 					js.push(`${idnt} ${stackN} = ${local(param(1))} > 0;`);
 					break;
 				case Bytecode.IN:
+					// eslint-disable-next-line max-len
 					js.push(`${idnt} ${stack1} = (${stack1} && ${stack1}.axClass === sec.AXQName) ? obj.axHasProperty(${stack1}.name) : ${stack0}.axHasPublicProperty(${stack1});`);
 					break;
 
@@ -688,11 +694,13 @@ export function compile(methodInfo: MethodInfo, options: ICompilerOptions = {}):
 				case Bytecode.IFTRUE:
 					js.push(`${idnt} if (${stack0}) { p = ${param(0)}; continue; };`);
 					break;
-				case Bytecode.LOOKUPSWITCH:
-					var jj = z.params.concat();
-					var dj = jj.shift();
+				case Bytecode.LOOKUPSWITCH: {
+					const jj = z.params.concat();
+					const dj = jj.shift();
+					// eslint-disable-next-line max-len
 					js.push(`${idnt} if (${stack0} >= 0 && ${stack0} < ${jj.length}) { p = [${jj.join(', ')}][${stack0}]; continue; } else { p = ${dj}; continue; };`);
 					break;
+				}
 				case Bytecode.JUMP:
 					js.push(`${idnt} { p = ${param(0)}; continue; };`);
 					break;
@@ -800,12 +808,14 @@ export function compile(methodInfo: MethodInfo, options: ICompilerOptions = {}):
 					js.push(`${idnt} ${stack0} = -${stack0};`);
 					break;
 				case Bytecode.TYPEOF:
+					// eslint-disable-next-line max-len
 					js.push(`${idnt} ${stack0} = typeof ${stack0} === 'undefined' ? 'undefined' : context.typeof(${stack0});`);
 					break;
 				case Bytecode.INSTANCEOF:
 					js.push(`${idnt} ${stack1} = ${stack0}.axIsInstanceOf(${stack1});`);
 					break;
 				case Bytecode.ISTYPE:
+					// eslint-disable-next-line max-len
 					js.push(`${idnt} ${stack0} = ${scope}.getScopeProperty(${getname(param(0))}, true, false).axIsType(${stack0});`);
 
 					break;
@@ -813,10 +823,12 @@ export function compile(methodInfo: MethodInfo, options: ICompilerOptions = {}):
 					js.push(`${idnt} ${stack1} = ${stack0}.axIsType(${stack1});`);
 					break;
 				case Bytecode.ASTYPE:
+					// eslint-disable-next-line max-len
 					js.push(`${idnt} ${stack0} = ${scope}.getScopeProperty(${getname(param(0))}, true, false).axAsType(${stack0});`);
 					break;
 
 				case Bytecode.ASTYPELATE:
+					// eslint-disable-next-line max-len
 					js.push(`${idnt} ${stack1} = ${emitIsAXOrPrimitive(stack1)} ? ${stack0}.axAsType(${stack1}) : ${stack1};`);
 					break;
 
@@ -829,26 +841,33 @@ export function compile(methodInfo: MethodInfo, options: ICompilerOptions = {}):
 					if (USE_OPT(blockSaver) && blockSaver.safe(obj)) {
 						js.push(`${idnt} /* This call maybe a safe, ${blockSaver.constructor.name} */`);
 					}
+
+					// eslint-disable-next-line max-len
 					js.push(`${idnt} ${obj} = context.call(${stackF(param(0) + 1)}, ${stackF(param(0))}, [${pp.join(', ')}]);`);
-				}
+
 					break;
+				}
 				case Bytecode.CONSTRUCT: {
 					const pp = [];
 
-					for (let j: number = 1; j <= param(0); j++)
+					for (let j = 1; j <= param(0); j++) {
 						pp.push(stackF(param(0) - j));
+					}
 
+					// eslint-disable-next-line max-len
 					js.push(`${idnt} ${stackF(param(0))} = context.construct(${stackF(param(0))}, [${pp.join(', ')}]);`);
-				}
+
 					break;
-				case Bytecode.CALLPROPERTY:
-					var mn = abc.getMultiname(param(1));
+				}
+				case Bytecode.CALLPROPERTY: {
+					const mn = abc.getMultiname(param(1));
 					const pp = [];
 					for (let j: number = 0; j <= param(0); j++)
 						pp.push(stackF(param(0) - j));
 
 					const obj = pp.shift();
 					if (abc.getMultiname(param(1)).name == 'getDefinitionByName') {
+						// eslint-disable-next-line max-len
 						js.push(`${idnt} ${stackF(param(0))} = context.getdefinitionbyname(${scope}, ${obj}, [${pp.join(', ')}]);`);
 					} else {
 						let d;
@@ -861,6 +880,7 @@ export function compile(methodInfo: MethodInfo, options: ICompilerOptions = {}):
 							if (d.isFunc) {
 								js.push(`${idnt} ${stackF(param(0))} = ${obj}['${n}'](${pp.join(', ')});`);
 							} else {
+								// eslint-disable-next-line max-len
 								js.push(`${idnt} ${stackF(param(0))} = /*fast*/${obj}.axCallProperty(${getname(param(1))}, [${pp.join(', ')}], false);`);
 							}
 							break;
@@ -880,10 +900,12 @@ export function compile(methodInfo: MethodInfo, options: ICompilerOptions = {}):
 
 						moveIdnt(1);
 						js.push(`${idnt} let t = ${obj};`);
+						// eslint-disable-next-line max-len
 						js.push(`${idnt} const m = ${obj}['$Bg${mn.name}'] || (t = sec.box(${obj}), t['$Bg${mn.name}']);`);
 						js.push(`${idnt} if( typeof m === 'function' ) { `);
 						js.push(`${idnt}     ${stackF(param(0))} = m.call(t${pp.length ? ', ' : ''}${pp.join(', ')});`);
 						js.push(`${idnt} } else {  `);
+						// eslint-disable-next-line max-len
 						js.push(`${idnt}     ${stackF(param(0))} = ${obj}.axCallProperty(${getname(param(1))}, [${pp.join(', ')}], false);`);
 						js.push(`${idnt} }`);
 
@@ -896,19 +918,21 @@ export function compile(methodInfo: MethodInfo, options: ICompilerOptions = {}):
 						}
 					}
 					break;
+				}
 				case Bytecode.CALLPROPLEX: {
-					var mn = abc.getMultiname(param(1));
+					const mn = abc.getMultiname(param(1));
 					const pp = [];
 
 					for (let j: number = 0; j <= param(0); j++)
 						pp.push(stackF(param(0) - j));
 
 					js.push(`${idnt} temp = sec.box(${pp.shift()});`);
+					// eslint-disable-next-line max-len
 					js.push(`${idnt} ${stackF(param(0))} = (typeof temp['$Bg${mn.name}'] === 'function')? temp['$Bg${mn.name}'](${pp.join(', ')}) : temp.axCallProperty(${getname(param(1))}, [${pp.join(', ')}], true);`);
 				}
 					break;
 				case Bytecode.CALLPROPVOID: {
-					var mn = abc.getMultiname(param(1));
+					const mn = abc.getMultiname(param(1));
 					const pp = [];
 
 					for (let j: number = 0; j <= param(0); j++)
@@ -916,9 +940,10 @@ export function compile(methodInfo: MethodInfo, options: ICompilerOptions = {}):
 
 					const obj = pp.shift();
 					{
-						let d: ICallEntry;
-						if (USE_OPT(fastCall) && (d = fastCall.sureThatFast(obj))) {
-							const n = fastCall.sureThatFast(obj).isMangled ? Multiname.getPublicMangledName(mn.name) : mn.name;
+						if (USE_OPT(fastCall) && fastCall.sureThatFast(obj)) {
+							const n = fastCall.sureThatFast(obj).isMangled
+								? Multiname.getPublicMangledName(mn.name)
+								: mn.name;
 
 							js.push(`${idnt} /* We sure that this safe call */ `);
 							js.push(`${idnt} ${obj}['${n}'](${pp.join(', ')});`);
@@ -967,12 +992,13 @@ export function compile(methodInfo: MethodInfo, options: ICompilerOptions = {}):
 				}
 					break;
 
-				case Bytecode.FINDPROPSTRICT:
-					var mn = abc.getMultiname(param(0));
+				case Bytecode.FINDPROPSTRICT: {
+					const mn = abc.getMultiname(param(0));
 					js.push(`${idnt} // ${mn}`);
 
 					if (USE_OPT(lexGen) && lexGen.test(mn)) {
 						js.push(`${idnt} /* GenerateLexImports */`);
+						// eslint-disable-next-line max-len
 						js.push(`${idnt} ${stackN} = ${lexGen.getPropStrictAlias(mn,<any>{ nameAlias: getname(param(0)) })};`);
 
 						if (USE_OPT(fastCall)) {
@@ -984,16 +1010,19 @@ export function compile(methodInfo: MethodInfo, options: ICompilerOptions = {}):
 
 					js.push(`${idnt} ${stackN} = ${scope}.findScopeProperty(${getname(param(0))}, true, false);`);
 					break;
+				}
 				case Bytecode.FINDPROPERTY:
 					js.push(`${idnt} // ${abc.getMultiname(param(0))}`);
 					js.push(`${idnt} ${stackN} = ${scope}.findScopeProperty(${getname(param(0))}, false, false);`);
 					break;
 				case Bytecode.NEWFUNCTION:
 					js.push(`${idnt} // ${abc.getMethodInfo(param(0))}`);
+					// eslint-disable-next-line max-len
 					js.push(`${idnt} ${stackN} = sec.createFunction(context.abc.getMethodInfo(${param(0)}), ${scope}, true);`);
 					break;
 				case Bytecode.NEWCLASS:
 					js.push(`${idnt} // ${abc.classes[param(0)]}`);
+					// eslint-disable-next-line max-len
 					js.push(`${idnt} ${stack0} = sec.createClass(context.abc.classes[${param(0)}], ${stack0}, ${scope});`);
 					break;
 
@@ -1010,6 +1039,7 @@ export function compile(methodInfo: MethodInfo, options: ICompilerOptions = {}):
 						moveIdnt(1);
 
 						if (runtime) {
+							// eslint-disable-next-line max-len
 							js.push(`${idnt} const rn = context.runtimename(${getname(param(0))}, ${stack0}, ${stack1});`);
 						} else {
 							js.push(`${idnt} const rn = context.runtimename(${getname(param(0))}, ${stack0});`);
@@ -1034,12 +1064,14 @@ export function compile(methodInfo: MethodInfo, options: ICompilerOptions = {}):
 						pp.push(stackF(param(0) - j));
 
 					js.push(`${idnt} ${stackF(param(0) - 1)} = sec.AXArray.axBox([${pp.join(', ')}]);`);
-				}
+
 					break;
+				}
 				case Bytecode.NEWOBJECT:
 					js.push(`${idnt} temp = Object.create(sec.AXObject.tPrototype);`);
 
 					for (let j: number = 1; j <= param(0); j++) {
+						// eslint-disable-next-line max-len
 						js.push(`${idnt} temp.axSetPublicProperty(${stackF(2 * param(0) - 2 * j + 1)}, ${stackF(2 * param(0) - 2 * j)});`);
 					}
 
@@ -1051,6 +1083,7 @@ export function compile(methodInfo: MethodInfo, options: ICompilerOptions = {}):
 					js.push(`${idnt} ${stackN} = sec.createActivation(context.mi, ${scope});`);
 					break;
 				case Bytecode.NEWCATCH:
+					// eslint-disable-next-line max-len
 					js.push(`${idnt} ${stackN} = sec.createCatch(context.mi.getBody().catchBlocks[${param(0)}], ${scope});`);
 					break;
 				case Bytecode.CONSTRUCTSUPER: {
@@ -1068,6 +1101,7 @@ export function compile(methodInfo: MethodInfo, options: ICompilerOptions = {}):
 					for (let j: number = 1; j <= param(0); j++)
 						pp.push(stackF(param(0) - j));
 
+					// eslint-disable-next-line max-len
 					js.push(`${idnt} ${stackF(param(0))} = sec.box(${stackF(param(0))}).axCallSuper(${getname(param(1))}, context.savedScope, [${pp.join(', ')}]);`);
 				}
 					break;
@@ -1077,10 +1111,12 @@ export function compile(methodInfo: MethodInfo, options: ICompilerOptions = {}):
 					for (let j: number = 1; j <= param(0); j++)
 						pp.push(stackF(param(0) - j));
 
-					var mn = abc.getMultiname(param(1));
+					const mn = abc.getMultiname(param(1));
 					if (mn.isRuntimeName() && mn.isRuntimeNamespace()) {
+						// eslint-disable-next-line max-len
 						js.push(`${idnt} ${stackF(param(0) + 2)} = sec.box(${stackF(param(0) + 2)}).axGetSuper(context.runtimename(${getname(param(1))}, ${stackF(param(0))}, ${stackF(param(0) + 1)}), context.savedScope, [${pp.join(', ')}]);`);
 					} else {
+						// eslint-disable-next-line max-len
 						js.push(`${idnt} ${stackF(param(0) + 1)} = sec.box(${stackF(param(0) + 1)}).axGetSuper(context.runtimename(${getname(param(1))}, ${stackF(param(0))}), context.savedScope, [${pp.join(', ')}]);`);
 					}
 				}
@@ -1091,6 +1127,7 @@ export function compile(methodInfo: MethodInfo, options: ICompilerOptions = {}):
 					for (let j: number = 1; j <= param(0); j++)
 						pp.push(stackF(param(0) - j));
 
+					// eslint-disable-next-line max-len
 					js.push(`${idnt} sec.box(${stackF(param(0))}).axCallSuper(${getname(param(1))}, context.savedScope, [${pp.join(', ')}]);`);
 				}
 					break;
@@ -1100,15 +1137,15 @@ export function compile(methodInfo: MethodInfo, options: ICompilerOptions = {}):
 					for (let j: number = 1; j <= param(0); j++)
 						pp.push(stackF(param(0) - j));
 
+					// eslint-disable-next-line max-len
 					js.push(`${idnt} ${stackF(param(0))} = context.constructprop(${getname(param(1))}, ${stackF(param(0))}, [${pp.join(', ')}]);`);
 
 					USE_OPT(fastCall) && fastCall.kill(stackF(param(0)));
 				}
 					break;
-				case Bytecode.GETPROPERTY:
-					var mn = abc.getMultiname(param(0));
+				case Bytecode.GETPROPERTY: {
+					const mn = abc.getMultiname(param(0));
 					let isSafe = false;
-					const lastIdnt = idnt;
 
 					if (USE_OPT(blockSaver) && blockSaver.needSafe(stack0)) {
 						isSafe = true;
@@ -1157,8 +1194,9 @@ export function compile(methodInfo: MethodInfo, options: ICompilerOptions = {}):
 					}
 
 					break;
+				}
 				case Bytecode.GETPROPERTY_DYN: {
-					var mn = abc.getMultiname(param(0));
+					const mn = abc.getMultiname(param(0));
 
 					if (USE_OPT(blockSaver) && blockSaver.markToSafe(mn)) {
 						js.push(`${idnt} /* Mark lookup to safe call, ${blockSaver.constructor.name} */`);
@@ -1195,8 +1233,8 @@ export function compile(methodInfo: MethodInfo, options: ICompilerOptions = {}):
 
 					break;
 				}
-				case Bytecode.SETPROPERTY:
-					var mn = abc.getMultiname(param(0));
+				case Bytecode.SETPROPERTY: {
+					const mn = abc.getMultiname(param(0));
 					js.push(`${idnt} // ${mn}`);
 
 					if (needFastCheck()) {
@@ -1212,56 +1250,71 @@ export function compile(methodInfo: MethodInfo, options: ICompilerOptions = {}):
 						moveIdnt(-1);
 						js.push(`${idnt} }`);
 					}
-
 					break;
-				case Bytecode.SETPROPERTY_DYN:
-					var mn = abc.getMultiname(param(0));
+				}
+				case Bytecode.SETPROPERTY_DYN: {
+					const mn = abc.getMultiname(param(0));
 					if (mn.isRuntimeName() && mn.isRuntimeNamespace()) {
+						// eslint-disable-next-line max-len
 						js.push(`${idnt} context.setproperty(context.runtimename(${getname(param(0))}, ${stack1}, ${stack2}), ${stack0}, ${stack3});`);
 					} else {
+						// eslint-disable-next-line max-len
 						js.push(`${idnt} context.setproperty(context.runtimename(${getname(param(0))}, ${stack1}), ${stack0}, ${stack2});`);
 					}
 					break;
+				}
 				case Bytecode.DELETEPROPERTY:
 					js.push(`${idnt} // ${abc.getMultiname(param(0))}`);
 					js.push(`${idnt} ${stack0} = context.deleteproperty(${getname(param(0))}, ${stack0});`);
 					break;
-				case Bytecode.DELETEPROPERTY_DYN:
-					var mn = abc.getMultiname(param(0));
+				case Bytecode.DELETEPROPERTY_DYN: {
+					const mn = abc.getMultiname(param(0));
 					if (mn.isRuntimeName() && mn.isRuntimeNamespace()) {
+						// eslint-disable-next-line max-len
 						js.push(`${idnt} ${stack2} = context.deleteproperty(context.runtimename(${getname(param(0))}, ${stack0}, ${stack1}), ${stack2});`);
 					} else {
+						// eslint-disable-next-line max-len
 						js.push(`${idnt} ${stack1} = context.deleteproperty(context.runtimename(${getname(param(0))}, ${stack0}), ${stack1});`);
 					}
 					break;
+				}
 				case Bytecode.GETSUPER:
+					// eslint-disable-next-line max-len
 					js.push(`${idnt} ${stack0} = sec.box(${stack0}).axGetSuper(${getname(param(0))}, context.savedScope);`);
 					break;
-				case Bytecode.GETSUPER_DYN:
-					var mn = abc.getMultiname(param(0));
+				case Bytecode.GETSUPER_DYN: {
+					const mn = abc.getMultiname(param(0));
 					if (mn.isRuntimeName() && mn.isRuntimeNamespace()) {
+						// eslint-disable-next-line max-len
 						js.push(`${idnt} ${stack2} = sec.box(${stack2}).axGetSuper(context.runtimename(${getname(param(0))}, ${stack0}, ${stack1}), context.savedScope);`);
 					} else {
+						// eslint-disable-next-line max-len
 						js.push(`${idnt} ${stack1} = sec.box(${stack1}).axGetSuper(context.runtimename(${getname(param(0))}, ${stack0}), context.savedScope);`);
 					}
 					break;
+				}
 				case Bytecode.SETSUPER:
+					// eslint-disable-next-line max-len
 					js.push(`${idnt} sec.box(${stack1}).axSetSuper(${getname(param(0))}, context.savedScope, ${stack0});`);
 					break;
-				case Bytecode.SETSUPER_DYN:
-					var mn = abc.getMultiname(param(0));
+				case Bytecode.SETSUPER_DYN: {
+					const mn = abc.getMultiname(param(0));
 					if (mn.isRuntimeName() && mn.isRuntimeNamespace()) {
+						// eslint-disable-next-line max-len
 						js.push(`${idnt} sec.box(${stack3}).axSetSuper(context.runtimename(${getname(param(0))}, ${stack1}, ${stack2}), context.savedScope, ${stack0});`);
 					} else {
+						// eslint-disable-next-line max-len
 						js.push(`${idnt} sec.box(${stack2}).axSetSuper(context.runtimename(${getname(param(0))}, ${stack1}), context.savedScope, ${stack0});`);
 					}
 					break;
-				case Bytecode.GETLEX:
-					var mn = abc.getMultiname(param(0));
+				}
+				case Bytecode.GETLEX: {
+					const mn = abc.getMultiname(param(0));
 
 					if (USE_OPT(lexGen) && lexGen.test(mn)) {
 						js.push(`${idnt} // ${mn}`);
 						js.push(`${idnt} /* GenerateLexImports */`);
+						// eslint-disable-next-line max-len
 						js.push(`${idnt} ${stackN} = ${lexGen.getLexAlias(mn,<any>{ nameAlias : getname(param(0)) })};`);
 
 						if (fastCall) {
@@ -1277,6 +1330,7 @@ export function compile(methodInfo: MethodInfo, options: ICompilerOptions = {}):
 						js.push(`${idnt} }`);
 					}
 					break;
+				}
 				case Bytecode.RETURNVALUE:
 					if (METHOD_HOOKS && METHOD_HOOKS[hookMethodPath + '__return']) {
 						js.push(`${idnt} /* ATTACH METHOD HOOK */`);
@@ -1293,7 +1347,9 @@ export function compile(methodInfo: MethodInfo, options: ICompilerOptions = {}):
 					js.push(`${idnt} return;`);
 					break;
 				case Bytecode.COERCE:
-					if (optimise & COMPILER_OPT_FLAGS.SKIP_NULL_COERCE && (lastZ.name === Bytecode.PUSHNULL || lastZ.name === Bytecode.PUSHUNDEFINED)) {
+					if ((optimise & COMPILER_OPT_FLAGS.SKIP_NULL_COERCE)
+						&& (lastZ.name === Bytecode.PUSHNULL
+							|| lastZ.name === Bytecode.PUSHUNDEFINED)) {
 						js.push(`${idnt} // SKIP_NULL_COERCE`);
 						break;
 					}
@@ -1303,13 +1359,17 @@ export function compile(methodInfo: MethodInfo, options: ICompilerOptions = {}):
 						break;
 					}
 
+					// eslint-disable-next-line max-len
 					js.push(`${idnt} ${stack0} = ${emitIsAX(stack0)} ? ${scope}.getScopeProperty(${getname(param(0))}, true, false).axCoerce(${stack0}): ${stack0};`);
 					break;
 				case Bytecode.COERCE_A:
 					js.push(`${idnt} ;`);
 					break;
 				case Bytecode.COERCE_S:
-					if (optimise & COMPILER_OPT_FLAGS.SKIP_NULL_COERCE && (lastZ.name === Bytecode.PUSHNULL || lastZ.name === Bytecode.PUSHUNDEFINED)) {
+					if ((optimise & COMPILER_OPT_FLAGS.SKIP_NULL_COERCE)
+						&& (lastZ.name === Bytecode.PUSHNULL
+							|| lastZ.name === Bytecode.PUSHUNDEFINED)) {
+
 						js.push(`${idnt} // SKIP_NULL_COERCE`);
 						break;
 					}
@@ -1400,14 +1460,19 @@ export function compile(methodInfo: MethodInfo, options: ICompilerOptions = {}):
 					if ((z.name <= Bytecode.LI8 && z.name >= Bytecode.SF64)) {
 						js.push(`${idnt} //unknown instruction ${BytecodeName[q[i].name]}`);
 						//console.log(`unknown instruction ${BytecodeName[q[i].name]} (method N${methodInfo.index()})`)
-						return { error:  { message: 'unhandled instruction ' + z, reason: COMPILATION_FAIL_REASON.UNHANDLED_INSTRUCTION } };
+						return {
+							error:  {
+								message: 'unhandled instruction ' + z,
+								reason: COMPILATION_FAIL_REASON.UNHANDLED_INSTRUCTION
+							}
+						};
 					}
 			}
 		}
 
 		currentCatchBlocks = catchEnd ? catchEnd[z.position] : null;
 		if (currentCatchBlocks) {
-			var lastCatchBlocks = openTryCatchBlockGroups.pop();
+			const lastCatchBlocks = openTryCatchBlockGroups.pop();
 			if (lastCatchBlocks) {
 				moveIdnt(-1);
 
@@ -1418,7 +1483,7 @@ export function compile(methodInfo: MethodInfo, options: ICompilerOptions = {}):
 		}
 	}
 	if (openTryCatchBlockGroups.length > 0) {
-		var lastCatchBlocks = openTryCatchBlockGroups.pop();
+		const lastCatchBlocks = openTryCatchBlockGroups.pop();
 		if (lastCatchBlocks) {
 			moveIdnt(-1);
 
@@ -1452,6 +1517,7 @@ export function compile(methodInfo: MethodInfo, options: ICompilerOptions = {}):
 		locals.push(`    let local${l.index} =  undefined`);
 		if (!(optimise & COMPILER_OPT_FLAGS.USE_ES_PARAMS)) {
 			if (l.index == params.length + 1 && !l.die) {
+				// eslint-disable-next-line max-len
 				locals.push(`    if(arguments && arguments.length) { local${l.index} = context.sec.createArrayUnsafe(Array.from(arguments).slice(${params.length})); }`);
 				locals.push(`    else { local${l.index} = context.emptyArray; }`);
 			}
@@ -1617,16 +1683,17 @@ export class Context {
 		return type;
 	}
 
-	call(value, obj, pp): any {
+	call(value: AXCallable, obj: ASObject, pp: any[]): any {
 		validateCall(this.sec, value, pp.length);
 		return value.axApply(obj, pp);
 	}
 
-	getdefinitionbyname(scope, obj, pp) {
-		return (<ScriptInfo>(<any>scope.global.object).scriptInfo).abc.env.app.getClass(Multiname.FromSimpleName(pp[0]));
+	getdefinitionbyname(scope: Scope, _: any, pp: any[]): AXClass {
+		const info = (<ScriptInfo>(<any>scope.global.object).scriptInfo);
+		return info.abc.env.app.getClass(Multiname.FromSimpleName(pp[0]));
 	}
 
-	getpropertydyn(mn, obj) {
+	getpropertydyn(mn: Multiname | number, obj: ASObject): ASObject {
 		const b = this.sec.box(obj);
 
 		if (typeof mn === 'number')
@@ -1738,7 +1805,8 @@ export class Context {
 				this.rn.namespaces = name.namespaces;
 				return this.rn;
 			}
-          	// appriory number
+
+			// appriory number
 			if (typeof name === 'number') {
 				this.rn.numeric = true;
 				this.rn.numericValue = name;
