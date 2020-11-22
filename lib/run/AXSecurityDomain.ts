@@ -28,7 +28,7 @@ import { tryLinkNativeClass } from '../nat/tryLinkNativeClass';
 import { getNativeInitializer } from '../nat/getNativeInitializer';
 import { installClassLoaders } from '../nat/installClassLoaders';
 import { installNativeFunctions } from '../nat/installNativeFunctions';
-import { release, isIndex, IndentingWriter, defineNonEnumerableProperty, 
+import { release, isIndex, IndentingWriter, defineNonEnumerableProperty,
 	defineReadOnlyProperty, flashlog, AVMStage } from '@awayfl/swf-loader';
 import { assert } from '@awayjs/graphics';
 import { checkValue } from './checkValue';
@@ -341,7 +341,7 @@ export class AXSecurityDomain {
 		axClass.scope = scope;
 
 		const forceNativeMethods = nativeClasses[className] ? (<typeof ASClass>nativeClasses[className]).forceNativeMethods : false;
-		
+
 		// Object and Class have their traits initialized earlier to avoid circular dependencies.
 		if (className !== 'Object' && className !== 'Class') {
 			this.initializeRuntimeTraits(axClass, superClass, classScope, forceNativeMethods);
@@ -364,7 +364,7 @@ export class AXSecurityDomain {
 		return axClass;
 	}
 
-	private initializeRuntimeTraits(axClass: AXClass, superClass: AXClass, scope: Scope, forceNativeMethods:boolean = false) {
+	private initializeRuntimeTraits(axClass: AXClass, superClass: AXClass, scope: Scope, forceNativeMethods: boolean = false) {
 		const classInfo = axClass.classInfo;
 		const instanceInfo = classInfo.instanceInfo;
 

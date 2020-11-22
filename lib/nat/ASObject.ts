@@ -28,7 +28,7 @@ export class ASObject implements IMetaobjectProtocol {
 
 	static forceNativeConstructor?: boolean = false;
 	static forceNativeMethods?: boolean = false;
-	
+
 	// Declare all instance ASObject fields as statics here so that the TS
 	// compiler can convert ASClass class objects to ASObject instances.
 
@@ -288,7 +288,7 @@ export class ASObject implements IMetaobjectProtocol {
 	}
 
 	axGetSuper(mn: Multiname, scope: Scope): any {
-		
+
 		const name = axCoerceName(mn.name);
 		const namespaces = mn.namespaces;
 		const trait = (<AXClass>scope.parent.object).tPrototype.traits.getTrait(namespaces, name);
@@ -296,7 +296,7 @@ export class ASObject implements IMetaobjectProtocol {
 		if (trait.kind === TRAIT.Getter || trait.kind === TRAIT.GetterSetter) {
 			value = trait.get.call(this);
 		} else {
-			const mangledName = trait.name.getMangledName();			
+			const mangledName = trait.name.getMangledName();
 			const fun = (<AXClass>scope.parent.object).tPrototype[mangledName];
 			if (fun)
 				return this.sec.AXMethodClosure.Create(<any> this, fun);

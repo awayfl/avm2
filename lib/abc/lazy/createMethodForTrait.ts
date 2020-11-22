@@ -9,7 +9,7 @@ import { getNative } from '../../nat/getNative';
 import { getMethodOrAccessorNative } from '../../nat/getMethodOrAccessorNative';
 import { assert } from '@awayjs/graphics';
 
-export function createMethodForTrait(methodTraitInfo: MethodTraitInfo, scope: Scope, forceNativeMethods:boolean = false) {
+export function createMethodForTrait(methodTraitInfo: MethodTraitInfo, scope: Scope, forceNativeMethods: boolean = false) {
 	if (methodTraitInfo.method) {
 		return methodTraitInfo.method;
 	}
@@ -34,11 +34,10 @@ export function createMethodForTrait(methodTraitInfo: MethodTraitInfo, scope: Sc
 			};
 			method.isInterpreted = false;
 		}
-	}
-	else {
+	} else {
 		if (forceNativeMethods)
 			method = getMethodOrAccessorNative(methodTraitInfo, false);
-		if(!method){
+		if (!method) {
 			method = interpret(methodInfo, scope, null);
 
 			if (!release) {

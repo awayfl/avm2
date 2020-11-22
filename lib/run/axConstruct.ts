@@ -203,7 +203,7 @@ export function axConstruct(argArray?: any[]) {
 	}
 	// @todo: this is a hack for getting adaptee
 	// for dynamic created SimpleButton
-	if (this.classInfo?.instanceInfo?.name?.name == 'SimpleButton'){
+	if (this.classInfo?.instanceInfo?.name?.name == 'SimpleButton') {
 		object.adaptee = new MovieClip();
 	}
 

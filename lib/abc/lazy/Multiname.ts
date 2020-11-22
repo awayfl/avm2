@@ -179,14 +179,14 @@ export class Multiname {
 		}
 	  const uri = this.namespaces[0].uri;
 
-	  // @todo: not sure about this. 
+	  // @todo: not sure about this.
 	  // seems like its needed to match for xml nodes that have uri==""
 	  if (uri == '' || uri == 'default')
 		  return true;
 
 		for (let i = mn.namespaces.length; i--;) {
 			// @todo: not sure about this. needed for xml
-			if (mn.namespaces[i].uri=='' || mn.namespaces[i].uri === uri) {
+			if (mn.namespaces[i].uri == '' || mn.namespaces[i].uri === uri) {
 				return true;
 			}
 		}
