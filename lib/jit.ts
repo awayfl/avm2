@@ -50,6 +50,8 @@ import {
 } from './ext/external';
 import { TRAIT } from './abc/lazy/TRAIT';
 import { AXCallable } from './run/AXCallable';
+import { ASClass } from './nat/ASClass';
+import { AXObject } from './run/AXObject';
 
 const METHOD_HOOKS: StringMap<{path: string, place: 'begin' | 'return', hook: Function}> = {};
 
@@ -1572,18 +1574,17 @@ export function compile(methodInfo: MethodInfo, options: ICompilerOptions = {}):
 }
 
 export class Context {
-	private readonly mi: MethodInfo;
+	/*jit internal*/ readonly mi: MethodInfo;
 	private readonly savedScope: Scope;
 	private readonly rn: Multiname;
 	private readonly sec: AXSecurityDomain
-	private readonly abc: ABCFile
+	/*jit internal*/ readonly abc: ABCFile
 	private readonly names: Multiname[]
-	private readonly jsGlobal: Object = jsGlobal;
-	private readonly axCoerceString: Function = axCoerceString;
-	private readonly axCheckFilter: Function = axCheckFilter;
-	private readonly internNamespace: Function = internNamespace;
+	/*jit internal*/ readonly jsGlobal: Object = jsGlobal;
+	/*jit internal*/ readonly axCoerceString: Function = axCoerceString;
+	/*jit internal*/ readonly axCheckFilter: Function = axCheckFilter;
+	/*jit internal*/ readonly internNamespace: Function = internNamespace;
 	private domain: any;
-	private domainMemoryView: DataView;
 
 	public readonly emptyArray: any;
 	public readonly AX_CLASS_SYMBOL = IS_AX_CLASS;
@@ -1707,9 +1708,15 @@ export class Context {
 		return b.axGetProperty(mn);
 	}
 
-	setproperty(mn: Multiname, value: any, obj: AXClass) {
+	setproperty(mn: Multiname, value: any, obj: AXClass | null) {
 
-		// unsfae SET fro plain Objects
+		if (obj == void 0) {
+			throw new Error(
+				// eslint-disable-next-line max-len
+				`[AVM2] Unexpected property assignment: ${typeof obj}[${JSON.stringify(mn?.name)}] = ${value?.toString()}`
+			);
+		}
+		// unsafe SET into plain Object
 		if (!obj[IS_AX_CLASS]) {
 			obj[mn.name] = value;
 			return;
@@ -1725,21 +1732,23 @@ export class Context {
 		if (obj[IS_EXTERNAL_CLASS]) {
 			// create prop and proxy to JS side.
 			ASObject.prototype.axSetProperty.call(obj, mn, value, <any>Bytecode.INITPROPERTY);
-			Object.defineProperty(obj, mn.name, { value });
+			Object.defineProperty(obj, mn.name, { value, configurable: true, writable: true });
 			return;
 		}
 
 		obj.axSetProperty(mn, value, <any>Bytecode.INITPROPERTY);
 	}
 
-	deleteproperty(name, obj) {
+	deleteproperty(name: string | number | Multiname, obj: AXObject) {
 		const b = this.sec.box(obj);
+
 		if (typeof name === 'number' || typeof name === 'string')
 			return delete b[name];
+
 		return b.axDeleteProperty(name);
 	}
 
-	construct(obj, pp) {
+	construct(obj: AXClass, pp: any[]): AXObject {
 		const mn = obj.classInfo.instanceInfo.getName();
 
 		const r = extClassContructor(mn.name, pp);
@@ -1754,7 +1763,7 @@ export class Context {
 		return obj.axConstruct(pp);
 	}
 
-	constructprop(mn: Multiname, obj, pp) {
+	constructprop(mn: Multiname, obj: AXClass, pp: any[]) {
 		const r = extClassContructor(mn, pp);
 
 		if (r != null)
@@ -1771,12 +1780,12 @@ export class Context {
 		return ctor.axConstruct(pp);
 	}
 
-	pushwith(scope, obj) {
+	pushwith(scope: Scope, obj: AXObject) {
 		const b = this.sec.box(obj);
 		return (scope.object === b && scope.isWith == true) ? scope : new Scope(scope, b, true);
 	}
 
-	hasnext2(obj, name) {
+	hasnext2(obj: AXObject, name: number): [AXObject, number] {
 		const info = Context.HAS_NEXT_INFO;
 
 		if (obj == undefined) {
@@ -1787,14 +1796,15 @@ export class Context {
 		return [info.object, info.index];
 	}
 
-	runtimename(mn, stack0, stack1) {
+	runtimename(mn: Multiname, stack0: Multiname & ASClass | string , stack1: string): Multiname {
 		this.rn.resolved = {};
 		this.rn.script = null;
 		this.rn.numeric = false;
 		this.rn.id = mn.id;
 		this.rn.kind = mn.kind;
+
 		if (mn.isRuntimeName()) {
-			let name = stack0;
+			let name = <any>stack0;
 			// Unwrap content script-created AXQName instances.
 			if (name && name.axClass && name.axClass === name.sec.AXQName) {
 				name = name.name;
@@ -1823,10 +1833,10 @@ export class Context {
 			this.rn.id = -1;
 		} else {
 			this.rn.name = mn.name;
-			stack1 = stack0;
+			stack1 = <string>stack0;
 		}
 		if (mn.isRuntimeNamespace()) {
-			let ns = stack1;
+			let ns = <any> stack1;
 			// Unwrap content script-created AXNamespace instances.
 			if (ns._ns) {
 				release || assert(ns.sec && ns.axClass === ns.sec.AXNamespace);
