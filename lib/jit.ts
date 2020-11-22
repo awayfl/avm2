@@ -52,6 +52,7 @@ import { TRAIT } from './abc/lazy/TRAIT';
 import { AXCallable } from './run/AXCallable';
 import { ASClass } from './nat/ASClass';
 import { AXObject } from './run/AXObject';
+import { Settings } from './Settings';
 
 const METHOD_HOOKS: StringMap<{path: string, place: 'begin' | 'return', hook: Function}> = {};
 
@@ -130,7 +131,7 @@ export function compile(methodInfo: MethodInfo, options: ICompilerOptions = {}):
 
 	const fastCall = new FastCall(lexGen, scope);
 
-	const USE_OPT = (opt) => {
+	const USE_OPT = (opt: any) => {
 		return optimise & COMPILER_OPT_FLAGS.ALLOW_CUSTOM_OPTIMISER && !!opt;
 	};
 
@@ -367,9 +368,16 @@ export function compile(methodInfo: MethodInfo, options: ICompilerOptions = {}):
 			args.push({ name: '...args' });
 		}
 
-		const argsFilled = args.map((e) => e.value ? `${e.name} = ${e.value}` : e.name).join(', ');
+		const argsFilled = args
+			.map((e) => {
+				return e.value
+					? `${e.name} /* ${e.type || '*'} */ = ${e.value}`
+					: `${e.name} /* ${e.type || '*'} */`;
+			})
+			.join(', ');
+
 		const mname =  methodName.replace(/([^a-z0-9]+)/gi, '_');
-		js0.push(`${idnt} ${' '.repeat(mname.length + 25)}// ${args.map(e => e.type).join(', ')}`);
+
 		js0.push(`${idnt} return function compiled_${mname}(${argsFilled}) {`);
 
 		moveIdnt(1);
@@ -517,8 +525,9 @@ export function compile(methodInfo: MethodInfo, options: ICompilerOptions = {}):
 			moveIdnt(1);
 		}
 
-		// eslint-disable-next-line max-len
-		js.push(`${idnt} //${BytecodeName[z.name]} ${z.params.join(' / ')} -> ${z.returnTypeId}`);// + " pos: " + z.position+ " scope:"+z.scope+ " stack:"+z.stack)
+		if (Settings.PRINT_BYTE_INSTRUCTION) {
+			js.push(`${idnt} //${BytecodeName[z.name]} ${z.params.join(' / ')} -> ${z.returnTypeId}`);
+		}
 
 		const stackF = (n: number) => {
 			return ((z.stack - 1 - n) >= 0)
@@ -1513,10 +1522,10 @@ export function compile(methodInfo: MethodInfo, options: ICompilerOptions = {}):
 		}
 
 		if (l.die) {
-			locals.push(`     // local${l.index} is assigned before read, skip init`);
+			locals.push(`        // local${l.index} is assigned before read, skip init`);
 		}
 		// todo: this is not 100% correct yet:
-		locals.push(`    let local${l.index} =  undefined`);
+		locals.push(`        let local${l.index} = undefined`);
 		if (!(optimise & COMPILER_OPT_FLAGS.USE_ES_PARAMS)) {
 			if (l.index == params.length + 1 && !l.die) {
 				// eslint-disable-next-line max-len

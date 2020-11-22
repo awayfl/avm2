@@ -1,5 +1,6 @@
+/* eslint-disable max-len */
 import { Debug } from '@awayfl/swf-loader';
-import { debuggerMode } from './settings';
+import { Settings } from './Settings';
 
 /*
  * Copyright 2014 Mozilla Foundation
@@ -23,7 +24,7 @@ export interface ErrorInfo {
 	// typeName: string;
 }
 
-export var Errors = {
+export const Errors = {
 /**
  * AVM2 Error Codes
  */
@@ -635,7 +636,7 @@ for (const k in Errors) {
 
 export function getErrorMessage(index: number): string {
 	const message = 'Error #' + index;
-	if (!debuggerMode.value) {
+	if (!Settings.ENABLE_DEBUG) {
 		return message;
 	}
 	const error = Errors[index];
@@ -646,7 +647,7 @@ export function getErrorInfo(index: number): ErrorInfo {
 	return Errors[index];
 }
 
-export function formatErrorMessage(error, ...args) {
+export function formatErrorMessage(error: ErrorInfo, ...args: any[]) {
 	let message = error.message;
 	args.forEach(function (x, i) {
 		message = message.replace('%' + (i + 1), x);
@@ -654,7 +655,7 @@ export function formatErrorMessage(error, ...args) {
 	return 'Error #' + error.code + ': ' + message;
 }
 
-export function translateErrorMessage(error) {
+export function translateErrorMessage(error: ErrorInfo & {type: string}) {
 	if (error.type) {
 		switch (error.type) {
 			case 'undefined_method':
