@@ -18,5 +18,5 @@ export const Settings: IAVM2Settings = {
 	/**
 	 * @description Use a XRegExp when RegExp require a lookbehinde pattern on Safari
 	 */
-	EMULATE_LOOKBEHIND: false
+	EMULATE_LOOKBEHIND: true
 };
