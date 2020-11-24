@@ -1,7 +1,8 @@
 /* eslint-disable no-cond-assign */
-import XRegExpOrig, { ExecArray } from 'xregexp';
+import XRegExpOrig from 'xregexp/lib';
+import XRegExpClass, { ExecArray } from 'xregexp/types';
 
-type TRegExp = typeof XRegExpOrig;
+type TRegExp = typeof XRegExpClass;
 interface IXRegExp extends TRegExp {
 	execLb (str: string, regex: string, flags: string): ExecArray | null;
 	testLb (str: string, regex: string, flags: string): boolean;
