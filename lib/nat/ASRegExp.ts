@@ -3,8 +3,20 @@ import { ASObject } from './ASObject';
 import { addPrototypeFunctionAlias } from './addPrototypeFunctionAlias';
 import { Errors } from '../errors';
 import { ASArray } from './ASArray';
+import { Settings } from '../Settings';
+import { XRegExp } from './XRegLookup';
+import { ExecArray } from 'xregexp/types';
 
 const WARN_REPORT_TABLE: StringMap<boolean> = {};
+
+const IS_SUPPORT_LOOKBEHIND = (() => {
+	try {
+		new RegExp('(?<=)');
+		return true;
+	} catch (_) {
+		return false;
+	}
+})();
 
 export class ASRegExp extends ASObject {
 	private static UNMATCHABLE_PATTERN = '^(?!)$';
@@ -17,8 +29,10 @@ export class ASRegExp extends ASObject {
 		addPrototypeFunctionAlias(proto, '$Bgtest', asProto.test);
 	}
 
-	value: RegExp;
+	public value: RegExp;
 
+	private _flags: string = '';
+	private _useFallback: boolean = false;
 	private _dotall: boolean;
 	private _extended: boolean;
 	private _source: string;
@@ -29,19 +43,22 @@ export class ASRegExp extends ASObject {
 		this._dotall = false;
 		this._extended = false;
 		this._captureNames = [];
-		let source;
+
+		let source: string;
 		if (pattern === undefined) {
 			pattern = source = '';
 		} else if (this.sec.AXRegExp.axIsType(pattern)) {
 			if (flags) {
 				this.sec.throwError('TypeError', Errors.RegExpFlagsArgumentError);
 			}
+
+			flags = pattern._flags;
 			source = pattern.source;
 			pattern = pattern.value;
 		} else {
 			pattern = String(pattern);
 			// Escape all forward slashes.
-			source = pattern.replace(/(^|^[\/]|(?:\\\\)+)\//g, '$1\\/');
+			source = pattern.replace(/(^|^[/]|(?:\\\\)+)\//g, '$1\\/');
 			if (flags) {
 				const f = flags;
 				flags = '';
@@ -66,16 +83,18 @@ export class ASRegExp extends ASObject {
 					}
 				}
 			}
+
+			this._flags = flags;
 			pattern = this._parse(source);
 		}
+
 		try {
 			this.value = new RegExp(pattern, flags);
 		} catch (e) {
-			// Our pattern pre-parser should have eliminated most errors, but in some cases we can't
-			// meaningfully detect them. If that happens, just catch the error and substitute an
-			// unmatchable pattern here.
-			this.value = new RegExp(ASRegExp.UNMATCHABLE_PATTERN, flags);
+			console.log('Unsupported RegExp pattern:' + pattern);
+			this._useFallback = true;
 		}
+
 		this._source = source;
 	}
 
@@ -83,13 +102,27 @@ export class ASRegExp extends ASObject {
 	// returns an unmatchable pattern of the source turns out to be invalid.
 	private _parse(pattern: string): string {
 
-		if (pattern.includes('?<=')) {
+		if (pattern.includes('(?<=') || pattern.includes('(?<!') && !this._extended) {
 
-			WARN_REPORT_TABLE['?<='] || console.warn(
-				'[ASRegExp] Pattern inlcude a positive lookbehind, falling to native.' +
-				'But this not compiled on Safari! Sorry!:', pattern);
+			if (!IS_SUPPORT_LOOKBEHIND) {
+				if (!Settings.EMULATE_LOOKBEHIND) {
+					throw new Error(
+						'[ASRegExp] Pattern include a lookbehind, but your browser not usupport it:' + pattern);
+				}
 
-			WARN_REPORT_TABLE['?<='] = true;
+				WARN_REPORT_TABLE['lookbehind'] || console.warn(
+					'[ASRegExp] Pattern include a lookbehind, we should use XRegExp polyfill for Safari.\n', pattern);
+				WARN_REPORT_TABLE['lookbehind'] = true;
+
+				// falling down to XRegExp
+				this._useFallback = true;
+				return pattern;
+			}
+
+			WARN_REPORT_TABLE['lookbehind'] || console.warn(
+				'[ASRegExp] Pattern include a lookbehind, we will use a native .\n', pattern);
+			WARN_REPORT_TABLE['lookbehind'] = true;
+
 			return pattern;
 		}
 
@@ -167,7 +200,7 @@ export class ASRegExp extends ASObject {
 					}
 					break;
 				case '{':
-					if (/\{[^\{]*?(?:,[^\{]*?)?\}/.exec(pattern.substr(i))) {
+					if (/\{[^{]*?(?:,[^{]*?)?\}/.exec(pattern.substr(i))) {
 						result += RegExp.lastMatch;
 						i += RegExp.lastMatch.length - 1;
 					} else {
@@ -237,12 +270,12 @@ export class ASRegExp extends ASObject {
 		return out;
 	}
 
-	axCall(ignoredThisArg: any): any {
+	axCall(_: any): any {
 		// eslint-disable-next-line
 		return this.exec.apply(this, arguments);
 	}
 
-	axApply(ignoredThisArg: any, argArray?: any[]): any {
+	axApply(_: any, argArray?: any[]): any {
 		// eslint-disable-next-line
 		return this.exec.apply(this, argArray);
 	}
@@ -279,8 +312,54 @@ export class ASRegExp extends ASObject {
 		return this._extended;
 	}
 
+	internalStringSearch (string: string): number {
+		if (!this._useFallback) {
+			return string.search(this.value);
+		}
+
+		return XRegExp.searchLb(string, this._source, this._flags);
+	}
+
+	internalStringReplace (string: string, replace: string | any): string {
+		if (!this._useFallback) {
+			return string.replace(this.value, replace);
+		}
+
+		return XRegExp.replaceLb(string, this._source, replace, this._flags);
+	}
+
+	// box string matche from string
+	internalStringMatch (string: string): any {
+		if (!this._useFallback) {
+			return string.match(this.value);
+		}
+
+		const res = XRegExp.matchAllLb(string, this._source, this._flags);
+
+		if (res.length > 0) {
+			const match = <any>[res[0]];
+
+			/**
+			* XRegExp not fully implement lookup behind matching, set index to 0
+			* @todo Maybe dangerous, implement it!
+			*/
+			match.index = 0;
+			match.input = string;
+			return match;
+		}
+
+		return null;
+	}
+
 	exec(str: string = ''): ASArray {
-		const result = this.value.exec(str);
+		let result: RegExpExecArray | ExecArray;
+
+		if (this._useFallback) {
+			result = XRegExp.execLb(str, this._source, this._flags);
+		} else {
+			result = this.value.exec(str);
+		}
+
 		if (!result) {
 			return null;
 		}

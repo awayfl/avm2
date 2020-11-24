@@ -7,6 +7,8 @@ import { axCoerceString } from '../run/axCoerceString';
 import { transformJStoASRegExpMatchArray } from './transformJStoASRegExpMatchArray';
 import { as3Compatibility } from './as3Compatibility';
 import { as3ToLowerCase } from './as3ToLowerCase';
+import { ASRegExp } from './ASRegExp';
+import { ASFunction } from './ASFunction';
 
 export class ASString extends ASObject {
 	static classNatives: any [] = [String];
@@ -61,6 +63,7 @@ export class ASString extends ASObject {
 	}
 
 	concat() {
+		// eslint-disable-next-line prefer-spread, prefer-rest-params
 		return this.value.concat.apply(this.value, arguments);
 	}
 
@@ -84,16 +87,23 @@ export class ASString extends ASObject {
 		return value.length > other.length ? 1 : -1;
 	}
 
-	match(pattern /* : string | ASRegExp */): any {
+	__getRegExp(pattern: string | ASRegExp): ASRegExp {
 		if (this.sec.AXRegExp.axIsType(pattern)) {
-			pattern = (<any>pattern).value;
+			return <ASRegExp>pattern;
 		} else {
-			pattern = axCoerceString(pattern);
+			return <any> this.sec.AXRegExp.axConstruct([axCoerceString(pattern)]);
 		}
-		const result = this.value.match(<any>pattern);
+	}
+
+	match(pattern: string | ASRegExp): any {
+
+		const regExp = this.__getRegExp(pattern);
+		const result =  regExp.internalStringMatch(this.value);
+
 		if (!result) {
 			return null;
 		}
+
 		try {
 			return transformJStoASRegExpMatchArray(this.sec, result);
 		} catch (e) {
@@ -101,30 +111,26 @@ export class ASString extends ASObject {
 		}
 	}
 
-	replace(pattern /* : string | ASRegExp */, repl /* : string | ASFunction */) {
-		if (this.sec.AXRegExp.axIsType(pattern)) {
-			pattern = (<any>pattern).value;
-		} else {
-			pattern = axCoerceString(pattern);
-		}
+	replace(pattern: string | ASRegExp, repl: string | ASFunction) {
+
+		const regExp = this.__getRegExp(pattern);
+
 		if (this.sec.AXFunction.axIsType(repl)) {
 			repl = (<any>repl).value;
 		}
+
 		try {
-			return this.value.replace(<any>pattern, <any>repl);
+			return regExp.internalStringReplace(this.value, repl);
 		} catch (e) {
 			return this.value;
 		}
 	}
 
-	search(pattern /* : string | ASRegExp */) {
-		if (this.sec.AXRegExp.axIsType(pattern)) {
-			pattern = (<any>pattern).value;
-		} else {
-			pattern = axCoerceString(pattern);
-		}
+	search(pattern: string | ASRegExp): number {
+		const regExp = this.__getRegExp(pattern);
+
 		try {
-			return this.value.search(<any>pattern);
+			return regExp.internalStringSearch(this.value);
 		} catch (e) {
 			return -1;
 		}
@@ -158,7 +164,7 @@ export class ASString extends ASObject {
 		if (length == -1) {
 			length = this.value.length - from - 1;
 		}
-      	return this.value.substr(from, length);
+		return this.value.substr(from, length);
 	}
 
 	toLocaleLowerCase() {
@@ -205,11 +211,14 @@ export class ASString extends ASObject {
 
 	generic_concat() {
 		const receiver = this == undefined ? '' : this;
+		// eslint-disable-next-line prefer-rest-params
 		return String.prototype.concat.apply(receiver, arguments);
 	}
 
 	generic_localeCompare(other: string) {
 		const receiver = this.sec.AXString.axBox(String(this));
+
+		// eslint-disable-next-line prefer-spread, prefer-rest-params
 		return receiver.localeCompare.apply(receiver, arguments);
 	}
 
