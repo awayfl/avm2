@@ -29,5 +29,11 @@ module.exports = {
 			jsnext: true,
 			main: true,
 			module: true
-		}) ]
+		}),
+		commonjs({
+			namedExports: {
+				'blocks': './node_modules/xregexp/tools/output/blocks.js'
+			}
+		})
+	]
 };
