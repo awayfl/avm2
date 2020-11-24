@@ -42,7 +42,7 @@ export class b2XForm {
 		this.R.SetIdentity();
 	}
 
-	public Set(x: b2XForm): void{
+	public Set(x: b2XForm): void {
 
 		this.position.SetV(x.position);
 

@@ -58,7 +58,7 @@ export class b2Contact {
 	/**
 	 * Change this to be a sensor or-non-sensor contact.
 	 */
-	public SetSensor(sensor: boolean): void{
+	public SetSensor(sensor: boolean): void {
 		if (sensor) {
 			this.m_flags |= b2Contact.e_sensorFlag;
 		} else {
@@ -78,7 +78,7 @@ export class b2Contact {
 	 * contact listener. The contact is only disabled for the current
 	 * time step (or sub-step in continuous collision).
 	 */
-	public SetEnabled(flag: boolean): void{
+	public SetEnabled(flag: boolean): void {
 		if (flag) {
 			this.m_flags |= b2Contact.e_enabledFlag;
 		} else {
@@ -277,7 +277,7 @@ export class b2Contact {
 
 	//virtual ~b2Contact() {}
 
-	public Evaluate(): void{}
+	public Evaluate(): void {}
 
 	private static s_input: b2TOIInput = new b2TOIInput();
 	public ComputeTOI(sweepA: b2Sweep, sweepB: b2Sweep): number {

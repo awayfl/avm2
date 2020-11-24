@@ -40,7 +40,7 @@ export class b2MouseJoint extends b2Joint {
 	/**
 	 * Use this to update the target point.
 	 */
-	public SetTarget(target: b2Vec2): void{
+	public SetTarget(target: b2Vec2): void {
 		if (this.m_bodyB.IsAwake() == false) {
 			this.m_bodyB.SetAwake(true);
 		}
@@ -110,7 +110,7 @@ export class b2MouseJoint extends b2Joint {
 	private K: b2Mat22 = new b2Mat22();
 	private K1: b2Mat22 = new b2Mat22();
 	private K2: b2Mat22 = new b2Mat22();
-	public InitVelocityConstraints(step: b2TimeStep): void{
+	public InitVelocityConstraints(step: b2TimeStep): void {
 		const b: b2Body = this.m_bodyB;
 
 		const mass: number = b.GetMass();
@@ -183,7 +183,7 @@ export class b2MouseJoint extends b2Joint {
 		b.m_angularVelocity += invI * (rX * this.m_impulse.y - rY * this.m_impulse.x);
 	}
 
-	public SolveVelocityConstraints(step: b2TimeStep): void{
+	public SolveVelocityConstraints(step: b2TimeStep): void {
 		const b: b2Body = this.m_bodyB;
 
 		let tMat: b2Mat22;

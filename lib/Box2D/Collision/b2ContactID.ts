@@ -11,7 +11,7 @@ export class b2ContactID {
 
 	}
 
-	public Set(id: b2ContactID): void{
+	public Set(id: b2ContactID): void {
 		this.key = id._key;
 	}
 

@@ -230,7 +230,7 @@ export class b2PrismaticJoint extends b2Joint {
 		this.m_enableMotor = def.enableMotor;
 	}
 
-	public InitVelocityConstraints(step: b2TimeStep): void{
+	public InitVelocityConstraints(step: b2TimeStep): void {
 		const b1: b2Body = this.m_body1;
 		const b2: b2Body = this.m_body2;
 
@@ -374,7 +374,7 @@ export class b2PrismaticJoint extends b2Joint {
 
 	}
 
-	public SolveVelocityConstraints(step: b2TimeStep): void{
+	public SolveVelocityConstraints(step: b2TimeStep): void {
 		const b1: b2Body = this.m_body1;
 		const b2: b2Body = this.m_body2;
 

@@ -24,5 +24,5 @@ export class b2PairCallback {
 
 	// This should free the pair's user data. In extreme circumstances, it is possible
 	// this will be called with null pairUserData because the pair never existed.
-	public PairRemoved(proxyUserData1: any, proxyUserData2: any, pairUserData: any): void{}
+	public PairRemoved(proxyUserData1: any, proxyUserData2: any, pairUserData: any): void {}
 }

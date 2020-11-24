@@ -69,7 +69,7 @@ export class b2EdgeShape extends b2Shape {
 	/**
 	* @inheritDoc
 	*/
-	public ComputeAABB(aabb: b2AABB, transform: b2Transform): void{
+	public ComputeAABB(aabb: b2AABB, transform: b2Transform): void {
 		const tMat: b2Mat22 = transform.R;
 		//b2Vec2 v1 = b2Mul(transform, this.m_v1);
 		const v1X: number = transform.position.x + (tMat.col1.x * this.m_v1.x + tMat.col2.x * this.m_v1.y);
@@ -96,7 +96,7 @@ export class b2EdgeShape extends b2Shape {
 	/**
 	* @inheritDoc
 	*/
-	public ComputeMass(massData: b2MassData, density: number): void{
+	public ComputeMass(massData: b2MassData, density: number): void {
 		massData.mass = 0;
 		massData.center.SetV(this.m_v1);
 		massData.I = 0;

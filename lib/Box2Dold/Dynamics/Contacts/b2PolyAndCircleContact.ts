@@ -35,7 +35,7 @@ export class b2PolyAndCircleContact extends b2Contact {
 		return new b2PolyAndCircleContact(shape1, shape2);
 	}
 
-	public static Destroy(contact: b2Contact, allocator: any): void{
+	public static Destroy(contact: b2Contact, allocator: any): void {
 	}
 
 	constructor(shape1: b2Shape, shape2: b2Shape) {
@@ -55,7 +55,7 @@ export class b2PolyAndCircleContact extends b2Contact {
 	//
 	private static readonly s_evalCP: b2ContactPoint = new b2ContactPoint();
 	//
-	public Evaluate(listener: b2ContactListener): void{
+	public Evaluate(listener: b2ContactListener): void {
 		let i: number /** int */;
 		let v1: b2Vec2;
 		let v2: b2Vec2;

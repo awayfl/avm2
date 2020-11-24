@@ -183,7 +183,7 @@ export class b2ContactSolver {
 	}
 	//~b2ContactSolver();
 
-	public InitVelocityConstraints(step: b2TimeStep): void{
+	public InitVelocityConstraints(step: b2TimeStep): void {
 		let tVec: b2Vec2;
 		let tVec2: b2Vec2;
 		let tMat: b2Mat22;
@@ -241,7 +241,7 @@ export class b2ContactSolver {
 		}
 	}
 
-	public SolveVelocityConstraints(): void{
+	public SolveVelocityConstraints(): void {
 		let j: number /** int */;
 		let ccp: b2ContactConstraintPoint;
 		let rAX: number;

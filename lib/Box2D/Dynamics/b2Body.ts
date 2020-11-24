@@ -148,7 +148,7 @@ export class b2Body {
 	 * @param fixture the fixture to be removed.
 	 * @warning This function is locked during callbacks.
 	 */
-	public DestroyFixture(fixture: b2Fixture): void{
+	public DestroyFixture(fixture: b2Fixture): void {
 		//b2Settings.b2Assert(this.m_world.IsLocked() == false);
 		if (this.m_world.IsLocked() == true) {
 			return;
@@ -216,7 +216,7 @@ export class b2Body {
 	* the center of mass).
 	* @param angle the new world rotation angle of the body in radians.
 	*/
-	public SetPositionAndAngle(position: b2Vec2, angle: number): void{
+	public SetPositionAndAngle(position: b2Vec2, angle: number): void {
 
 		let f: b2Fixture;
 
@@ -382,7 +382,7 @@ export class b2Body {
 	* @param force the world force vector, usually in Newtons (N).
 	* @param point the world position of the point of application.
 	*/
-	public ApplyForce(force: b2Vec2, point: b2Vec2): void{
+	public ApplyForce(force: b2Vec2, point: b2Vec2): void {
 		if (this.m_type != b2Body.b2_dynamicBody) {
 			return;
 		}
@@ -422,7 +422,7 @@ export class b2Body {
 	* @param impulse the world impulse vector, usually in N-seconds or kg-m/s.
 	* @param point the world position of the point of application.
 	*/
-	public ApplyImpulse(impulse: b2Vec2, point: b2Vec2): void{
+	public ApplyImpulse(impulse: b2Vec2, point: b2Vec2): void {
 		if (this.m_type != b2Body.b2_dynamicBody) {
 			return;
 		}
@@ -828,7 +828,7 @@ export class b2Body {
 	/**
 	* Should this body be treated like a bullet for continuous collision detection?
 	*/
-	public SetBullet(flag: boolean): void{
+	public SetBullet(flag: boolean): void {
 		if (flag) {
 			this.m_flags |= b2Body.e_bulletFlag;
 		} else {
@@ -847,7 +847,7 @@ export class b2Body {
 	 * Is this body allowed to sleep
 	 * @param	flag
 	 */
-	public SetSleepingAllowed(flag: boolean): void{
+	public SetSleepingAllowed(flag: boolean): void {
 		if (flag) {
 			this.m_flags |= b2Body.e_allowSleepFlag;
 		} else {
@@ -918,7 +918,7 @@ export class b2Body {
 	* An inactive body is still owned by a b2World object and remains
 	* in the body list.
 	*/
-	public SetActive(flag: boolean): void{
+	public SetActive(flag: boolean): void {
 		if (flag == this.IsActive()) {
 			return;
 		}
@@ -1128,7 +1128,7 @@ export class b2Body {
 	//
 	private static s_xf1: b2Transform = new b2Transform();
 	//
-	public SynchronizeFixtures(): void{
+	public SynchronizeFixtures(): void {
 
 		const xf1: b2Transform = b2Body.s_xf1;
 		xf1.R.Set(this.m_sweep.a0);
@@ -1145,7 +1145,7 @@ export class b2Body {
 		}
 	}
 
-	public SynchronizeTransform(): void{
+	public SynchronizeTransform(): void {
 		this.m_xf.R.Set(this.m_sweep.a);
 		//this.m_xf.position = this.m_sweep.c - b2Mul(this.m_xf.R, this.m_sweep.localCenter);
 		const tMat: b2Mat22 = this.m_xf.R;
@@ -1172,7 +1172,7 @@ export class b2Body {
 		return true;
 	}
 
-	public Advance(t: number): void{
+	public Advance(t: number): void {
 		// Advance to the new safe time.
 		this.m_sweep.Advance(t);
 		this.m_sweep.c.SetV(this.m_sweep.c0);

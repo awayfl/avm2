@@ -26,7 +26,7 @@ export class b2Sweep {
 
 	/// Get the interpolated transform at a specific time.
 	/// @param t the normalized time in [0,1].
-	public GetXForm(xf: b2XForm, t: number): void{
+	public GetXForm(xf: b2XForm, t: number): void {
 
 		// center = p + R * localCenter
 		if (1.0 - this.t0 > Number.MIN_VALUE) {
@@ -50,7 +50,7 @@ export class b2Sweep {
 
 	/// Advance the sweep forward, yielding a new initial state.
 	/// @param t the new initial time.
-	public Advance(t: number): void{
+	public Advance(t: number): void {
 		if (this.t0 < t && 1.0 - this.t0 > Number.MIN_VALUE) {
 			const alpha: number = (t - this.t0) / (1.0 - this.t0);
 			//c0 = (1.0f - alpha) * c0 + alpha * c;

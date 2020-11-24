@@ -33,7 +33,7 @@ export class b2Transform {
 		this.R.SetIdentity();
 	}
 
-	public Set(x: b2Transform): void{
+	public Set(x: b2Transform): void {
 
 		this.position.SetV(x.position);
 

@@ -50,7 +50,7 @@ export class b2RevoluteJointDef extends b2JointDef {
 
 	/// Initialize the bodies, anchors, and reference angle using the world
 	/// anchor.
-	public Initialize(b1: b2Body, b2: b2Body, anchor: b2Vec2): void{
+	public Initialize(b1: b2Body, b2: b2Body, anchor: b2Vec2): void {
 		this.body1 = b1;
 		this.body2 = b2;
 		this.localAnchor1 = this.body1.GetLocalPoint(anchor);

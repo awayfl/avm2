@@ -174,7 +174,7 @@ export class b2Shape {
 
 	//
 	private static s_proxyAABB: b2AABB = new b2AABB();
-	public CreateProxy(broadPhase: b2BroadPhase, transform: b2XForm): void{
+	public CreateProxy(broadPhase: b2BroadPhase, transform: b2XForm): void {
 
 		//b2Settings.b2Assert(this.m_proxyId == b2_nullProxy);
 
@@ -194,7 +194,7 @@ export class b2Shape {
 
 	}
 
-	public DestroyProxy(broadPhase: b2BroadPhase): void{
+	public DestroyProxy(broadPhase: b2BroadPhase): void {
 
 		if (this.m_proxyId != b2Pair.b2_nullProxy) {
 			broadPhase.DestroyProxy(this.m_proxyId);
@@ -226,7 +226,7 @@ export class b2Shape {
 	}
 
 	private static s_resetAABB: b2AABB = new b2AABB();
-	public RefilterProxy(broadPhase: b2BroadPhase, transform: b2XForm): void{
+	public RefilterProxy(broadPhase: b2BroadPhase, transform: b2XForm): void {
 
 		if (this.m_proxyId == b2Pair.b2_nullProxy) {
 			return;
@@ -247,7 +247,7 @@ export class b2Shape {
 
 	}
 
-	public UpdateSweepRadius(center: b2Vec2): void{}
+	public UpdateSweepRadius(center: b2Vec2): void {}
 
 	public m_type: number /** int */;
 	public m_next: b2Shape;

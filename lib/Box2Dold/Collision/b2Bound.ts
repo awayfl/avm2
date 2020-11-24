@@ -19,7 +19,7 @@
 export class b2Bound {
 	public IsLower(): boolean { return (this.value & 1) == 0; }
 	public IsUpper(): boolean { return (this.value & 1) == 1; }
-	public Swap(b: b2Bound): void{
+	public Swap(b: b2Bound): void {
 		const tempValue: number /** uint */ = this.value;
 		const tempProxyId: number /** uint */ = this.proxyId;
 		const tempStabbingCount: number /** uint */ = this.stabbingCount;

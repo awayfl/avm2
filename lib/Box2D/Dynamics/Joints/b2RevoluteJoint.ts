@@ -75,7 +75,7 @@ export class b2RevoluteJoint extends b2Joint {
 	/**
 	* Enable/disable the joint limit.
 	*/
-	public EnableLimit(flag: boolean): void{
+	public EnableLimit(flag: boolean): void {
 		this.m_enableLimit = flag;
 	}
 
@@ -96,7 +96,7 @@ export class b2RevoluteJoint extends b2Joint {
 	/**
 	* Set the joint limits in radians.
 	*/
-	public SetLimits(lower: number, upper: number): void{
+	public SetLimits(lower: number, upper: number): void {
 		//b2Settings.b2Assert(lower <= upper);
 		this.m_lowerAngle = lower;
 		this.m_upperAngle = upper;
@@ -114,7 +114,7 @@ export class b2RevoluteJoint extends b2Joint {
 	/**
 	* Enable/disable the joint motor.
 	*/
-	public EnableMotor(flag: boolean): void{
+	public EnableMotor(flag: boolean): void {
 		this.m_enableMotor = flag;
 	}
 
@@ -137,7 +137,7 @@ export class b2RevoluteJoint extends b2Joint {
 	/**
 	* Set the maximum motor torque, usually in N-m.
 	*/
-	public SetMaxMotorTorque(torque: number): void{
+	public SetMaxMotorTorque(torque: number): void {
 		this.m_maxMotorTorque = torque;
 	}
 
@@ -178,7 +178,7 @@ export class b2RevoluteJoint extends b2Joint {
 	private K1: b2Mat22 = new b2Mat22();
 	private K2: b2Mat22 = new b2Mat22();
 	private K3: b2Mat22 = new b2Mat22();
-	public InitVelocityConstraints(step: b2TimeStep): void{
+	public InitVelocityConstraints(step: b2TimeStep): void {
 		const bA: b2Body = this.m_bodyA;
 		const bB: b2Body = this.m_bodyB;
 

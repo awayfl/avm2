@@ -12,7 +12,7 @@ export class b2Color {
 		this._b = 255 * b2Math.Clamp(bb, 0.0, 1.0) >>> 0;
 	}
 
-	public Set(rr: number, gg: number, bb: number): void{
+	public Set(rr: number, gg: number, bb: number): void {
 		this._r = 255 * b2Math.Clamp(rr, 0.0, 1.0) >>> 0;
 		this._g = 255 * b2Math.Clamp(gg, 0.0, 1.0) >>> 0;
 		this._b = 255 * b2Math.Clamp(bb, 0.0, 1.0) >>> 0;

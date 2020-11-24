@@ -294,7 +294,7 @@ export class b2LineJoint extends b2Joint {
 		this.m_perp.SetZero();
 	}
 
-	public InitVelocityConstraints(step: b2TimeStep): void{
+	public InitVelocityConstraints(step: b2TimeStep): void {
 		const bA: b2Body = this.m_bodyA;
 		const bB: b2Body = this.m_bodyB;
 
@@ -420,7 +420,7 @@ export class b2LineJoint extends b2Joint {
 		}
 	}
 
-	public SolveVelocityConstraints(step: b2TimeStep): void{
+	public SolveVelocityConstraints(step: b2TimeStep): void {
 		const bA: b2Body = this.m_bodyA;
 		const bB: b2Body = this.m_bodyB;
 

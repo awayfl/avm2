@@ -59,7 +59,7 @@ export class b2PairManager {
 	}
 	//~b2PairManager();
 
-	public Initialize(broadPhase: b2BroadPhase, callback: b2PairCallback): void{
+	public Initialize(broadPhase: b2BroadPhase, callback: b2PairCallback): void {
 		this.m_broadPhase = broadPhase;
 		this.m_callback = callback;
 	}
@@ -80,7 +80,7 @@ export class b2PairManager {
 	We may add a pair that is already in the pair manager and pair buffer.
 	If the added pair is not a new pair, then it must be in the pair buffer (because RemovePair was called).
 	*/
-	public AddBufferedPair(proxyId1: number /** int */, proxyId2: number /** int */): void{
+	public AddBufferedPair(proxyId1: number /** int */, proxyId2: number /** int */): void {
 		let bufferedPair: b2BufferedPair;
 		//b2Settings.b2Assert(id1 != b2_nullProxy && id2 != b2_nullProxy);
 		//b2Settings.b2Assert(this.m_pairBufferCount < b2_maxPairs);
@@ -111,7 +111,7 @@ export class b2PairManager {
 	}
 
 	// Buffer a pair for removal.
-	public RemoveBufferedPair(proxyId1: number /** int */, proxyId2: number /** int */): void{
+	public RemoveBufferedPair(proxyId1: number /** int */, proxyId2: number /** int */): void {
 		let bufferedPair: b2BufferedPair;
 
 		//b2Settings.b2Assert(id1 != b2_nullProxy && id2 != b2_nullProxy);
@@ -145,7 +145,7 @@ export class b2PairManager {
 		}
 	}
 
-	public Commit(): void{
+	public Commit(): void {
 		let bufferedPair: b2BufferedPair;
 		let i: number /** int */;
 
@@ -330,11 +330,11 @@ export class b2PairManager {
 		return pair;
 	}
 
-	private ValidateBuffer(): void{
+	private ValidateBuffer(): void {
 		// DEBUG
 	}
 
-	private ValidateTable(): void{
+	private ValidateTable(): void {
 		// DEBUG
 	}
 

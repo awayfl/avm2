@@ -356,7 +356,7 @@ export class b2PolygonShape extends b2Shape {
 	/**
 	* @inheritDoc
 	*/
-	public ComputeMass(massData: b2MassData, density: number): void{
+	public ComputeMass(massData: b2MassData, density: number): void {
 		// Polygon mass, centroid, and inertia.
 		// Let rho be the polygon density in mass per unit area.
 		// Then:

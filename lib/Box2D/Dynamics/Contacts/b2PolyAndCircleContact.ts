@@ -16,17 +16,17 @@ export class b2PolyAndCircleContact extends b2Contact {
 		return new b2PolyAndCircleContact();
 	}
 
-	public static Destroy(contact: b2Contact, allocator: any): void{
+	public static Destroy(contact: b2Contact, allocator: any): void {
 	}
 
-	public Reset(fixtureA: b2Fixture, fixtureB: b2Fixture): void{
+	public Reset(fixtureA: b2Fixture, fixtureB: b2Fixture): void {
 		super.Reset(fixtureA, fixtureB);
 		b2Settings.b2Assert(fixtureA.GetType() == b2Shape.e_polygonShape);
 		b2Settings.b2Assert(fixtureB.GetType() == b2Shape.e_circleShape);
 	}
 	//~b2PolyAndCircleContact() {}
 
-	public Evaluate(): void{
+	public Evaluate(): void {
 		const bA: b2Body = this.m_fixtureA.m_body;
 		const bB: b2Body = this.m_fixtureB.m_body;
 

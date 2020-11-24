@@ -129,7 +129,7 @@ export class b2GearJoint extends b2Joint {
 
 	}
 
-	public InitVelocityConstraints(step: b2TimeStep): void{
+	public InitVelocityConstraints(step: b2TimeStep): void {
 		const g1: b2Body = this.m_ground1;
 		const g2: b2Body = this.m_ground2;
 		const b1: b2Body = this.m_body1;
@@ -218,7 +218,7 @@ export class b2GearJoint extends b2Joint {
 		}
 	}
 
-	public SolveVelocityConstraints(step: b2TimeStep): void{
+	public SolveVelocityConstraints(step: b2TimeStep): void {
 		const b1: b2Body = this.m_body1;
 		const b2: b2Body = this.m_body2;
 

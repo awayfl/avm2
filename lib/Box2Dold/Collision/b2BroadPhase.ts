@@ -274,7 +274,7 @@ export class b2BroadPhase {
 		return proxyId;
 	}
 
-	public DestroyProxy(proxyId: number /** uint */): void{
+	public DestroyProxy(proxyId: number /** uint */): void {
 		let tBound1: b2Bound;
 		let tBound2: b2Bound;
 
@@ -397,7 +397,7 @@ export class b2BroadPhase {
 
 	// Call MoveProxy as many times as you like, then when you are done
 	// call Commit to finalized the proxy pairs (for your time step).
-	public MoveProxy(proxyId: number /** uint */, aabb: b2AABB): void{
+	public MoveProxy(proxyId: number /** uint */, aabb: b2AABB): void {
 		let as3arr: number[];
 		let as3int: number /** int */;
 
@@ -661,7 +661,7 @@ export class b2BroadPhase {
 		}
 	}
 
-	public Commit(): void{
+	public Commit(): void {
 		this.m_pairManager.Commit();
 	}
 
@@ -696,7 +696,7 @@ export class b2BroadPhase {
 		return count;
 	}
 
-	public Validate(): void{
+	public Validate(): void {
 		let pair: b2Pair;
 		let proxy1: b2Proxy;
 		let proxy2: b2Proxy;
@@ -803,7 +803,7 @@ export class b2BroadPhase {
 		return true;
 	}
 
-	private Query(lowerQueryOut: number[], upperQueryOut: number[], lowerValue: number /** uint */, upperValue: number /** uint */, bounds: b2Bound[], boundCount: number /** uint */, axis: number /** int */): void{
+	private Query(lowerQueryOut: number[], upperQueryOut: number[], lowerValue: number /** uint */, upperValue: number /** uint */, bounds: b2Bound[], boundCount: number /** uint */, axis: number /** int */): void {
 
 		const lowerQuery: number /** uint */ = b2BroadPhase.BinarySearch(bounds, boundCount, lowerValue);
 		const upperQuery: number /** uint */ = b2BroadPhase.BinarySearch(bounds, boundCount, upperValue);
@@ -844,7 +844,7 @@ export class b2BroadPhase {
 		upperQueryOut[0] = upperQuery;
 	}
 
-	private IncrementOverlapCount(proxyId: number /** uint */): void{
+	private IncrementOverlapCount(proxyId: number /** uint */): void {
 		const proxy: b2Proxy = this.m_proxyPool[ proxyId ];
 		if (proxy.timeStamp < this.m_timeStamp) {
 			proxy.timeStamp = this.m_timeStamp;
@@ -857,7 +857,7 @@ export class b2BroadPhase {
 		}
 	}
 
-	private IncrementTimeStamp(): void{
+	private IncrementTimeStamp(): void {
 		if (this.m_timeStamp == b2Settings.USHRT_MAX) {
 			for (let i: number /** uint */ = 0; i < b2Settings.b2_maxProxies; ++i) {
 				(this.m_proxyPool[i] as b2Proxy).timeStamp = 0;

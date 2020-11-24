@@ -33,7 +33,7 @@ export class b2PolygonContact extends b2Contact {
 		return new b2PolygonContact(shape1, shape2);
 	}
 
-	public static Destroy(contact: b2Contact, allocator: any): void{
+	public static Destroy(contact: b2Contact, allocator: any): void {
 		//((b2PolyContact*)contact)->~b2PolyContact();
 		//allocator->Free(contact, sizeof(b2PolyContact));
 	}
@@ -51,7 +51,7 @@ export class b2PolygonContact extends b2Contact {
 	private m0: b2Manifold = new b2Manifold();
 	private static readonly s_evalCP: b2ContactPoint = new b2ContactPoint();
 
-	public Evaluate(listener: b2ContactListener): void{
+	public Evaluate(listener: b2ContactListener): void {
 		let v1: b2Vec2;
 		let v2: b2Vec2;
 		let mp0: b2ManifoldPoint;

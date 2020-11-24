@@ -26,10 +26,10 @@ export class b2DestructionListener {
 
 	/// Called when any joint is about to be destroyed due
 	/// to the destruction of one of its attached bodies.
-	public SayGoodbyeJoint(joint: b2Joint): void{}
+	public SayGoodbyeJoint(joint: b2Joint): void {}
 
 	/// Called when any shape is about to be destroyed due
 	/// to the destruction of its parent body.
-	public SayGoodbyeShape(shape: b2Shape): void{}
+	public SayGoodbyeShape(shape: b2Shape): void {}
 
 }

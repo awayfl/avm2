@@ -27,7 +27,7 @@ export class b2ContactFactory {
 		}
 	}
 
-	public InitializeRegisters(): void{
+	public InitializeRegisters(): void {
 		this.m_registers = new Array<Array<b2ContactRegister> >(b2Shape.e_shapeTypeCount);
 		for (let i: number /** int */ = 0; i < b2Shape.e_shapeTypeCount; i++) {
 			this.m_registers[i] = new Array<b2ContactRegister>(b2Shape.e_shapeTypeCount);
@@ -80,7 +80,7 @@ export class b2ContactFactory {
 		}
 	}
 
-	public Destroy(contact: b2Contact): void{
+	public Destroy(contact: b2Contact): void {
 		if (contact.m_manifold.m_pointCount > 0) {
 			contact.m_fixtureA.m_body.SetAwake(true);
 			contact.m_fixtureB.m_body.SetAwake(true);

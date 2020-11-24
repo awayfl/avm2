@@ -121,7 +121,7 @@ export class b2WeldJoint extends b2Joint {
 
 	}
 
-	public SolveVelocityConstraints(step: b2TimeStep): void{
+	public SolveVelocityConstraints(step: b2TimeStep): void {
 		//B2_NOT_USED(step);
 		let tMat: b2Mat22;
 		let tX: number;

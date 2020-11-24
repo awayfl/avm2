@@ -32,7 +32,7 @@ export class b2Manifold {
 		this.m_localPoint = new b2Vec2();
 	}
 
-	public Reset(): void{
+	public Reset(): void {
 		for (let i: number /** int */ = 0; i < b2Settings.b2_maxManifoldPoints; i++) {
 			(this.m_points[i] as b2ManifoldPoint).Reset();
 		}
@@ -42,7 +42,7 @@ export class b2Manifold {
 		this.m_pointCount = 0;
 	}
 
-	public Set(m: b2Manifold): void{
+	public Set(m: b2Manifold): void {
 		this.m_pointCount = m.m_pointCount;
 		for (let i: number /** int */ = 0; i < b2Settings.b2_maxManifoldPoints; i++) {
 			(this.m_points[i] as b2ManifoldPoint).Set(m.m_points[i]);

@@ -78,7 +78,7 @@ export class b2Body {
 	/// attached to a body are implicitly destroyed when the body is destroyed.
 	/// @param shape the shape to be removed.
 	/// @warning This function is locked during callbacks.
-	public DestroyShape(s: b2Shape): void{
+	public DestroyShape(s: b2Shape): void {
 		//b2Settings.b2Assert(this.m_world.m_lock == false);
 		if (this.m_world.m_lock == true) {
 			return;
@@ -122,7 +122,7 @@ export class b2Body {
 	/// If you are not sure how to compute mass properties, use SetMassFromShapes.
 	/// The inertia tensor is assumed to be relative to the center of mass.
 	/// @param massData the mass properties.
-	public SetMass(massData: b2MassData): void{
+	public SetMass(massData: b2MassData): void {
 		let s: b2Shape;
 
 		//b2Settings.b2Assert(this.m_world.m_lock == false);
@@ -188,7 +188,7 @@ export class b2Body {
 	/// after adding all the shapes. If you add or remove shapes later, you may want
 	/// to call this again. Note that this changes the center of mass position.
 	private static s_massData: b2MassData = new b2MassData();
-	public SetMassFromShapes(): void{
+	public SetMassFromShapes(): void {
 
 		let s: b2Shape;
 
@@ -367,7 +367,7 @@ export class b2Body {
 
 	/// Set the linear velocity of the center of mass.
 	/// @param v the new linear velocity of the center of mass.
-	public SetLinearVelocity(v: b2Vec2): void{
+	public SetLinearVelocity(v: b2Vec2): void {
 		this.m_linearVelocity.SetV(v);
 	}
 
@@ -379,7 +379,7 @@ export class b2Body {
 
 	/// Set the angular velocity.
 	/// @param omega the new angular velocity in radians/second.
-	public SetAngularVelocity(omega: number): void{
+	public SetAngularVelocity(omega: number): void {
 		this.m_angularVelocity = omega;
 	}
 
@@ -394,7 +394,7 @@ export class b2Body {
 	/// affect the angular velocity. This wakes up the body.
 	/// @param force the world force vector, usually in Newtons (N).
 	/// @param point the world position of the point of application.
-	public ApplyForce(force: b2Vec2, point: b2Vec2): void{
+	public ApplyForce(force: b2Vec2, point: b2Vec2): void {
 		if (this.IsSleeping()) {
 			this.WakeUp();
 		}
@@ -409,7 +409,7 @@ export class b2Body {
 	/// without affecting the linear velocity of the center of mass.
 	/// This wakes up the body.
 	/// @param torque about the z-axis (out of the screen), usually in N-m.
-	public ApplyTorque(torque: number): void{
+	public ApplyTorque(torque: number): void {
 		if (this.IsSleeping()) {
 			this.WakeUp();
 		}
@@ -421,7 +421,7 @@ export class b2Body {
 	/// is not at the center of mass. This wakes up the body.
 	/// @param impulse the world impulse vector, usually in N-seconds or kg-m/s.
 	/// @param point the world position of the point of application.
-	public ApplyImpulse(impulse: b2Vec2, point: b2Vec2): void{
+	public ApplyImpulse(impulse: b2Vec2, point: b2Vec2): void {
 		if (this.IsSleeping()) {
 			this.WakeUp();
 		}
@@ -507,7 +507,7 @@ export class b2Body {
 	}
 
 	/// Should this body be treated like a bullet for continuous collision detection?
-	public SetBullet(flag: boolean): void{
+	public SetBullet(flag: boolean): void {
 		if (flag) {
 			this.m_flags |= b2Body.e_bulletFlag;
 		} else {
@@ -536,7 +536,7 @@ export class b2Body {
 	}
 
 	/// You can disable sleeping on this body.
-	public AllowSleeping(flag: boolean): void{
+	public AllowSleeping(flag: boolean): void {
 		if (flag) {
 			this.m_flags |= b2Body.e_allowSleepFlag;
 		} else {
@@ -546,7 +546,7 @@ export class b2Body {
 	}
 
 	/// Wake up this body so it will begin simulating.
-	public WakeUp(): void{
+	public WakeUp(): void {
 		this.m_flags &= ~b2Body.e_sleepFlag;
 		this.m_sleepTime = 0.0;
 	}
@@ -725,7 +725,7 @@ export class b2Body {
 
 	}
 
-	public SynchronizeTransform(): void{
+	public SynchronizeTransform(): void {
 		this.m_xf.R.Set(this.m_sweep.a);
 		//this.m_xf.position = this.m_sweep.c - b2Mul(this.m_xf.R, this.m_sweep.localCenter);
 		const tMat: b2Mat22 = this.m_xf.R;
@@ -745,7 +745,7 @@ export class b2Body {
 		return false;
 	}
 
-	public Advance(t: number): void{
+	public Advance(t: number): void {
 		// Advance to the new safe time.
 		this.m_sweep.Advance(t);
 		this.m_sweep.c.SetV(this.m_sweep.c0);

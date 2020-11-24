@@ -93,7 +93,7 @@ export class b2World {
 	/**
 	* Register a destruction listener.
 	*/
-	public SetDestructionListener(listener: b2DestructionListener): void{
+	public SetDestructionListener(listener: b2DestructionListener): void {
 
 		this.m_destructionListener = unBoxMethods(listener, b2DestructionListener.prototype);
 	}
@@ -102,7 +102,7 @@ export class b2World {
 	* Register a contact filter to provide specific control over collision.
 	* Otherwise the default filter is used (b2_defaultFilter).
 	*/
-	public SetContactFilter(filter: b2ContactFilter | ASClass | null): void{
+	public SetContactFilter(filter: b2ContactFilter | ASClass | null): void {
 		this.m_contactManager.m_contactFilter = unBoxMethods(filter, b2ContactFilter.prototype);
 	}
 
@@ -118,7 +118,7 @@ export class b2World {
 	* inside the b2World::Step method, so make sure your renderer is ready to
 	* consume draw commands when you call Step().
 	*/
-	public SetDebugDraw(debugDraw: b2DebugDraw): void{
+	public SetDebugDraw(debugDraw: b2DebugDraw): void {
 		this.m_debugDraw = debugDraw;
 	}
 
@@ -187,7 +187,7 @@ export class b2World {
 	* @warning This automatically deletes all associated shapes and joints.
 	* @warning This function is locked during callbacks.
 	*/
-	public DestroyBody(b: b2Body): void{
+	public DestroyBody(b: b2Body): void {
 
 		//b2Settings.b2Assert(this.m_bodyCount > 0);
 		//b2Settings.b2Assert(this.m_lock == false);
@@ -326,7 +326,7 @@ export class b2World {
 	* Destroy a joint. This may cause the connected bodies to begin colliding.
 	* @warning This function is locked during callbacks.
 	*/
-	public DestroyJoint(j: b2Joint): void{
+	public DestroyJoint(j: b2Joint): void {
 
 		//b2Settings.b2Assert(this.m_lock == false);
 
@@ -525,7 +525,7 @@ export class b2World {
 	* @param velocityIterations for the velocity constraint solver.
 	* @param positionIterations for the position constraint solver.
 	*/
-	public Step(dt: number, velocityIterations: number /** int */, positionIterations: number /** int */): void{
+	public Step(dt: number, velocityIterations: number /** int */, positionIterations: number /** int */): void {
 		if (this.m_flags & b2World.e_newFixture) {
 			this.m_contactManager.FindNewContacts();
 			this.m_flags &= ~b2World.e_newFixture;
@@ -581,7 +581,7 @@ export class b2World {
 	/**
 	 * Call this to draw shapes and other debug draw data.
 	 */
-	public DrawDebugData(): void{
+	public DrawDebugData(): void {
 
 		if (this.m_debugDraw == null) {
 			return;
@@ -856,7 +856,7 @@ export class b2World {
 
 	// Find islands, integrate and solve constraints, solve position constraints
 	private s_stack: Array<b2Body> = new Array<b2Body>();
-	public Solve(step: b2TimeStep): void{
+	public Solve(step: b2TimeStep): void {
 		let b: b2Body;
 
 		// Step all controllers
@@ -1019,7 +1019,7 @@ export class b2World {
 	private static s_timestep: b2TimeStep = new b2TimeStep();
 	private static s_queue: Array<b2Body> = new Array<b2Body>();
 	// Find TOI contacts and solve them.
-	public SolveTOI(step: b2TimeStep): void{
+	public SolveTOI(step: b2TimeStep): void {
 
 		let b: b2Body;
 		let fA: b2Fixture;
@@ -1325,7 +1325,7 @@ export class b2World {
 
 	private static s_jointColor: b2Color = new b2Color(0.5, 0.8, 0.8);
 	//
-	public DrawJoint(joint: b2Joint): void{
+	public DrawJoint(joint: b2Joint): void {
 
 		const b1: b2Body = joint.GetBodyA();
 		const b2: b2Body = joint.GetBodyB();
@@ -1368,7 +1368,7 @@ export class b2World {
 		}
 	}
 
-	public DrawShape(shape: b2Shape, xf: b2Transform, color: b2Color): void{
+	public DrawShape(shape: b2Shape, xf: b2Transform, color: b2Color): void {
 
 		switch (shape.m_type) {
 			case b2Shape.e_circleShape:

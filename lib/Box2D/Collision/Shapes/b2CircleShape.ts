@@ -100,7 +100,7 @@ export class b2CircleShape extends b2Shape {
 	/**
 	* @inheritDoc
 	*/
-	public ComputeAABB(aabb: b2AABB, transform: b2Transform): void{
+	public ComputeAABB(aabb: b2AABB, transform: b2Transform): void {
 		//b2Vec2 p = transform.position + b2Mul(transform.R, m_p);
 		const tMat: b2Mat22 = transform.R;
 		const pX: number = transform.position.x + (tMat.col1.x * this.m_p.x + tMat.col2.x * this.m_p.y);
@@ -112,7 +112,7 @@ export class b2CircleShape extends b2Shape {
 	/**
 	* @inheritDoc
 	*/
-	public ComputeMass(massData: b2MassData, density: number): void{
+	public ComputeMass(massData: b2MassData, density: number): void {
 		massData.mass = density * b2Settings.b2_pi * this.m_radius * this.m_radius;
 		massData.center.SetV(this.m_p);
 

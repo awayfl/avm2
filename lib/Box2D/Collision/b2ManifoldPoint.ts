@@ -20,14 +20,14 @@ export class b2ManifoldPoint {
 		this.Reset();
 	}
 
-	public Reset(): void{
+	public Reset(): void {
 		this.m_localPoint.SetZero();
 		this.m_normalImpulse = 0.0;
 		this.m_tangentImpulse = 0.0;
 		this.m_id.key = 0;
 	}
 
-	public Set(m: b2ManifoldPoint): void{
+	public Set(m: b2ManifoldPoint): void {
 		this.m_localPoint.SetV(m.m_localPoint);
 		this.m_normalImpulse = m.m_normalImpulse;
 		this.m_tangentImpulse = m.m_tangentImpulse;

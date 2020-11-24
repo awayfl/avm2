@@ -99,7 +99,7 @@ export class b2DistanceJoint extends b2Joint {
 		this.m_bias = 0.0;
 	}
 
-	public InitVelocityConstraints(step: b2TimeStep): void{
+	public InitVelocityConstraints(step: b2TimeStep): void {
 
 		let tMat: b2Mat22;
 		let tX: number;
@@ -188,7 +188,7 @@ export class b2DistanceJoint extends b2Joint {
 		}
 	}
 
-	public SolveVelocityConstraints(step: b2TimeStep): void{
+	public SolveVelocityConstraints(step: b2TimeStep): void {
 
 		let tMat: b2Mat22;
 

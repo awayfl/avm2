@@ -9,12 +9,12 @@ export class b2Jacobian {
 	public linearB: b2Vec2 = new b2Vec2();
 	public angularB: number;
 
-	public SetZero(): void{
+	public SetZero(): void {
 		this.linearA.SetZero(); this.angularA = 0.0;
 		this.linearB.SetZero(); this.angularB = 0.0;
 	}
 
-	public Set(x1: b2Vec2, a1: number, x2: b2Vec2, a2: number): void{
+	public Set(x1: b2Vec2, a1: number, x2: b2Vec2, a2: number): void {
 		this.linearA.SetV(x1); this.angularA = a1;
 		this.linearB.SetV(x2); this.angularB = a2;
 	}

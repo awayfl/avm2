@@ -141,7 +141,7 @@ export class b2ContactManager extends b2PairCallback {
 
 	// This is a callback from the broadphase when two AABB proxies cease
 	// to overlap. We retire the b2Contact.
-	public PairRemoved(proxyUserData1: any, proxyUserData2: any, pairUserData: any): void{
+	public PairRemoved(proxyUserData1: any, proxyUserData2: any, pairUserData: any): void {
 
 		if (pairUserData == null) {
 			return;
@@ -280,7 +280,7 @@ export class b2ContactManager extends b2PairCallback {
 	public m_nullContact: b2NullContact = new b2NullContact();
 	public m_destroyImmediate: boolean;
 
-	public static InitializeRegisters(): void{
+	public static InitializeRegisters(): void {
 		b2Contact.s_registers = new Array(b2Shape.e_shapeTypeCount);
 		for (let i: number /** int */ = 0; i < b2Shape.e_shapeTypeCount; i++) {
 			b2Contact.s_registers[i] = new Array(b2Shape.e_shapeTypeCount);

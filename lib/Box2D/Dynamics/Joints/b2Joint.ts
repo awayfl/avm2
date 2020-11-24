@@ -67,7 +67,7 @@ export class b2Joint {
 	/**
 	* Set the user data pointer.
 	*/
-	public SetUserData(data: any): void{
+	public SetUserData(data: any): void {
 		this.m_userData = data;
 	}
 
@@ -156,7 +156,7 @@ export class b2Joint {
 		return joint;
 	}
 
-	public static Destroy(joint: b2Joint, allocator: any): void{
+	public static Destroy(joint: b2Joint, allocator: any): void {
 		/*joint->~b2Joint();
 		switch (joint.m_type)
 		{
@@ -216,9 +216,9 @@ export class b2Joint {
 	}
 	//virtual ~b2Joint() {}
 
-	public InitVelocityConstraints(step: b2TimeStep): void{}
+	public InitVelocityConstraints(step: b2TimeStep): void {}
 	public SolveVelocityConstraints(step: b2TimeStep): void { }
-	public FinalizeVelocityConstraints(): void{}
+	public FinalizeVelocityConstraints(): void {}
 
 	// This returns true if the position errors are within tolerance.
 	public SolvePositionConstraints(baumgarte: number): boolean { return false; }

@@ -35,7 +35,7 @@ export class b2DebugDraw {
 	/**
 	* Set the drawing flags.
 	*/
-	public SetFlags(flags: number /** uint */): void{
+	public SetFlags(flags: number /** uint */): void {
 		this.m_drawFlags = flags;
 	}
 
@@ -49,7 +49,7 @@ export class b2DebugDraw {
 	/**
 	* Append flags to the current flags.
 	*/
-	public AppendFlags(flags: number /** uint */): void{
+	public AppendFlags(flags: number /** uint */): void {
 		this.m_drawFlags |= flags;
 	}
 
@@ -147,7 +147,7 @@ export class b2DebugDraw {
 	/**
 	* Draw a closed polygon provided in CCW order.
 	*/
-	public DrawPolygon(vertices: Array<b2Vec2>, vertexCount: number /** int */, color: b2Color): void{
+	public DrawPolygon(vertices: Array<b2Vec2>, vertexCount: number /** int */, color: b2Color): void {
 
 		this.m_sprite.graphics.lineStyle(this.m_lineThickness, color.color, this.m_alpha);
 		this.m_sprite.graphics.moveTo(vertices[0].x * this.m_drawScale, vertices[0].y * this.m_drawScale);
@@ -161,7 +161,7 @@ export class b2DebugDraw {
 	/**
 	* Draw a solid closed polygon provided in CCW order.
 	*/
-	public DrawSolidPolygon(vertices: Array<b2Vec2>, vertexCount: number /** int */, color: b2Color): void{
+	public DrawSolidPolygon(vertices: Array<b2Vec2>, vertexCount: number /** int */, color: b2Color): void {
 
 		this.m_sprite.graphics.lineStyle(this.m_lineThickness, color.color, this.m_alpha);
 		this.m_sprite.graphics.moveTo(vertices[0].x * this.m_drawScale, vertices[0].y * this.m_drawScale);
@@ -177,7 +177,7 @@ export class b2DebugDraw {
 	/**
 	* Draw a circle.
 	*/
-	public DrawCircle(center: b2Vec2, radius: number, color: b2Color): void{
+	public DrawCircle(center: b2Vec2, radius: number, color: b2Color): void {
 
 		this.m_sprite.graphics.lineStyle(this.m_lineThickness, color.color, this.m_alpha);
 		this.m_sprite.graphics.drawCircle(center.x * this.m_drawScale, center.y * this.m_drawScale, radius * this.m_drawScale);
@@ -187,7 +187,7 @@ export class b2DebugDraw {
 	/**
 	* Draw a solid circle.
 	*/
-	public DrawSolidCircle(center: b2Vec2, radius: number, axis: b2Vec2, color: b2Color): void{
+	public DrawSolidCircle(center: b2Vec2, radius: number, axis: b2Vec2, color: b2Color): void {
 
 		this.m_sprite.graphics.lineStyle(this.m_lineThickness, color.color, this.m_alpha);
 		this.m_sprite.graphics.moveTo(0,0);
@@ -202,7 +202,7 @@ export class b2DebugDraw {
 	/**
 	* Draw a line segment.
 	*/
-	public DrawSegment(p1: b2Vec2, p2: b2Vec2, color: b2Color): void{
+	public DrawSegment(p1: b2Vec2, p2: b2Vec2, color: b2Color): void {
 
 		this.m_sprite.graphics.lineStyle(this.m_lineThickness, color.color, this.m_alpha);
 		this.m_sprite.graphics.moveTo(p1.x * this.m_drawScale, p1.y * this.m_drawScale);
@@ -214,7 +214,7 @@ export class b2DebugDraw {
 	* Draw a transform. Choose your own length scale.
 	* @param xf a transform.
 	*/
-	public DrawTransform(xf: b2Transform): void{
+	public DrawTransform(xf: b2Transform): void {
 
 		this.m_sprite.graphics.lineStyle(this.m_lineThickness, 0xff0000, this.m_alpha);
 		this.m_sprite.graphics.moveTo(xf.position.x * this.m_drawScale, xf.position.y * this.m_drawScale);

@@ -14,18 +14,18 @@ export class b2EdgeAndCircleContact extends b2Contact {
 		return new b2EdgeAndCircleContact();
 	}
 
-	public static Destroy(contact: b2Contact, allocator: any): void{
+	public static Destroy(contact: b2Contact, allocator: any): void {
 		//
 	}
 
-	public Reset(fixtureA: b2Fixture, fixtureB: b2Fixture): void{
+	public Reset(fixtureA: b2Fixture, fixtureB: b2Fixture): void {
 		super.Reset(fixtureA, fixtureB);
 		//b2Settings.b2Assert(m_shape1.m_type == b2Shape.e_circleShape);
 		//b2Settings.b2Assert(m_shape2.m_type == b2Shape.e_circleShape);
 	}
 	//~b2EdgeAndCircleContact() {}
 
-	public Evaluate(): void{
+	public Evaluate(): void {
 		const bA: b2Body = this.m_fixtureA.GetBody();
 		const bB: b2Body = this.m_fixtureB.GetBody();
 		this.b2CollideEdgeAndCircle(this.m_manifold,

@@ -23,6 +23,6 @@ export class b2BoundaryListener {
 
 	/// This is called for each body that leaves the world boundary.
 	/// @warning you can't modify the world inside this callback.
-	public Violation(body: b2Body): void{}
+	public Violation(body: b2Body): void {}
 
 }

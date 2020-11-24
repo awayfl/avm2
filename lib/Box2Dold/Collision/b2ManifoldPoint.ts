@@ -25,7 +25,7 @@ import { b2Vec2 } from '../Common/Math';
 /// The point is stored in local coordinates because CCD
 /// requires sub-stepping in which the separation is stale.
 export class b2ManifoldPoint {
-	public Reset(): void{
+	public Reset(): void {
 		this.localPoint1.SetZero();
 		this.localPoint2.SetZero();
 		this.separation = 0.0;
@@ -34,7 +34,7 @@ export class b2ManifoldPoint {
 		this.id.key = 0;
 	}
 
-	public Set(m: b2ManifoldPoint): void{
+	public Set(m: b2ManifoldPoint): void {
 		this.localPoint1.SetV(m.localPoint1);
 		this.localPoint2.SetV(m.localPoint2);
 		this.separation = m.separation;

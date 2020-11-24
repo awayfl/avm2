@@ -132,7 +132,7 @@ export class b2PulleyJoint extends b2Joint {
 
 	}
 
-	public InitVelocityConstraints(step: b2TimeStep): void{
+	public InitVelocityConstraints(step: b2TimeStep): void {
 		const bA: b2Body = this.m_bodyA;
 		const bB: b2Body = this.m_bodyB;
 

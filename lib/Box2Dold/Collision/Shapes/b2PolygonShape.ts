@@ -142,7 +142,7 @@ export class b2PolygonShape extends b2Shape {
 	//
 	private static s_computeMat: b2Mat22 = new b2Mat22();
 	//
-	public ComputeAABB(aabb: b2AABB, xf: b2XForm): void{
+	public ComputeAABB(aabb: b2AABB, xf: b2XForm): void {
 		let tMat: b2Mat22;
 		let tVec: b2Vec2;
 
@@ -202,7 +202,7 @@ export class b2PolygonShape extends b2Shape {
 	//
 
 	//
-	public ComputeMass(massData: b2MassData): void{
+	public ComputeMass(massData: b2MassData): void {
 		// Polygon mass, centroid, and inertia.
 		// Let rho be the polygon density in mass per unit area.
 		// Then:
@@ -515,7 +515,7 @@ export class b2PolygonShape extends b2Shape {
 		}
 	}
 
-	public UpdateSweepRadius(center: b2Vec2): void{
+	public UpdateSweepRadius(center: b2Vec2): void {
 		let tVec: b2Vec2;
 
 		// Update the sweep radius (maximum radius) as measured from

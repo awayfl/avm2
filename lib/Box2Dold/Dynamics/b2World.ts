@@ -93,18 +93,18 @@ export class b2World {
 	//~b2World();
 
 	/// Register a destruction listener.
-	public SetDestructionListener(listener: b2DestructionListener): void{
+	public SetDestructionListener(listener: b2DestructionListener): void {
 		this.m_destructionListener = listener;
 	}
 
 	/// Register a broad-phase boundary listener.
-	public SetBoundaryListener(listener: b2BoundaryListener): void{
+	public SetBoundaryListener(listener: b2BoundaryListener): void {
 		this.m_boundaryListener = listener;
 	}
 
 	/// Register a contact filter to provide specific control over collision.
 	/// Otherwise the default filter is used (b2_defaultFilter).
-	public SetContactFilter(filter: b2ContactFilter): void{
+	public SetContactFilter(filter: b2ContactFilter): void {
 		this.m_contactFilter = filter;
 	}
 
@@ -138,7 +138,7 @@ export class b2World {
 	/// Register a routine for debug drawing. The debug draw functions are called
 	/// inside the b2World::Step method, so make sure your renderer is ready to
 	/// consume draw commands when you call Step().
-	public SetDebugDraw(debugDraw: b2DebugDraw): void{
+	public SetDebugDraw(debugDraw: b2DebugDraw): void {
 		this.m_debugDraw = debugDraw;
 	}
 
@@ -189,7 +189,7 @@ export class b2World {
 	/// is retained. This function is locked during callbacks.
 	/// @warning This automatically deletes all associated shapes and joints.
 	/// @warning This function is locked during callbacks.
-	public DestroyBody(b: b2Body): void{
+	public DestroyBody(b: b2Body): void {
 
 		//b2Settings.b2Assert(this.m_bodyCount > 0);
 		//b2Settings.b2Assert(this.m_lock == false);
@@ -292,7 +292,7 @@ export class b2World {
 
 	/// Destroy a joint. This may cause the connected bodies to begin colliding.
 	/// @warning This function is locked during callbacks.
-	public DestroyJoint(j: b2Joint): void{
+	public DestroyJoint(j: b2Joint): void {
 
 		//b2Settings.b2Assert(this.m_lock == false);
 
@@ -414,7 +414,7 @@ export class b2World {
 	/// and constraint solution.
 	/// @param timeStep the amount of time to simulate, this should not vary.
 	/// @param iterations the number of iterations to be used by the constraint solver.
-	public Step(dt: number, iterations: number /** int */): void{
+	public Step(dt: number, iterations: number /** int */): void {
 
 		this.m_lock = true;
 
@@ -499,7 +499,7 @@ export class b2World {
 	// Internal yet public to make life easier.
 
 	// Find islands, integrate and solve constraints, solve position constraints
-	public Solve(step: b2TimeStep): void{
+	public Solve(step: b2TimeStep): void {
 
 		let b: b2Body;
 
@@ -649,7 +649,7 @@ export class b2World {
 	}
 
 	// Find TOI contacts and solve them.
-	public SolveTOI(step: b2TimeStep): void{
+	public SolveTOI(step: b2TimeStep): void {
 
 		let b: b2Body;
 		let s1: b2Shape;
@@ -885,7 +885,7 @@ export class b2World {
 
 	private static s_jointColor: b2Color = new b2Color(0.5, 0.8, 0.8);
 	//
-	public DrawJoint(joint: b2Joint): void{
+	public DrawJoint(joint: b2Joint): void {
 
 		const b1: b2Body = joint.m_body1;
 		const b2: b2Body = joint.m_body2;
@@ -929,7 +929,7 @@ export class b2World {
 	}
 
 	private static s_coreColor: b2Color = new b2Color(0.9, 0.6, 0.6);
-	public DrawShape(shape: b2Shape, xf: b2XForm, color: b2Color, core: boolean): void{
+	public DrawShape(shape: b2Shape, xf: b2XForm, color: b2Color, core: boolean): void {
 
 		const coreColor: b2Color = b2World.s_coreColor;
 
@@ -979,7 +979,7 @@ export class b2World {
 	}
 
 	private static s_xf: b2XForm = new b2XForm();
-	public DrawDebugData(): void{
+	public DrawDebugData(): void {
 
 		if (this.m_debugDraw == null) {
 			return;

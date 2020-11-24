@@ -36,7 +36,7 @@ export class b2PolygonDef extends b2ShapeDef {
 	/// Build vertices to represent an axis-aligned box.
 	/// @param hx the half-width.
 	/// @param hy the half-height.
-	public SetAsBox(hx: number, hy: number): void{
+	public SetAsBox(hx: number, hy: number): void {
 		this.vertexCount = 4;
 		this.vertices[0].Set(-hx, -hy);
 		this.vertices[1].Set(hx, -hy);
@@ -50,7 +50,7 @@ export class b2PolygonDef extends b2ShapeDef {
 	/// @param center the center of the box in local coordinates.
 	/// @param angle the rotation of the box in local coordinates.
 	private static s_mat: b2Mat22 = new b2Mat22();
-	public SetAsOrientedBox(hx: number, hy: number, center: b2Vec2 = null, angle: number = 0.0): void{
+	public SetAsOrientedBox(hx: number, hy: number, center: b2Vec2 = null, angle: number = 0.0): void {
 		//SetAsBox(hx, hy);
 		{
 			this.vertexCount = 4;

@@ -95,7 +95,7 @@ export class b2CircleShape extends b2Shape {
 	}
 
 	/// @see b2Shape::ComputeAABB
-	public ComputeAABB(aabb: b2AABB, transform: b2XForm): void{
+	public ComputeAABB(aabb: b2AABB, transform: b2XForm): void {
 		//b2Vec2 p = transform.position + b2Mul(transform.R, m_localPosition);
 		const tMat: b2Mat22 = transform.R;
 		const pX: number = transform.position.x + (tMat.col1.x * this.m_localPosition.x + tMat.col2.x * this.m_localPosition.y);
@@ -128,7 +128,7 @@ export class b2CircleShape extends b2Shape {
 	}
 
 	/// @see b2Shape::ComputeMass
-	public ComputeMass(massData: b2MassData): void{
+	public ComputeMass(massData: b2MassData): void {
 		massData.mass = this.m_density * b2Settings.b2_pi * this.m_radius * this.m_radius;
 		massData.center.SetV(this.m_localPosition);
 
@@ -161,7 +161,7 @@ export class b2CircleShape extends b2Shape {
 
 	}
 
-	public UpdateSweepRadius(center: b2Vec2): void{
+	public UpdateSweepRadius(center: b2Vec2): void {
 		// Update the sweep radius (maximum radius) as measured from
 		// a local center point.
 		//b2Vec2 d = m_localPosition - center;

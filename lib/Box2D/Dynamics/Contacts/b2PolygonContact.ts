@@ -13,19 +13,19 @@ export class b2PolygonContact extends b2Contact {
 		return new b2PolygonContact();
 	}
 
-	public static Destroy(contact: b2Contact, allocator: any): void{
+	public static Destroy(contact: b2Contact, allocator: any): void {
 		//((b2PolyContact*)contact)->~b2PolyContact();
 		//allocator->Free(contact, sizeof(b2PolyContact));
 	}
 
-	public Reset(fixtureA: b2Fixture, fixtureB: b2Fixture): void{
+	public Reset(fixtureA: b2Fixture, fixtureB: b2Fixture): void {
 		super.Reset(fixtureA, fixtureB);
 		//b2Settings.b2Assert(m_shape1.m_type == b2Shape.e_polygonShape);
 		//b2Settings.b2Assert(m_shape2.m_type == b2Shape.e_polygonShape);
 	}
 	//~b2PolyContact() {}
 
-	public Evaluate(): void{
+	public Evaluate(): void {
 		const bA: b2Body = this.m_fixtureA.GetBody();
 		const bB: b2Body = this.m_fixtureB.GetBody();
 

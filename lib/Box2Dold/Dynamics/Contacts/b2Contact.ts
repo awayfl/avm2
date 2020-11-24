@@ -145,7 +145,7 @@ export class b2Contact {
 
 	//virtual ~b2Contact() {}
 
-	public Evaluate(listener: b2ContactListener): void{}
+	public Evaluate(listener: b2ContactListener): void {}
 	public static s_registers: b2ContactRegister[][]; //[][]
 	public static s_initialized: boolean = false;
 
