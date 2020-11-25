@@ -39,19 +39,25 @@ const getQualifiedClassName = function(_: AXSecurityDomain, value: any): string 
 export var Natives = {
 	print: function(sec: AXSecurityDomain, expression: any, arg1?: any, arg2?: any, arg3?: any, arg4?: any) {
 		let message;
+		const objects = [];
 		if (arguments.length == 2) {
 			message = arguments[1] ? arguments[1].toString() : arguments[1];
+			if (typeof arguments[1] !== 'string') objects.push(arguments[1]);
 		} else {
 			message = '';
 			for (let i = 1; i < arguments.length;i++) {
 				message += arguments[i] ? arguments[i].toString() : arguments[i];
+				if (typeof arguments[i] !== 'string') objects.push(arguments[i]);
 				if (i != arguments.length - 1) {
 					message += ' ';
 				}
 
 			}
 		}
-		console.log('%c Trace from SWF:', 'color: DodgerBlue', message);
+		console.log('%c Trace from SWF:', 'color: DodgerBlue', message, objects.length == 0 ? '' : objects);
+		if (message == 'debugger') {
+			debugger;
+		}
 	},
 	debugBreak: function(v: any) {
 		/* tslint:disable */
