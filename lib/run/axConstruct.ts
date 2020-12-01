@@ -212,7 +212,13 @@ export function axConstruct(argArray?: any[]) {
 
 	object.axInitializer.apply(object,argArray);
 	object.constructorHasRun = true;
+
 	if (object.adaptee instanceof MovieClip || object.adaptee instanceof Sprite)
 		OrphanManager.addOrphan(object);
+
+	if (object.isAVMFont) {
+		// hack for font: make sure the fontName is set on Font
+		object.fontName = instName;
+	}
 	return object;
 }
