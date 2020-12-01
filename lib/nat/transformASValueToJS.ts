@@ -6,7 +6,7 @@ import { AXSecurityDomain } from '../run/AXSecurityDomain';
 /**
  * Transforms an AS value into a JS value.
  */
-export function transformASValueToJS(sec: AXSecurityDomain, value, deep: boolean) {
+export function transformASValueToJS(sec: AXSecurityDomain, value: any, deep: boolean): {} {
 	if (typeof value !== 'object') {
 		return value;
 	}
@@ -15,17 +15,21 @@ export function transformASValueToJS(sec: AXSecurityDomain, value, deep: boolean
 	}
 	if (sec.AXArray.axIsType(value)) {
 		const resultList = [];
-		const list = value.value;
-		for (var i = 0; i < list.length; i++) {
+		// this can be a JS array
+		const list = Array.isArray(value) ? value : value.value;
+
+		for (let i = 0; i < list.length; i++) {
 			const entry = list[i];
 			const jsValue = deep ? transformASValueToJS(sec, entry, true) : entry;
 			resultList.push(jsValue);
 		}
 		return resultList;
 	}
+
 	const keys = Object.keys(value);
 	const resultObject = {};
-	for (var i = 0; i < keys.length; i++) {
+
+	for (let i = 0; i < keys.length; i++) {
 		const key = keys[i];
 		if (key == '__scope__') {
 			continue;

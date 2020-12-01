@@ -17,8 +17,9 @@ export class ASJSON extends ASObject {
 			this.sec.throwError('SyntaxError', Errors.JSONInvalidParseInput);
 		}
 
+		let unfiltered: Object;
 		try {
-			var unfiltered: Object = transformJSValueToAS(this.sec, JSON.parse(text), true);
+			unfiltered = transformJSValueToAS(this.sec, JSON.parse(text), true);
 		} catch (e) {
 			this.sec.throwError('SyntaxError', Errors.JSONInvalidParseInput);
 		}
@@ -32,8 +33,9 @@ export class ASJSON extends ASObject {
 	static stringify(value: any, replacer = null, space = null): string {
 		// We deliberately deviate from ECMA-262 and throw on
 		// invalid replacer parameter.
+
+		const sec = typeof replacer === 'object' ? replacer?.sec : null;
 		if (replacer !== null) {
-			var sec = typeof replacer === 'object' ? replacer.sec : null;
 			if (!sec || !(sec.AXFunction.axIsType(replacer) || sec.AXArray.axIsType(replacer))) {
 				this.sec.throwError('TypeError', Errors.JSONInvalidReplacer);
 			}
@@ -83,14 +85,20 @@ export class ASJSON extends ASObject {
 		return propertyList;
 	}
 
-	private static stringifySpecializedToString(value: Object, replacerArray: any [], replacerFunction: (key: string, value: any) => any, gap: string): string {
+	private static stringifySpecializedToString(
+		value: Object, replacerArray: any [], replacerFunction: (key: string, value: any) => any, gap: string): string {
+
+		// In AS3 |JSON.stringify(undefined)| returns "null", while JS returns |undefined|.
+		// TODO: Is there anything to be done in case of a |replacerFunction| function?
+		if (value === undefined) {
+			return 'null';
+		}
+
+		const jsValue = transformASValueToJS(this.sec, value, true);
+
 		try {
-			// In AS3 |JSON.stringify(undefined)| returns "null", while JS returns |undefined|.
-			// TODO: Is there anything to be done in case of a |replacerFunction| function?
-			if (value === undefined) {
-				return 'null';
-			}
-			return JSON.stringify(transformASValueToJS(this.sec, value, true), replacerFunction, gap);
+			return JSON.stringify(jsValue, replacerFunction, gap);
+
 		} catch (e) {
 			this.sec.throwError('TypeError', Errors.JSONCyclicStructure);
 		}
