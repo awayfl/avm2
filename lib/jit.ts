@@ -598,6 +598,7 @@ export function compile(methodInfo: MethodInfo, options: ICompilerOptions = {}):
 				case Bytecode.DEBUG:
 					break;
 				case Bytecode.THROW:
+					js.push(`${idnt} throw ${stack0};`);
 					break;
 				case Bytecode.GETLOCAL:
 					localIndex = param(0);
