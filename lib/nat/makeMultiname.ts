@@ -7,10 +7,10 @@ export function makeMultiname(v: any, namespace?: Namespace) {
 	rn.namespaces = namespace ? [namespace] : [Namespace.PUBLIC];
 	rn.name = v;
 
-	// require for {0: 10}, because otherwith it reutn invalid result
-	if (typeof v === 'number') {
+	// require for {0: 10}, because otherwith it will return invalid result
+	if (Number.isInteger(+v)) {
 		rn.numeric = true;
-		rn.numericValue = v;
+		rn.numericValue = +v;
 	}
 
 	return rn;
