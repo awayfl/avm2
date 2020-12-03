@@ -52,7 +52,7 @@ import { TRAIT } from './abc/lazy/TRAIT';
 import { AXCallable } from './run/AXCallable';
 import { ASClass } from './nat/ASClass';
 import { AXObject } from './run/AXObject';
-import { Settings } from './Settings';
+import { COERCE_MODE_ENUM, Settings } from './Settings';
 
 const METHOD_HOOKS: StringMap<{path: string, place: 'begin' | 'return', hook: Function}> = {};
 
@@ -496,7 +496,7 @@ export function compile(methodInfo: MethodInfo, options: ICompilerOptions = {}):
 		Settings.ENABLE_LOOP_QUARD
 		&& genBrancher
 		// every cathch has 2 jumps, ignore it
-		&& (jumps.length - catches * 2) >= Settings.LOOP_QUARD_MIN_BRANCHES
+		&& (jumps.length - catches * 2) >= Settings.LOOP_GUARD_MIN_BRANCHES
 	);
 
 	if (genBrancher) {
@@ -510,7 +510,7 @@ export function compile(methodInfo: MethodInfo, options: ICompilerOptions = {}):
 		moveIdnt(1);
 
 		if (useLoopGuard) {
-			const loops = Settings.LOOP_QUARD_MAX_LOOPS;
+			const loops = Settings.LOOP_GUARD_MAX_LOOPS;
 			js.push(
 				`${idnt} if (tick++ > ${loops}) {\n`
 				+ `${moveIdnt(1)} throw 'To many loops (> ${loops}) in "${hookMethodPath}" at '+ p +`
@@ -1391,7 +1391,7 @@ export function compile(methodInfo: MethodInfo, options: ICompilerOptions = {}):
 
 					js.push(`${idnt} return;`);
 					break;
-				case Bytecode.COERCE:
+				case Bytecode.COERCE: {
 					if ((optimise & COMPILER_OPT_FLAGS.SKIP_NULL_COERCE)
 						&& (lastZ.name === Bytecode.PUSHNULL
 							|| lastZ.name === Bytecode.PUSHUNDEFINED)) {
@@ -1404,9 +1404,29 @@ export function compile(methodInfo: MethodInfo, options: ICompilerOptions = {}):
 						break;
 					}
 
-					// eslint-disable-next-line max-len
-					js.push(`${idnt} ${stack0} = ${emitIsAX(stack0)} ? ${scope}.getScopeProperty(${getname(param(0))}, true, false).axCoerce(${stack0}): ${stack0};`);
+					const mn = abc.getMultiname(param(0));
+					// skip coerce for native JS objects
+					js.push(`${idnt} if (${emitIsAX(stack0)}) {`);
+
+					if (Settings.COERCE_MODE == COERCE_MODE_ENUM.DEFAULT) {
+						// eslint-disable-next-line max-len
+						js.push(`${moveIdnt(1)} ${stack0} = ${scope}.getScopeProperty(${getname(param(0))}, true, false).axCoerce(${stack0});`);
+
+					} else {
+						// eslint-disable-next-line max-len
+						js.push(`${moveIdnt(1)} var _e = ${scope}.getScopeProperty(${getname(param(0))}, true, false);`);
+
+						if (Settings.COERCE_MODE === COERCE_MODE_ENUM.SOFT) {
+							// eslint-disable-next-line max-len
+							js.push(`${idnt} _e || console.warn('[${methodName}] Coerce Type not found:', ${JSON.stringify(mn.name)})`);
+						}
+
+						js.push(`${idnt} ${stack0} = _e ? _e.axCoerce(${stack0}) : ${stack0};`);
+					}
+					js.push(`${moveIdnt(-1)} }`);
+
 					break;
+				}
 				case Bytecode.COERCE_A:
 					js.push(`${idnt} ;`);
 					break;
