@@ -351,7 +351,8 @@ export class ASObject implements IMetaobjectProtocol {
 	}
 
 	axHasPropertyInternal(mn: Multiname): boolean {
-		return this.axResolveMultiname(mn) in this;
+		const key = this.axResolveMultiname(mn);
+		return key in this;
 	}
 
 	axHasOwnProperty(mn: Multiname): boolean {
@@ -433,7 +434,14 @@ export class ASObject implements IMetaobjectProtocol {
 
 		const axEnumerableKeys = self.axEnumerableKeys;
 		while (index < axEnumerableKeys.length) {
-			rn.name = axEnumerableKeys[index];
+			const key = axEnumerableKeys[index];
+
+			// Hack for iteration over numeric keys;
+			const num = +key;
+			rn.name = key;
+			rn.numeric = Number.isInteger(num);
+			rn.numericValue = rn.numeric ? num : NaN;
+
 			if (self.axHasPropertyInternal(rn)) {
 				release || assert(rn.name === axEnumerableKeys[index]);
 				return index + 1;
