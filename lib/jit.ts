@@ -481,11 +481,42 @@ export function compile(methodInfo: MethodInfo, options: ICompilerOptions = {}):
 		js.push(`${idnt} /* ATTACH METHOD HOOK */`);
 		js.push(`${idnt} context.executeHook(local0, '${hookMethodPath + '__begin'}')`);
 	}
+
 	js.push(`${idnt} `);
+
+	const catches = catchStart
+		? Object.keys(catchStart).length
+		: 0;
+
+	const useLoopGuard =
+	(
+		Settings.ENABLE_LOOP_QUARD
+		&& genBrancher
+		// every cathch has 2 jumps, ignore it
+		&& (jumps.length - catches * 2) >= Settings.LOOP_QUARD_MIN_BRANCHES
+	);
+
 	if (genBrancher) {
+		if (useLoopGuard) {
+			js.push(`${idnt} let tick = 0;`);
+		}
+
 		js.push(`${idnt} let p = 0;`);
 		js.push(`${idnt} while (true) {`);
-		js.push(`${moveIdnt(1)} switch (p) {`);
+
+		moveIdnt(1);
+
+		if (useLoopGuard) {
+			const loops = Settings.LOOP_QUARD_MAX_LOOPS;
+			js.push(
+				`${idnt} if (tick++ > ${loops}) {\n`
+				+ `${moveIdnt(1)} throw 'To many loops (> ${loops}) in "${hookMethodPath}" at '+ p +`
+				+ '\',method was dropped to avoid stucking\';\n'
+				+ `${moveIdnt(-1)} };`
+			);
+		}
+
+		js.push(`${idnt} switch (p) {`);
 	}
 
 	let currentCatchBlocks: ExceptionInfo[];
