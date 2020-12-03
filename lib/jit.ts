@@ -271,8 +271,11 @@ export function compile(methodInfo: MethodInfo, options: ICompilerOptions = {}):
 
 		js.push(`${idnt} // in case this is a error coming from stack0.__fast when stack0 is undefined,`);
 		js.push(`${idnt} // we convert it to a ASError, so that avm2 can still catch it`);
-		js.push(`${idnt} if (e instanceof TypeError)`);
-		js.push(`${idnt}     e=context.sec.createError("TypeError", {code:1065, message:e.message})`);
+		js.push(`${idnt} if (e instanceof TypeError) {`);
+		js.push(`${idnt}     var _e = context.sec.createError("TypeError", {code:1065, message:e.message})`);
+		js.push(`${idnt}     _e.source = e; e = _e;`);
+		js.push(`${idnt} }`);
+
 		js.push(`${idnt} stack0 = e;`);
 
 		for (let i = 0; i < catchBlocks.length; i++) {
