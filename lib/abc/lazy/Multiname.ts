@@ -36,6 +36,31 @@ export class Multiname {
 		// ...
 	}
 
+	public set(name: string | number | any, namespace?: Namespace) {
+		// try to cast name to numeric, required for objects with numeric key's
+		// {0: 1}
+		const isIndexator = (
+			typeof name === 'number'
+			|| (
+				typeof name === 'string' // name maybe as object for Map
+				&& !name.includes('.') // check case when name is `1.0`
+				&& Number.isInteger(+name) // check that real integer, same as isFinite
+			)
+		);
+
+		if (typeof name === 'object') {
+			//debugger;
+		}
+
+		this.namespaces = namespace ? [namespace] : [];
+		this.name = name;
+
+		if (isIndexator) {
+			this.numericValue = +name;
+			this.numeric = true;
+		}
+	}
+
 	/**
 	 * Drop field for RT name
 	 * @see https://github.com/awayfl/avm2/issues/4

@@ -432,15 +432,11 @@ export class ASObject implements IMetaobjectProtocol {
 
 		rn.drop();
 
-		const axEnumerableKeys = self.axEnumerableKeys;
+		const axEnumerableKeys = <string[]>self.axEnumerableKeys;
 		while (index < axEnumerableKeys.length) {
 			const key = axEnumerableKeys[index];
 
-			// Hack for iteration over numeric keys;
-			const num = +key;
-			rn.name = key;
-			rn.numeric = Number.isInteger(num);
-			rn.numericValue = rn.numeric ? num : NaN;
+			rn.set(key);
 
 			if (self.axHasPropertyInternal(rn)) {
 				release || assert(rn.name === axEnumerableKeys[index]);
