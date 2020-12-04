@@ -225,6 +225,7 @@ export function compile(methodInfo: MethodInfo, options: ICompilerOptions = {}):
 	Path:  ${hookMethodPath}
 	Type:  ${methodType}
 	Super: ${superClass || '-'}
+	Return: ${methodInfo.getTypeName()?.toString() || '*'}
 */\n\n`;
 	const {
 		error,
@@ -1382,6 +1383,13 @@ export function compile(methodInfo: MethodInfo, options: ICompilerOptions = {}):
 						js.push(`${idnt} /* ATTACH METHOD HOOK */`);
 						js.push(`${idnt} context.executeHook(local0, '${hookMethodPath + '__return'}')`);
 					}
+
+					// Restict type conversion for boolean.
+					if (methodInfo.getTypeName()?.name === 'Boolean') {
+						js.push(`${idnt} return !!${stack0};`);
+						break;
+					}
+
 					js.push(`${idnt} return ${stack0};`);
 					break;
 				case Bytecode.RETURNVOID:

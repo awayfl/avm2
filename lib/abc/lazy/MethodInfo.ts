@@ -17,6 +17,7 @@ export class MethodInfo {
 	public minArgs: number;
 	private _body: MethodBodyInfo;
 	private _returnType: AXClass;
+	private _retunTypeName: Multiname;
 
 	public scriptInfo: ScriptInfo = null;
 	public classInfo: ClassInfo = null;
@@ -75,6 +76,19 @@ export class MethodInfo {
 
 	index(): number {
 		return this._index;
+	}
+
+	getTypeName(): Multiname {
+		if (this._retunTypeName !== undefined) {
+			return this._retunTypeName;
+		}
+		if (this.returnTypeNameIndex === 0) {
+			this._retunTypeName = null;
+		} else {
+			this._retunTypeName = this.abc.getMultiname(this.returnTypeNameIndex);
+		}
+
+		return this._retunTypeName;
 	}
 
 	getType(): AXClass {
