@@ -186,13 +186,13 @@ export class ASObject implements IMetaobjectProtocol {
 	}
 
 	axHasPublicProperty(nm: any): boolean {
-		rn.name = nm;
-		if (typeof nm === 'number') {
-			rn.numeric = true;
-			rn.numericValue = nm;
-		}
+		rn.set(nm);
+
 		const result = this.axHasProperty(rn);
 		release || assert(rn.name === nm || isNaN(rn.name) && isNaN(nm));
+
+		rn.drop();
+
 		return result;
 	}
 

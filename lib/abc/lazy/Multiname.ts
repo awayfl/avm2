@@ -55,6 +55,7 @@ export class Multiname {
 		this.namespaces = namespace ? [namespace] : [];
 		this.name = name;
 
+		this.numeric = false;
 		if (isIndexator) {
 			this.numericValue = +name;
 			this.numeric = true;
