@@ -46,7 +46,7 @@ export class OrphanManager {
 
 		for (let i = 0; i < OrphanManager.orphans.length; i++) {
 			orphan = OrphanManager.orphans[i];
-			if(orphan.isAsset(MovieClip)) {
+			if (orphan.isAsset(MovieClip)) {
 				orphan.advanceFrame();
 				FrameScriptManager.execute_as3_constructors_recursiv(<MovieClip> orphan);
 			}
