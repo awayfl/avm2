@@ -1,6 +1,5 @@
-import { MovieClip, SceneImage2D, FrameScriptManager, Sprite, DisplayObject } from '@awayjs/scene';
-import { AssetBase, WaveAudio } from '@awayjs/core';
-import { BitmapImage2D } from '@awayjs/stage';
+import { MovieClip, FrameScriptManager, DisplayObject } from '@awayjs/scene';
+import { AssetBase } from '@awayjs/core';
 import { AXClass, IS_AX_CLASS } from './AXClass';
 import { Multiname } from '../abc/lazy/Multiname';
 
@@ -24,7 +23,7 @@ export class OrphanManager {
 
 	static addOrphan(orphan: DisplayObject) {
 
-		if (OrphanManager.orphans.indexOf(orphan) != -1)
+		if (OrphanManager.orphans.indexOf(orphan) !== -1)
 			return;
 
 		OrphanManager.orphans.push(orphan);
@@ -47,41 +46,13 @@ export class OrphanManager {
 		for (let i = 0; i < OrphanManager.orphans.length; i++) {
 			orphan = OrphanManager.orphans[i];
 			if (orphan.isAsset(MovieClip)) {
-				orphan.advanceFrame();
+				(<MovieClip>orphan).advanceFrame();
 				FrameScriptManager.execute_as3_constructors_recursiv(<MovieClip> orphan);
 			}
 		}
 	}
 }
 
-interface IAssetLookup {
-	allowType: Array<any>;
-	lookupMethod?: string;
-	passToConstructor?: boolean; // pass asset to constructor?
-}
-type IAsseLookupTable = StringMap<IAssetLookup>;
-
-// ASSET LOOKUP TABLE
-// ClassType => AssetType
-const ASSET_LOOKUP: IAsseLookupTable = {
-	'Sound': {
-		allowType: [WaveAudio],
-		lookupMethod: 'getSymbolDefinition',
-	},
-	'BitmapData': {
-		allowType: [SceneImage2D, BitmapImage2D],
-		lookupMethod: 'getSymbolDefinition',
-	},
-	'BitmapAsset': {
-		allowType: [SceneImage2D, BitmapImage2D],
-		lookupMethod: 'getSymbolDefinition',
-		passToConstructor: true
-	},
-	'Bitmap': {
-		allowType: [SceneImage2D, BitmapImage2D],
-		lookupMethod: 'getSymbolDefinition',
-	},
-};
 /**
  * Generic axConstruct method that lives on the AXClass prototype. This just
  * creates an empty object with the right prototype and then calls the
@@ -156,7 +127,8 @@ export function axConstruct(argArray?: any[]) {
 
 	//	ActiveLoaderContext.loaderContext is a hack !
 	//	in future the appDom should be provided by the symbol
-	//	UNSAFE! Need check more clea because assets can has nested class defenetion, like as `BitmapAsset : FlexBitmap: Bitmap`
+	//	UNSAFE! Need check more clea because assets can has nested class defenetion,
+	//  like as `BitmapAsset : FlexBitmap: Bitmap`
 
 	const name = (<Multiname>_this.superClass?.classInfo?.instanceInfo?.name)?.name;
 	const appDom: IAwayApplicationDomain = ActiveLoaderContext.loaderContext?.applicationDomain;
@@ -170,18 +142,9 @@ export function axConstruct(argArray?: any[]) {
 		const asset: AssetBase = appDom.getSymbolAdaptee(fullName);
 
 		if (!asset) {
+			// eslint-disable-next-line max-len
 			console.warn(`error: could not get asset ${name} for class ${instName}, no ActiveLoaderContext.loaderContext`);
-		}/* else {
-
-			const isAsset = asset.isAsset && lookup.allowType.some((type) => asset.isAsset(type));
-
-			if(!isAsset) {
-				console.warn(`error: invalid asset type for class ${instName} of type ${name},
-					recieved: ${asset ?? asset.assetType}, expected [${ lookup.allowType.map((e) => e.assetType).join()}]`);
-
-				asset = null;
-			}
-		}*/
+		}
 
 		if (asset) {
 			if (asset instanceof MovieClip) {
@@ -200,6 +163,7 @@ export function axConstruct(argArray?: any[]) {
 	// mark object that it is AX object, not a regular class
 	object[IS_AX_CLASS] = true;
 
+	// eslint-disable-next-line prefer-spread
 	object.axInitializer.apply(object,argArray);
 	object.constructorHasRun = true;
 
