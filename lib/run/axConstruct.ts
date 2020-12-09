@@ -1,9 +1,8 @@
-import { MovieClip, SceneImage2D, FrameScriptManager, Sprite, DisplayObjectContainer, SimpleButton } from '@awayjs/scene';
+import { MovieClip, SceneImage2D, FrameScriptManager, Sprite, DisplayObject } from '@awayjs/scene';
 import { AssetBase, WaveAudio } from '@awayjs/core';
 import { BitmapImage2D } from '@awayjs/stage';
 import { AXClass, IS_AX_CLASS } from './AXClass';
 import { Multiname } from '../abc/lazy/Multiname';
-import { AXApplicationDomain } from './AXApplicationDomain';
 
 export class ActiveLoaderContext {
 	//	ActiveLoaderContext.loaderContext is a hack !
@@ -21,45 +20,36 @@ interface IAwayApplicationDomain {
 // maybe eve solve the orphan-issue in otherway alltogether
 export class OrphanManager {
 
-	static orphans: any[] = [];
-	static addOrphan(orphan: any) {
-		if (OrphanManager.orphans.indexOf(orphan) >= 0) {
+	static orphans: DisplayObject[] = [];
+
+	static addOrphan(orphan: DisplayObject) {
+
+		if (OrphanManager.orphans.indexOf(orphan) != -1)
 			return;
-		}
+
 		OrphanManager.orphans.push(orphan);
 	}
 
-	static removeOrphan(orphan: any) {
-		if (OrphanManager.orphans.indexOf(orphan) < 0) {
+	static removeOrphan(orphan: DisplayObject) {
+
+		const index: number = OrphanManager.orphans.indexOf(orphan);
+
+		if (index === -1)
 			return;
-		}
-		// todo: make this faster:
-		const newOrphans = [];
-		for (let i = 0; i < OrphanManager.orphans.length; i++) {
-			if (OrphanManager.orphans[i] != orphan) {
-				newOrphans.push(OrphanManager.orphans[i]);
-			}
-		}
-		OrphanManager.orphans = newOrphans;
+
+		OrphanManager.orphans.splice(index, 1);
 	}
 
 	static updateOrphans() {
+
+		let orphan: DisplayObject;
+
 		for (let i = 0; i < OrphanManager.orphans.length; i++) {
-
-			//if((<AwayMovieClip>OrphanManager.orphans[i].adaptee).isAsset(AwayMovieClip)){
-			if (OrphanManager.orphans[i].adaptee.update) {
-				OrphanManager.orphans[i].adaptee.update();
-				FrameScriptManager.execute_as3_constructors_recursiv(OrphanManager.orphans[i].adaptee);
-			} else if (OrphanManager.orphans[i].adaptee.advanceFrame) {
-				OrphanManager.orphans[i].adaptee.advanceFrame();
-				FrameScriptManager.execute_as3_constructors_recursiv(OrphanManager.orphans[i].adaptee);
+			orphan = OrphanManager.orphans[i];
+			if(orphan.isAsset(MovieClip)) {
+				orphan.advanceFrame();
+				FrameScriptManager.execute_as3_constructors_recursiv(<MovieClip> orphan);
 			}
-			// }
-			// else{
-			// 	(<any>OrphanManager.orphans[i]).advanceFrame(events);
-
-			// }
-			//(<any>OrphanManager.orphans[i]).dispatchQueuedEvents();
 		}
 	}
 }
@@ -213,8 +203,8 @@ export function axConstruct(argArray?: any[]) {
 	object.axInitializer.apply(object,argArray);
 	object.constructorHasRun = true;
 
-	if (object.adaptee instanceof MovieClip || object.adaptee instanceof Sprite)
-		OrphanManager.addOrphan(object);
+	if (object.adaptee instanceof MovieClip)
+		OrphanManager.addOrphan(object.adaptee);
 
 	if (object.isAVMFont) {
 		// hack for font: make sure the fontName is set on Font
