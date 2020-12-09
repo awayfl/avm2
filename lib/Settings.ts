@@ -33,7 +33,7 @@ export const Settings: IAVM2Settings = {
 	/**
 	 * @description Guard to avoid infinity loops, throw exception
 	 */
-	ENABLE_LOOP_QUARD: true,
+	ENABLE_LOOP_QUARD: false,
 	/**
 	 * @description  How many branching jumps required for enable guarding except Exceptions
 	 */
