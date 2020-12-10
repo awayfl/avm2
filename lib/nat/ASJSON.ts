@@ -94,7 +94,7 @@ export class ASJSON extends ASObject {
 			return 'null';
 		}
 
-		const jsValue = transformASValueToJS(this.sec, value, true, replacerFunction, 'main');
+		const jsValue = transformASValueToJS(this.sec, value, true, replacerFunction);
 
 		try {
 			return JSON.stringify(jsValue, null, gap);

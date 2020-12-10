@@ -8,7 +8,7 @@ import { AXSecurityDomain } from '../run/AXSecurityDomain';
  */
 export function transformASValueToJS(
 	sec: AXSecurityDomain, value: any,
-	deep: boolean, replacerFunction: Function, key: string): {} {
+	deep: boolean, replacerFunction: (key: string, value: any) => any = null, key: string = null): {} {
 
 	if (replacerFunction)
 		value = replacerFunction(key, value);
