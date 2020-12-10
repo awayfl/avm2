@@ -6,8 +6,14 @@ import { AXSecurityDomain } from '../run/AXSecurityDomain';
 /**
  * Transforms an AS value into a JS value.
  */
-export function transformASValueToJS(sec: AXSecurityDomain, value: any, deep: boolean): {} {
-	if (typeof value !== 'object') {
+export function transformASValueToJS(
+	sec: AXSecurityDomain, value: any,
+	deep: boolean, replacerFunction: Function, key: string): {} {
+
+	if (replacerFunction)
+		value = replacerFunction(key, value);
+
+	if (typeof value !== 'object' || isNullOrUndefined(value)) {
 		return value;
 	}
 	if (isNullOrUndefined(value)) {
@@ -20,7 +26,17 @@ export function transformASValueToJS(sec: AXSecurityDomain, value: any, deep: bo
 
 		for (let i = 0; i < list.length; i++) {
 			const entry = list[i];
-			const jsValue = deep ? transformASValueToJS(sec, entry, true) : entry;
+			const jsValue = deep ? transformASValueToJS(sec, entry, true, replacerFunction, i.toString()) : entry;
+			resultList.push(jsValue);
+		}
+		return resultList;
+	}
+	if (value.constructor?.name == 'GenericVector') {
+		const resultList = [];
+		const list = value._buffer;
+		for (let i = 0; i < list.length; i++) {
+			const entry = list[i];
+			const jsValue = deep ? transformASValueToJS(sec, entry, true, replacerFunction, i.toString()) : entry;
 			resultList.push(jsValue);
 		}
 		return resultList;
@@ -41,7 +57,7 @@ export function transformASValueToJS(sec: AXSecurityDomain, value: any, deep: bo
 		}
 		let v = value[key];
 		if (deep) {
-			v = transformASValueToJS(sec, v, true);
+			v = transformASValueToJS(sec, v, true, replacerFunction, jsKey);
 		}
 		resultObject[jsKey] = v;
 	}

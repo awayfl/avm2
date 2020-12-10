@@ -94,10 +94,10 @@ export class ASJSON extends ASObject {
 			return 'null';
 		}
 
-		const jsValue = transformASValueToJS(this.sec, value, true);
+		const jsValue = transformASValueToJS(this.sec, value, true, replacerFunction, 'main');
 
 		try {
-			return JSON.stringify(jsValue, replacerFunction, gap);
+			return JSON.stringify(jsValue, null, gap);
 
 		} catch (e) {
 			this.sec.throwError('TypeError', Errors.JSONCyclicStructure);
