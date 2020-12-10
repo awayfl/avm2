@@ -278,13 +278,11 @@ export function compile(methodInfo: MethodInfo, options: ICompilerOptions = {}):
 		js.push(`${idnt} }`);
 
 		js.push(`${idnt} stack0 = e;`);
-
+		let lastCatchItem;
 		for (let i = 0; i < catchBlocks.length; i++) {
 			const typeName = catchBlocks[i].getType();
 			if (!typeName) {
-				js.push(`${idnt} { p = ${catchBlocks[i].target}; continue; };`);
-				//if(!catchBlocks[i].varName)
-				//createFinally.push(`{ p = ${catchBlocks[i].target}; continue; };`);
+				lastCatchItem = `${idnt} { p = ${catchBlocks[i].target}; continue; };`;
 				continue;
 			} else {
 				let n = names.indexOf(typeName);
@@ -298,6 +296,9 @@ export function compile(methodInfo: MethodInfo, options: ICompilerOptions = {}):
 				js.push(`${idnt}     { p = ${catchBlocks[i].target}; continue; };`);
 			}
 		}
+		if (lastCatchItem)
+			js.push(lastCatchItem);
+
 		// if error was not catched by now, we throw it
 		js.push(`${idnt} throw e;`);
 
