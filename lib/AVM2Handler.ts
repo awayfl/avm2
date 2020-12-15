@@ -32,7 +32,6 @@ export class AVM2Handler implements IAVMHandler {
 		}
 
 		this._avmStage = avmStage;
-		this._avmStage.scene.mouseManager._stage = this._avmStage;
 
 		initSystem();
 		initializeAXBasePrototype();
