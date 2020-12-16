@@ -31,7 +31,7 @@ export function transformASValueToJS(
 		}
 		return resultList;
 	}
-	if (value.constructor?.name == 'GenericVector') {
+	if (sec.ObjectVector.axClass.axIsType(value)) {
 		const resultList = [];
 		const list = value._buffer;
 		for (let i = 0; i < list.length; i++) {
