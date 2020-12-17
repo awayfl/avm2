@@ -83,14 +83,7 @@ export function axConstruct(argArray?: any[]) {
 
 	const object = Object.create(_this.tPrototype);
 	initTraitsForObject(object, _this.tPrototype.traits);
-	/*const allProps = (<any>Object).getOwnPropertyDescriptors(_this.tPrototype);
-	for (const key in _this.tPrototype.traits) {
-		console.log(allProps[key]);
-		//if (!object.hasOwnProperty(allProps[i]) && typeof _this.tPrototype[allProps[i]] === 'number') {
-		//	object[allProps[i]] = _this.tPrototype[allProps[i]];
-		//}
-	}
-	console.log("allProps", allProps);*/
+
 	let symbol = null;
 	let timeline = null;
 	let classToCheck = _this;
