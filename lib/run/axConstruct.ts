@@ -2,6 +2,8 @@ import { MovieClip, FrameScriptManager, DisplayObject } from '@awayjs/scene';
 import { AssetBase } from '@awayjs/core';
 import { AXClass, IS_AX_CLASS } from './AXClass';
 import { Multiname } from '../abc/lazy/Multiname';
+import { ASObject } from '../nat/ASObject';
+import { RuntimeTraits } from '../abc/lazy/RuntimeTraits';
 
 export class ActiveLoaderContext {
 	//	ActiveLoaderContext.loaderContext is a hack !
@@ -53,6 +55,21 @@ export class OrphanManager {
 	}
 }
 
+const initTraitsForObject = function(object: ASObject, traits: RuntimeTraits) {
+	if (!traits)
+		return;
+	if (traits.slots) {
+		for (let i = 0; i < traits.slots.length; i++) {
+			if (traits.slots[i]) {
+				object[traits.slots[i].name.getMangledName()] =  traits.slots[i].value;
+			}
+		}
+	}
+	if (traits.superTraits)
+		initTraitsForObject(object, traits.superTraits);
+	return object;
+};
+
 /**
  * Generic axConstruct method that lives on the AXClass prototype. This just
  * creates an empty object with the right prototype and then calls the
@@ -65,6 +82,15 @@ export function axConstruct(argArray?: any[]) {
 	const _this = this as AXClass;
 
 	const object = Object.create(_this.tPrototype);
+	initTraitsForObject(object, _this.tPrototype.traits);
+	/*const allProps = (<any>Object).getOwnPropertyDescriptors(_this.tPrototype);
+	for (const key in _this.tPrototype.traits) {
+		console.log(allProps[key]);
+		//if (!object.hasOwnProperty(allProps[i]) && typeof _this.tPrototype[allProps[i]] === 'number') {
+		//	object[allProps[i]] = _this.tPrototype[allProps[i]];
+		//}
+	}
+	console.log("allProps", allProps);*/
 	let symbol = null;
 	let timeline = null;
 	let classToCheck = _this;
