@@ -3,6 +3,7 @@ import { Scope } from './Scope';
 import { ClassInfo } from '../abc/lazy/ClassInfo';
 import { Multiname } from '../abc/lazy/Multiname';
 import { ASClass } from '../nat/ASClass';
+import { AXApplicationDomain } from './AXApplicationDomain';
 
 export const IS_AX_CLASS = Symbol('AX class marker');
 
@@ -13,6 +14,7 @@ export interface AXClass extends AXObject {
 	superClass: AXClass;
 	classInfo: ClassInfo;
 	name: Multiname;
+	axApplicationDomain: AXApplicationDomain;
 	// Used to initialize Vectors.
 	defaultValue: any;
 	tPrototype: AXObject;

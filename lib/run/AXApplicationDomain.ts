@@ -28,6 +28,9 @@ export class AXApplicationDomain {
 
 	public sec: AXSecurityDomain;
 
+	// back reference to Playerglobal appDomain
+	public awayApplicationDomain: any;
+
 	private _abcs: ABCFile [];
 	private _binarySymbols: any;
 
@@ -86,7 +89,7 @@ export class AXApplicationDomain {
 		scriptInfo.state = ScriptInfoState.Executed;
 	}
 
-	public findProperty(mn: Multiname, strict: boolean, execute: boolean): AXGlobal {
+	public findProperty(mn: Multiname, _strict: boolean, execute: boolean): AXGlobal {
 		const script: ScriptInfo = this.findDefiningScript(mn, execute);
 		if (script) {
 			return script.global;
@@ -95,16 +98,24 @@ export class AXApplicationDomain {
 	}
 
 	public getClass(mn: Multiname): AXClass {
-		return <AXClass> this.getProperty(mn, true, true);
+		const classObject = <AXClass> this.getProperty(mn, true, true);
+
+		if (classObject && !classObject.axApplicationDomain) {
+			classObject.axApplicationDomain = this;
+		}
+
+		return classObject;
 	}
 
 	public getProperty(mn: Multiname, strict: boolean, execute: boolean): AXObject {
 		const global: AXGlobal = this.findProperty(mn, strict, execute);
 		if (global) {
 			return global.axGetProperty(mn);
-	  }
-	  if (mn.name != 'void')
-      	this.sec.throwError('ReferenceError', Errors.DefinitionNotFoundError, mn.name);
+		}
+
+		if (mn.name != 'void') {
+			this.sec.throwError('ReferenceError', Errors.DefinitionNotFoundError, mn.name);
+		}
 	}
 
 	public findDefiningScript(mn: Multiname, execute: boolean): ScriptInfo {
@@ -122,7 +133,7 @@ export class AXApplicationDomain {
 
 		// Search through the loaded abcs.
 		for (let i = 0; i < this._abcs.length; i++) {
-			var abc = this._abcs[i];
+			const abc = this._abcs[i];
 			script = this._findDefiningScriptInABC(abc, mn, execute);
 			if (script) {
 				if (!mn.mutable)
@@ -132,7 +143,7 @@ export class AXApplicationDomain {
 		}
 
 		// Still no luck, so let's ask the security domain to load additional ABCs and try again.
-		var abc: ABCFile = this.system.sec.findDefiningABC(mn);
+		const abc: ABCFile = this.system.sec.findDefiningABC(mn);
 		if (abc) {
 			this.loadABC(abc);
 			script = this._findDefiningScriptInABC(abc, mn, execute);

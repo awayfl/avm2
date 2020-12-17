@@ -150,7 +150,13 @@ export function axConstruct(argArray?: any[]) {
 	//  like as `BitmapAsset : FlexBitmap: Bitmap`
 
 	const name = (<Multiname>_this.superClass?.classInfo?.instanceInfo?.name)?.name;
-	const appDom: IAwayApplicationDomain = ActiveLoaderContext.loaderContext?.applicationDomain;
+	let appDom: IAwayApplicationDomain;
+
+	if (_this.axApplicationDomain && _this.axApplicationDomain.awayApplicationDomain) {
+		appDom = _this.axApplicationDomain.awayApplicationDomain;
+	} else if (ActiveLoaderContext.loaderContext) {
+		appDom = ActiveLoaderContext.loaderContext.applicationDomain;
+	}
 	//	const lookup: IAssetLookup = name ? ASSET_LOOKUP[name] : null;
 
 	const mn =  (<Multiname>_this.classInfo.instanceInfo.name);
