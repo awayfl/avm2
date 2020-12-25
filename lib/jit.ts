@@ -731,7 +731,9 @@ export function compile(methodInfo: MethodInfo, options: ICompilerOptions = {}):
 					js.push(`${idnt} if (${stack0} <= ${stack1}) { p = ${param(0)}; continue; };`);
 					break;
 				case Bytecode.IFLT:
-					js.push(`${idnt} if (${stack0} > ${stack1}) { p = ${param(0)}; continue; };`);
+					// JUMP is flipped, but there are case when this is not allowed
+
+					js.push(`${idnt} if (!(${stack1} >= ${stack0})) { p = ${param(0)}; continue; };`);
 					break;
 				case Bytecode.IFLE:
 					js.push(`${idnt} if (${stack0} >= ${stack1}) { p = ${param(0)}; continue; };`);
