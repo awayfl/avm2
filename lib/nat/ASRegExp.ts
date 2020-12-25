@@ -84,7 +84,7 @@ export class ASRegExp extends ASObject {
 				}
 			}
 
-			this._flags = flags;
+			this._flags = flags || '';
 			pattern = this._parse(source);
 		}
 
@@ -330,8 +330,17 @@ export class ASRegExp extends ASObject {
 
 	// box string matche from string
 	internalStringMatch (string: string): any {
+		const g = this._flags.includes('g');
+
 		if (!this._useFallback) {
-			return string.match(this.value);
+			const res = string.match(this.value);
+
+			// in Flash match should return a [] for globals
+			if (!res) {
+				return g ? [] : null;
+			}
+
+			return res;
 		}
 
 		const res = XRegExp.matchAllLb(string, this._source, this._flags);
@@ -346,6 +355,9 @@ export class ASRegExp extends ASObject {
 			match.index = 0;
 			match.input = string;
 			return match;
+
+		} else if (g) {
+			return [];
 		}
 
 		return null;
