@@ -10,8 +10,6 @@ import { axCoerceString } from '../../run/axCoerceString';
 import { isNumeric } from '@awayfl/swf-loader';
 import { ScriptInfo } from './ScriptInfo';
 import { AXObject } from '../../run/AXObject';
-import { XMLNode } from '../../natives/xml-document';
-
 export class Multiname {
 	private static _nextID = 1;
 	public id: number = Multiname._nextID++;
@@ -204,12 +202,13 @@ export class Multiname {
 		if (!anyName && this.name !== mn.name) {
 			return false;
 		}
-	  const uri = this.namespaces[0].uri;
 
-	  // @todo: not sure about this.
-	  // seems like its needed to match for xml nodes that have uri==""
-	  if (uri == '' || uri == 'default')
-		  return true;
+		const uri = this.namespaces[0].uri;
+
+		// @todo: not sure about this.
+		// seems like its needed to match for xml nodes that have uri==""
+		if (uri == '' || uri == 'default')
+			return true;
 
 		for (let i = mn.namespaces.length; i--;) {
 			// @todo: not sure about this. needed for xml
