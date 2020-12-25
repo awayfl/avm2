@@ -211,6 +211,11 @@ export class ASArray extends ASObject {
 		return this.value.join(',');
 	}
 
+	valueOf() {
+		// same
+		return this.value.join(',');
+	}
+
 	generic_toString() {
 		return coerceArray(this).join(',');
 	}
@@ -502,4 +507,5 @@ export class ASArray extends ASObject {
 		}
 		this['$Bg' + nm] = value;
 	}
+
 }
