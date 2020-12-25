@@ -10,6 +10,7 @@ import { axCoerceString } from '../../run/axCoerceString';
 import { isNumeric } from '@awayfl/swf-loader';
 import { ScriptInfo } from './ScriptInfo';
 import { AXObject } from '../../run/AXObject';
+import { XMLNode } from '../../natives/xml-document';
 
 export class Multiname {
 	private static _nextID = 1;
@@ -310,28 +311,43 @@ export class Multiname {
 		return undefined;
 	}
 
-	public static FromSimpleName(simpleName: string): Multiname {
+	public static FromSimpleName(simpleName: string | any): Multiname {
+
+		let realName = '';
 
 		//	hack when simple-name is a XMLList returned from "attribute" getter
 		//	when working with xml
-		if ((<any>simpleName)._children && (<any>simpleName)._children.length == 1
-		&& (<any>simpleName)._children[0]._value) {
-			simpleName = (<any>simpleName)._children[0]._value;
+
+		if (typeof simpleName !== 'string' && simpleName._children?.length === 1) {
+			simpleName = (<any>simpleName)._children[0]._value || '';
+		} else {
+			realName = simpleName;
 		}
 
-		let nameIndex = simpleName.lastIndexOf('.');
+		//case for `com.package.name::className`
+		let nameIndex = realName.lastIndexOf('::');
+
+		if (nameIndex > 0) {
+			// trim extra :
+			realName = realName.replace('::', ':');
+		} else {
+			//case for `com.package.name.className`
+			nameIndex = realName.lastIndexOf('.');
+		}
+
 		if (nameIndex <= 0) {
-			nameIndex = simpleName.lastIndexOf(' ');
+			//case for `com.package.name className`
+			nameIndex = realName.lastIndexOf(' ');
 		}
 
 		let uri = '';
-		let name;
-		if (nameIndex > 0 && nameIndex < simpleName.length - 1) {
-			name = simpleName.substring(nameIndex + 1).trim();
-			uri = simpleName.substring(0, nameIndex).trim();
-		} else {
-			name = simpleName;
+		let name = realName;
+
+		if (nameIndex > 0 && nameIndex < realName.length - 1) {
+			name = realName.substring(nameIndex + 1).trim();
+			uri = realName.substring(0, nameIndex).trim();
 		}
+
 		const ns = internNamespace(NamespaceType.Public, uri);
 		return new Multiname(null, 0, CONSTANT.RTQName, [ns], name);
 	}
