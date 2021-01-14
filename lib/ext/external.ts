@@ -62,11 +62,8 @@ export function extClassContructor(mn: Multiname, args: any[]) {
 	Object.defineProperty(Constructor.prototype, IS_EXTERNAL_CLASS,  {
 		value: true
 	});
-	// faster that Object.create;
-	// class constructor optimized in v8 and WebKit
-	// s ... rollup issues =(
-	const obj = Object.create(Constructor.prototype);
-	Constructor.apply(obj, args);
+
+	const obj = Reflect.construct(Constructor, args);
 
 	// force fast mode;
 	// legacy
