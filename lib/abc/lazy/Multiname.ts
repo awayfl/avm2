@@ -225,7 +225,9 @@ export class Multiname {
 			case CONSTANT.RTQNameA:
 			case CONSTANT.RTQNameLA:
 			case CONSTANT.MultinameA:
-			case CONSTANT.MultinameL:
+			// Why? I not found a reason for L, in any cases is only A is figured
+			//case CONSTANT.MultinameL:
+			// eslint-disable-next-line no-fallthrough
 			case CONSTANT.MultinameLA:
 				return true;
 		}
