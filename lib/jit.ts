@@ -1786,7 +1786,8 @@ export class Context {
 	setproperty(mn: Multiname, value: any, obj: AXClass | null) {
 
 		if (obj == void 0) {
-			throw new Error(
+
+			throw this.sec.createError('Error',
 				// eslint-disable-next-line max-len
 				`[AVM2] Unexpected property assignment: ${typeof obj}[${JSON.stringify(mn?.name)}] = ${value?.toString()}`
 			);
