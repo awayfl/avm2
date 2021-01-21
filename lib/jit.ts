@@ -393,7 +393,7 @@ export function compile(methodInfo: MethodInfo, options: ICompilerOptions = {}):
 			if (a.type === 'String') {
 				const name = a.name;
 				js0.push(`${idnt} /* Force string coerce */`);
-				js0.push(`${idnt} ${name} = (${name} && typeof ${name} !=='string') ? ${name}.toString() : ${name};`);
+				js0.push(`${idnt} ${name} = (${name} !== null && typeof ${name} !== 'string') ? ${name}.toString() : ${name};`);
 			}
 		}
 
