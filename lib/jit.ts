@@ -31,6 +31,7 @@ import { affilate, Instruction, IAffilerResult, IAffilerError } from './gen/affi
 import { TinyConstructor } from './gen/TinyConstructor';
 import { TweenCallSaver } from './gen/CallBlockSaver';
 import { FastCall, ICallEntry } from './gen/FastCall';
+import { BlockEmitter } from './gen/BlockEmitter';
 
 import { Stat } from './gen/Stat';
 
@@ -49,6 +50,7 @@ import {
 	IS_EXTERNAL_CLASS,
 	needFastCheck
 } from './ext/external';
+
 import { TRAIT } from './abc/lazy/TRAIT';
 import { AXCallable } from './run/AXCallable';
 import { ASClass } from './nat/ASClass';
@@ -132,6 +134,8 @@ export function compile(methodInfo: MethodInfo, options: ICompilerOptions = {}):
 	const tinyCtr = new TinyConstructor();
 
 	const fastCall = new FastCall(lexGen, scope);
+
+	const be = new BlockEmitter();
 
 	Stat.begin('');
 
@@ -260,13 +264,19 @@ export function compile(methodInfo: MethodInfo, options: ICompilerOptions = {}):
 
 	let idnt: string = '';
 	let idnLen = 0;
-	// move correr by 4 spaces - 1, for separate idnt =)
+
+	// move carrete by 4 spaces - 1, for separate idnt =)
 	const moveIdnt = (offset: number) => {
 		idnLen += offset * 4;
-		if (idnLen < 0) idnLen = 0;
 
+		if (idnLen < 0) {
+			idnLen = 0;
+		}
+
+		be._ident = idnLen;
 		return idnt = (' ').repeat(idnLen ? idnLen - 1 : 0);
 	};
+
 	const openTryCatchBlockGroups: ExceptionInfo[][] = [];
 	//	creates a catch condition for a list of ExceptionInfo
 	const createCatchConditions = (catchBlocks: ExceptionInfo[]) => {
@@ -392,7 +402,12 @@ export function compile(methodInfo: MethodInfo, options: ICompilerOptions = {}):
 
 		moveIdnt(1);
 
-		js0.push(`${idnt} let local0 = this === context.jsGlobal ? context.savedScope.global.object : this;`);
+		//js0.push(`${idnt} let local0 = this === context.jsGlobal ? context.savedScope.global.object : this;`);
+		js0.push(be.emitVar(0, 'local', {
+			value: 'this === context.jsGlobal ? context.savedScope.global.object : this',
+			kind: 'expression',
+			declare: true
+		}));
 
 		for (const a of args) {
 			const name = a.name;
@@ -420,12 +435,24 @@ export function compile(methodInfo: MethodInfo, options: ICompilerOptions = {}):
 		}
 
 		if (methodInfo.needsRest()) {
-			js0.push(`${idnt} let local${params.length + 1} = context.sec.createArrayUnsafe(args);`);
+			//js0.push(`${idnt} let local${params.length + 1} = context.sec.createArrayUnsafe(args);`);
+
+			js0.push(be.emitVar(params.length + 1, 'local', {
+				value: 'context.sec.createArrayUnsafe(args)',
+				kind: 'expression',
+				declare: true
+			}));
+
 			paramsShift += 1;
 		}
 
 		if (methodInfo.needsArguments()) {
-			js0.push(`${idnt} let local${params.length + 1} = context.sec.createArrayUnsafe(Array.from(arguments));`);
+			//js0.push(`${idnt} let local${params.length + 1} = context.sec.createArrayUnsafe(Array.from(arguments));`);
+			js0.push(be.emitVar(params.length + 1, 'local', {
+				value: 'context.sec.createArrayUnsafe(Array.from(arguments))',
+				kind: 'expression',
+				declare: true
+			}));
 			paramsShift += 1;
 		}
 	} else {
@@ -472,8 +499,15 @@ export function compile(methodInfo: MethodInfo, options: ICompilerOptions = {}):
 		};
 	}
 
-	for (let i = 0; i < maxstack; i++)
-		js0.push(`${idnt} let stack${i} = undefined;`);
+	for (let i = 0; i < maxstack; i++) {
+
+		//js0.push(`${idnt} let stack${i} = undefined;`);
+		js0.push(be.emitVar(i, 'stack', {
+			declare: true,
+			value: 'undefined',
+			kind: 'simple'
+		}));
+	}
 
 	for (let i: number = 0; i < maxscope; i++)
 		js0.push(`${idnt} let scope${i} = undefined;`);
@@ -506,7 +540,7 @@ export function compile(methodInfo: MethodInfo, options: ICompilerOptions = {}):
 
 	if (METHOD_HOOKS && METHOD_HOOKS[hookMethodPath + '__begin']) {
 		js.push(`${idnt} /* ATTACH METHOD HOOK */`);
-		js.push(`${idnt} context.executeHook(local0, '${hookMethodPath + '__begin'}')`);
+		js.push(`${idnt} context.executeHook(_this, '${hookMethodPath + '__begin'}')`);
 	}
 
 	js.push(`${idnt} `);
@@ -587,10 +621,11 @@ export function compile(methodInfo: MethodInfo, options: ICompilerOptions = {}):
 			js.push(`${idnt} //${BytecodeName[z.name]} ${z.params.join(' / ')} -> ${z.returnTypeId}`);
 		}
 
+		const getStackIndex = (n: number) => (z.stack - 1 - n);
 		const stackF = (n: number) => {
-			return ((z.stack - 1 - n) >= 0)
-				? `stack${(z.stack - 1 - n)}`
-				: `/*${underrun} ${z.stack - 1 - n}*/ stack0`;
+			return (getStackIndex(n) >= 0)
+				? `stack${getStackIndex(n)}`
+				: `/*${underrun} ${getStackIndex(n)}*/ stack0`;
 		};
 
 		const stack0 = stackF(0);
@@ -628,7 +663,12 @@ export function compile(methodInfo: MethodInfo, options: ICompilerOptions = {}):
 					localIndex = param(0);
 					optionalLocalVars[localIndex] && (optionalLocalVars[localIndex].read++);
 
-					js.push(`${idnt} ${stackN} = ${local(localIndex)};`);
+					js.push(be.emitVar(getStackIndex(-1), 'stack', {
+						value: localIndex,
+						kind: 'local'
+					}));
+
+					//js.push(`${idnt} ${stackN} = ${local(localIndex)};`);
 					break;
 				case Bytecode.SETLOCAL:
 					localIndex = param(0);
@@ -658,7 +698,7 @@ export function compile(methodInfo: MethodInfo, options: ICompilerOptions = {}):
 				case Bytecode.PUSHSCOPE:
 					staticHoistLex?.markScope(scopeN, js.length);
 					// extends can be used only on AXObject
-					js.push(`${idnt} ${scopeN} = ${scope}.extend(${stack0});`);
+					js.push(`${idnt} ${scopeN} = ${scope}.extend(${be.getVar(getStackIndex(0), 'stack').getInlineEmitter()});`);
 					break;
 				case Bytecode.PUSHWITH:
 					js.push(`${idnt} ${scopeN} = context.pushwith(${scope}, ${stack0});`);
@@ -703,37 +743,77 @@ export function compile(methodInfo: MethodInfo, options: ICompilerOptions = {}):
 					js.push(`${idnt} temp = undefined;`);
 					break;
 				case Bytecode.PUSHTRUE:
-					js.push(`${idnt} ${stackN} = true;`);
+					//js.push(`${idnt} ${stackN} = true;`);
+					js.push(be.emitVar(getStackIndex(-1), 'stack', {
+						value: true,
+						kind: 'simple'
+					}));
 					break;
 				case Bytecode.PUSHFALSE:
-					js.push(`${idnt} ${stackN} = false;`);
+					//js.push(`${idnt} ${stackN} = false;`);
+					js.push(be.emitVar(getStackIndex(-1), 'stack', {
+						value: false,
+						kind: 'simple'
+					}));
 					break;
 				case Bytecode.PUSHBYTE:
-					js.push(`${idnt} ${stackN} = ${param(0)};`);
-					break;
 				case Bytecode.PUSHSHORT:
-					js.push(`${idnt} ${stackN} = ${param(0)};`);
+
+					//js.push(`${idnt} ${stackN} = ${param(0)};`);
+					js.push(be.emitVar(getStackIndex(-1), 'stack', {
+						value: param(0),
+						kind: 'simple'
+					}));
 					break;
 				case Bytecode.PUSHINT:
-					js.push(`${idnt} ${stackN} = ${abc.ints[param(0)]};`);
+					//js.push(`${idnt} ${stackN} = ${abc.ints[param(0)]};`);
+					js.push(be.emitVar(getStackIndex(-1), 'stack', {
+						value: abc.ints[param(0)],
+						kind: 'simple'
+					}));
 					break;
 				case Bytecode.PUSHUINT:
-					js.push(`${idnt} ${stackN} = ${abc.uints[param(0)]};`);
+					//js.push(`${idnt} ${stackN} = ${abc.uints[param(0)]};`);
+					js.push(be.emitVar(getStackIndex(-1), 'stack', {
+						value: abc.uints[param(0)],
+						kind: 'simple'
+					}));
 					break;
 				case Bytecode.PUSHDOUBLE:
-					js.push(`${idnt} ${stackN} = ${abc.doubles[param(0)]};`);
+					//js.push(`${idnt} ${stackN} = ${abc.doubles[param(0)]};`);
+					js.push(be.emitVar(getStackIndex(-1), 'stack', {
+						value: abc.doubles[param(0)],
+						kind: 'simple'
+					}));
 					break;
 				case Bytecode.PUSHSTRING:
-					js.push(`${idnt} ${stackN} = ${escape(abc.getString(param(0)))};`);
+					//js.push(`${idnt} ${stackN} = ${escape(abc.getString(param(0)))};`);
+					js.push(be.emitVar(getStackIndex(-1), 'stack', {
+						value: escape(abc.getString(param(0))),
+						kind: 'simple'
+					}));
 					break;
 				case Bytecode.PUSHNAN:
-					js.push(`${idnt} ${stackN} = NaN;`);
+					//js.push(`${idnt} ${stackN} = NaN;`);
+					js.push(be.emitVar(getStackIndex(-1), 'stack', {
+						value: NaN,
+						kind: 'simple'
+					}));
 					break;
 				case Bytecode.PUSHNULL:
-					js.push(`${idnt} ${stackN} = null;`);
+					//js.push(`${idnt} ${stackN} = null;`);
+					js.push(be.emitVar(getStackIndex(-1), 'stack', {
+						value: null,
+						kind: 'simple'
+					}));
 					break;
 				case Bytecode.PUSHUNDEFINED:
-					js.push(`${idnt} ${stackN} = undefined;`);
+					//js.push(`${idnt} ${stackN} = undefined;`);
+					//js.push(`${idnt} ${stackN} = undefined;`);
+					js.push(be.emitVar(getStackIndex(-1), 'stack', {
+						value: undefined,
+						kind: 'simple'
+					}));
 					break;
 				case Bytecode.IFEQ:
 					js.push(`${idnt} if (${stack0} == ${stack1}) { p = ${param(0)}; continue; };`);
