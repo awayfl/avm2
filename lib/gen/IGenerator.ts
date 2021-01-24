@@ -10,6 +10,11 @@ export interface IGenerator {
 	genBody(ident: string): string;
 
 	/**
+	 * Run postprocess mutation of generated code
+	 */
+	genPost(arr: string[]): string[];
+
+	/**
 	 * Reset generator
 	 */
 	reset(): void;

@@ -36,6 +36,7 @@ import { Stat } from './gen/Stat';
 
 import {
 	ComplexGenerator,
+	StaticHoistLex,
 	PhysicsLex,
 	TopLevelLex
 } from './gen/LexImportsGenerator';
@@ -117,19 +118,22 @@ export function compile(methodInfo: MethodInfo, options: ICompilerOptions = {}):
 		scope,
 	} = options;
 
+	const staticHoistLex = new StaticHoistLex();
+
 	// lex generator
 	const lexGen = new ComplexGenerator([
 		new PhysicsLex({ box2D: false }), // generate static aliases for Physics engine
-		new TopLevelLex() // generate alias for TopLevel props
+		new TopLevelLex(), // generate alias for TopLevel props
+		//staticHoistLex // collided with fastCall yet, need fix it
 	]);
 
 	const blockSaver = new TweenCallSaver();
 
 	const tinyCtr = new TinyConstructor();
 
-	Stat.begin('');
-
 	const fastCall = new FastCall(lexGen, scope);
+
+	Stat.begin('');
 
 	const USE_OPT = (opt: any) => {
 		return optimise & COMPILER_OPT_FLAGS.ALLOW_CUSTOM_OPTIMISER && !!opt;
@@ -252,7 +256,7 @@ export function compile(methodInfo: MethodInfo, options: ICompilerOptions = {}):
 	const maxscope = body.maxScopeDepth - body.initScopeDepth;
 
 	const js0 = [];
-	const js = [];
+	let js = [];
 
 	let idnt: string = '';
 	let idnLen = 0;
@@ -652,6 +656,7 @@ export function compile(methodInfo: MethodInfo, options: ICompilerOptions = {}):
 					js.push(`${idnt} ${stackN} = context.savedScope.global.object;`);
 					break;
 				case Bytecode.PUSHSCOPE:
+					staticHoistLex?.markScope(scopeN, js.length);
 					// extends can be used only on AXObject
 					js.push(`${idnt} ${scopeN} = ${scope}.extend(${stack0});`);
 					break;
@@ -1064,13 +1069,16 @@ export function compile(methodInfo: MethodInfo, options: ICompilerOptions = {}):
 					const mn = abc.getMultiname(param(0));
 					js.push(`${idnt} // ${mn}`);
 
-					if (USE_OPT(lexGen) && lexGen.test(mn)) {
+					if (USE_OPT(lexGen) && lexGen.test(mn, false)) {
 						js.push(`${idnt} /* GenerateLexImports */`);
 						// eslint-disable-next-line max-len
-						js.push(`${idnt} ${stackN} = ${lexGen.getPropStrictAlias(mn,<any>{ nameAlias: getname(param(0)) })};`);
+						js.push(`${idnt} ${stackN} = ${lexGen.getPropStrictAlias(mn,<any>{
+							nameAlias: getname(param(0)),
+							/*findProp: true,*/
+						})};`);
 
 						if (USE_OPT(fastCall)) {
-							const mangled = (lexGen.getGenerator(mn) instanceof TopLevelLex);
+							const mangled = (lexGen.getGenerator(mn, false) instanceof TopLevelLex);
 							fastCall.mark(stackN, i, mangled, mn);
 						}
 						break;
@@ -1379,14 +1387,18 @@ export function compile(methodInfo: MethodInfo, options: ICompilerOptions = {}):
 				case Bytecode.GETLEX: {
 					const mn = abc.getMultiname(param(0));
 
-					if (USE_OPT(lexGen) && lexGen.test(mn)) {
+					if (USE_OPT(lexGen) && lexGen.test(mn, true)) {
 						js.push(`${idnt} // ${mn}`);
 						js.push(`${idnt} /* GenerateLexImports */`);
 						// eslint-disable-next-line max-len
-						js.push(`${idnt} ${stackN} = ${lexGen.getLexAlias(mn,<any>{ nameAlias : getname(param(0)) })};`);
+						js.push(`${idnt} ${stackN} = ${lexGen.getLexAlias(mn,<any>{
+							nameAlias : getname(param(0)),
+							/*findProp: false,*/
+							scope: scope
+						})};`);
 
 						if (fastCall) {
-							const mangled = (lexGen.getGenerator(mn) instanceof TopLevelLex);
+							const mangled = (lexGen.getGenerator(mn, true) instanceof TopLevelLex);
 							fastCall.mark(stackN, i, mangled, mn, true);
 						}
 					} else {
@@ -1621,16 +1633,22 @@ export function compile(methodInfo: MethodInfo, options: ICompilerOptions = {}):
 
 	js0[LOCALS_POS] = locals.join('\n');
 
-	const header = ['const AX_CLASS_SYMBOL = context.AX_CLASS_SYMBOL;'];
+	const genHeader = ['const AX_CLASS_SYMBOL = context.AX_CLASS_SYMBOL;'];
+	const genBody = [];
 
 	if (USE_OPT(lexGen)) {
-		header.push(lexGen.genHeader(idnt));
+		genHeader.push(lexGen.genHeader(idnt));
+		genBody.push(lexGen.genBody(idnt));
+
+		// mutated generated codeblock
+		js = lexGen.genPost(js);
 	}
 
 	const w =
 		scriptHeader +
-		header.join('\n') +
+		genHeader.join('\n') +
 		js0.join('\n') + '\n' +
+		genBody.join('\n') + '\n' +
 		js.join('\n');
 
 	const hasError = w.indexOf(underrun) > -1;
