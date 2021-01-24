@@ -390,10 +390,18 @@ export function compile(methodInfo: MethodInfo, options: ICompilerOptions = {}):
 		js0.push(`${idnt} let local0 = this === context.jsGlobal ? context.savedScope.global.object : this;`);
 
 		for (const a of args) {
+			const name = a.name;
+
 			if (a.type === 'String') {
-				const name = a.name;
 				js0.push(`${idnt} /* Force string coerce */`);
-				js0.push(`${idnt} ${name} = (${name} !== null && typeof ${name} !== 'string') ? ${name}.toString() : ${name};`);
+				// eslint-disable-next-line max-len
+				js0.push(`${idnt} ${name} = (${name} != null && typeof ${name} !== 'string') ? ${name}.toString() : ${name};`);
+			} else if (a.type === 'int') {
+				js0.push(`${idnt} /* Force int coerce */`);
+				js0.push(`${idnt} ${name} = ${name} | 0;`);
+			} else if (a.type === 'Number') {
+				js0.push(`${idnt} /* Force Number coerce */`);
+				js0.push(`${idnt} ${name} = +${name};`);
 			}
 		}
 
