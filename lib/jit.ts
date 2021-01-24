@@ -348,7 +348,8 @@ export function compile(methodInfo: MethodInfo, options: ICompilerOptions = {}):
 	moveIdnt(1);
 
 	if (optimise & COMPILER_OPT_FLAGS.USE_ES_PARAMS) {
-		const args = [];
+		const args: {name: string, value?: any, type?: string}[] = [];
+
 		for (let i = 0; i < params.length; i++) {
 			const p = params[i];
 			const arg = { name: 'local' + (i + 1), value: null, type: '' };
@@ -391,17 +392,26 @@ export function compile(methodInfo: MethodInfo, options: ICompilerOptions = {}):
 
 		for (const a of args) {
 			const name = a.name;
+			let argCoerce = '';
 
-			if (a.type === 'String') {
-				js0.push(`${idnt} /* Force string coerce */`);
-				// eslint-disable-next-line max-len
-				js0.push(`${idnt} ${name} = (${name} != null && typeof ${name} !== 'string') ? ${name}.toString() : ${name};`);
-			} else if (a.type === 'int') {
-				js0.push(`${idnt} /* Force int coerce */`);
-				js0.push(`${idnt} ${name} = ${name} | 0;`);
-			} else if (a.type === 'Number') {
-				js0.push(`${idnt} /* Force Number coerce */`);
-				js0.push(`${idnt} ${name} = +${name};`);
+			switch (a.type) {
+				case 'String':
+					// eslint-disable-next-line max-len
+					argCoerce = `${name} = (${name} != null && typeof ${name} !== 'string') ? ${name}.toString() : ${name};`;
+					break;
+				case 'Number':
+					argCoerce = `${name} = +${name};`;
+					break;
+				case 'int':
+					argCoerce = `${name} = ${name} | 0;`;
+					break;
+				default:
+					break;
+			}
+
+			if (argCoerce) {
+				js0.push(`${idnt} /* Force ${a.type} coerce */`);
+				js0.push(`${idnt} ${argCoerce}`);
 			}
 		}
 
