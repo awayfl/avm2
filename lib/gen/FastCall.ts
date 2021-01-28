@@ -1,5 +1,5 @@
 import { IGenerator } from './IGenerator';
-import { LexImportsGenerator, ILexGenerator } from './LexImportsGenerator';
+import { ILexGenerator } from './LexImportsGenerator';
 import { Multiname } from '../abc/lazy/Multiname';
 import { Scope } from '../run/Scope';
 
@@ -14,6 +14,9 @@ export interface ICallEntry {
 	methodImport?: string;
 }
 
+/**
+ * @description Generate a simple call instruction  (witout runtime checks) on lexed alliases
+ */
 export class FastCall implements IGenerator {
 	public safeIntrDistance = 20;
 
@@ -115,6 +118,10 @@ export class FastCall implements IGenerator {
 	 */
 	drop() {
 		this._active = {};
+	}
+
+	genPost(arr: string[]) {
+		return arr;
 	}
 
 	reset() {

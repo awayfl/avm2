@@ -1,6 +1,13 @@
 import { assert } from '@awayjs/graphics';
 
-import { release, notImplemented, defineNonEnumerableProperty, isIndex, isNullOrUndefined, isObject } from '@awayfl/swf-loader';
+import {
+	release,
+	notImplemented,
+	defineNonEnumerableProperty,
+	isIndex,
+	isNullOrUndefined,
+	isObject,
+} from '@awayfl/swf-loader';
 import { Namespace } from '../abc/lazy/Namespace';
 import { Multiname } from '../abc/lazy/Multiname';
 import { CONSTANT } from '../abc/lazy/CONSTANT';
@@ -16,6 +23,7 @@ import { axCoerceString } from '../run/axCoerceString';
 import { checkValue } from '../run/checkValue';
 import { validateCall } from '../run/validateCall';
 import { getCurrentScope } from '../run/getCurrentScope';
+import { AXQNameClass } from '../run/AXQNameClass';
 
 /* tslint:disable */
 /*
@@ -146,9 +154,11 @@ export function escapeElementValue(sec: AXSecurityDomain, s: any): string {
 // 10.2.1.2 EscapeAttributeValue ( s )
 export function escapeAttributeValue(s: string): string {
 	s = String(s);
-	let i = 0, ch;
+	let i = 0,
+		ch: string;
+
 	while (i < s.length && (ch = s[i]) !== '&' && ch !== '<' &&
-          ch !== '\"' && ch !== '\n' && ch !== '\r' && ch !== '\t') {
+          ch !== '"' && ch !== '\n' && ch !== '\r' && ch !== '\t') {
 		i++;
 	}
 	if (i >= s.length) {
@@ -164,7 +174,7 @@ export function escapeAttributeValue(s: string): string {
 			case '<':
 				buf += '&lt;';
 				break;
-			case '\"':
+			case '"':
 				buf += '&quot;';
 				break;
 			case '\n':
@@ -232,7 +242,10 @@ function getIndentString(indent: number): string {
 }
 
 function generateUniquePrefix(namespaces: Namespace[]) {
-	let i = 1, newPrefix;
+	let i = 1,
+		newPrefix: string;
+
+	// eslint-disable-next-line no-constant-condition
 	while (true) {
 		newPrefix = '_ns' + i;
 		if (!namespaces.some(function (ns) { return ns.prefix === newPrefix; })) {
@@ -251,7 +264,7 @@ function toXMLString(sec: AXSecurityDomain, node: any) {
 }
 
 // 10.3 ToXML
-function toXML(v, sec: AXSecurityDomain) {
+function toXML(v: any, sec: AXSecurityDomain) {
 	if (v === null) {
 		sec.throwError('TypeError', Errors.ConvertNullToObjectError);
 	}
@@ -318,7 +331,7 @@ function toXMLList(value: any, targetList: ASXMLList): void {
 }
 
 // 10.6 ToXMLName
-function toXMLName(mn, sec: AXSecurityDomain): Multiname {
+function toXMLName(mn: string | Multiname |  AXQNameClass, sec: AXSecurityDomain): Multiname {
 	if (mn === undefined) {
 		return anyMultiname;
 	}
@@ -461,7 +474,7 @@ function GetNamespace(mn: Multiname, inScopeNamespaces: Namespace[]) {
 // 13.1.2.1 isXMLName ( value )
 export function isXMLName(v, sec: AXSecurityDomain) {
 	try {
-		const qn = sec.AXQName.Create(v);
+		sec.AXQName.Create(v);
 	} catch (e) {
 		return false;
 	}
@@ -469,8 +482,9 @@ export function isXMLName(v, sec: AXSecurityDomain) {
 	return true;
 }
 
-var tmpMultiname = new Multiname(null, 0, CONSTANT.QName, [], null, null, true);
-var anyMultiname = new Multiname(null, 0, CONSTANT.QName, [], null, null, true);
+const tmpMultiname = new Multiname(null, 0, CONSTANT.QName, [], null, null, true);
+const anyMultiname = new Multiname(null, 0, CONSTANT.QName, [], null, null, true);
+
 release || Object.seal(anyMultiname);
 
 export const enum XMLParserErrorCode {
@@ -506,7 +520,7 @@ export class XMLParserBase {
 				case 'amp':
 					return '&';
 				case 'quot':
-					return '\"';
+					return '"';
 			}
 			// throw "Unknown entity: " + entity;
 			return all;
@@ -515,7 +529,8 @@ export class XMLParserBase {
 
 	private parseContent(s: string, start: number):
 	{name: string; attributes: {name: string; value: string}[]; parsed: number} {
-		let pos = start, name, attributes = [];
+		let pos = start;
+		const attributes = [];
 
 		function skipWs() {
 			while (pos < s.length && isWhitespace(s, pos)) {
@@ -526,10 +541,16 @@ export class XMLParserBase {
 		while (pos < s.length && !isWhitespace(s, pos) && s[pos] !== '>' && s[pos] !== '/') {
 			++pos;
 		}
-		name = s.substring(start, pos);
+
+		const name = s.substring(start, pos);
 		skipWs();
-		while (pos < s.length && s[pos] !== '>' &&
-    s[pos] !== '/' && s[pos] !== '?') {
+
+		while (
+			pos < s.length &&
+			s[pos] !== '>' &&
+			s[pos] !== '/' &&
+			s[pos] !== '?') {
+
 			skipWs();
 			let attrName = '', attrValue = '';
 			while (pos < s.length && !isWhitespace(s, pos) && s[pos] !== '=') {
@@ -560,7 +581,7 @@ export class XMLParserBase {
 
 	private parseProcessingInstruction(s: string, start: number):
 	{name: string; value: string; parsed: number} {
-		let pos = start, name, value;
+		let pos = start;
 
 		function skipWs() {
 			while (pos < s.length && isWhitespace(s, pos)) {
@@ -571,13 +592,13 @@ export class XMLParserBase {
 		while (pos < s.length && !isWhitespace(s, pos) && s[pos] !== '>' && s[pos] !== '/') {
 			++pos;
 		}
-		name = s.substring(start, pos);
+		const name = s.substring(start, pos);
 		skipWs();
 		const attrStart = pos;
 		while (pos < s.length && (s[pos] !== '?' || s[pos + 1] != '>')) {
 			++pos;
 		}
-		value = s.substring(attrStart, pos);
+		const value = s.substring(attrStart, pos);
 		return { name: name, value: value, parsed: pos - start };
 	}
 
@@ -588,7 +609,9 @@ export class XMLParserBase {
 			let j = i;
 			if (ch === '<') {
 				++j;
-				var ch2 = s[j], q;
+				const ch2 = s[j];
+				let q: number;
+
 				switch (ch2) {
 					case '/':
 						++j;
@@ -600,9 +623,9 @@ export class XMLParserBase {
 						this.onEndElement(s.substring(j, q));
 						j = q + 1;
 						break;
-					case '?':
+					case '?': {
 						++j;
-						var pi = this.parseProcessingInstruction(s, j);
+						const pi = this.parseProcessingInstruction(s, j);
 						if (s.substring(j + pi.parsed, j + pi.parsed + 2) != '?>') {
 							this.onError(XMLParserErrorCode.UnterminatedXmlDeclaration);
 							return;
@@ -610,6 +633,7 @@ export class XMLParserBase {
 						this.onPi(pi.name, pi.value);
 						j += pi.parsed + 2;
 						break;
+					}
 					case '!':
 						if (s.substring(j + 1, j + 3) === '--') {
 							q = s.indexOf('-->', j + 3);
@@ -628,7 +652,9 @@ export class XMLParserBase {
 							this.onCdata(s.substring(j + 8, q));
 							j = q + 3;
 						} else if (s.substring(j + 1, j + 8) === 'DOCTYPE') {
-							let q2 = s.indexOf('[', j + 8), complexDoctype = false;
+							const q2 = s.indexOf('[', j + 8);
+							let complexDoctype = false;
+
 							q = s.indexOf('>', j + 8);
 							if (q < 0) {
 								this.onError(XMLParserErrorCode.UnterminatedDoctypeDeclaration);
@@ -651,26 +677,31 @@ export class XMLParserBase {
 							return;
 						}
 						break;
-					default:
-						var content = this.parseContent(s, j);
+					default: {
+						const content = this.parseContent(s, j);
 						if (content === null) {
 							this.onError(XMLParserErrorCode.MalformedElement);
 							return;
 						}
-						var isClosed = false;
+
+						let isClosed = false;
 						if (s.substring(j + content.parsed, j + content.parsed + 2) === '/>') {
 							isClosed = true;
 						} else if (s.substring(j + content.parsed, j + content.parsed + 1) !== '>') {
 							this.onError(XMLParserErrorCode.UnterminatedElement);
 							return;
 						}
+
 						this.onBeginElement(content.name, content.attributes, isClosed);
 						j += content.parsed + (isClosed ? 2 : 1);
 						break;
+					}
 				}
 			} else {
 				do {
+					//
 				} while (j++ < s.length && s[j] !== '<');
+
 				const text = s.substring(i, j);
 				this.onText(this.resolveEntities(text));
 			}
@@ -678,28 +709,28 @@ export class XMLParserBase {
 		}
 	}
 
-	onPi(name: string, value: string): void {
+	onPi(_name: string, _value: string): void {
 	}
 
-	onComment(text: string): void {
+	onComment(_text: string): void {
 	}
 
-	onCdata(text: string): void {
+	onCdata(_text: string): void {
 	}
 
-	onDoctype(doctypeContent: string): void {
+	onDoctype(_doctypeContent: string): void {
 	}
 
-	onText(text: string): void {
+	onText(_text: string): void {
 	}
 
-	onBeginElement(name: string, attributes: {name: string; value: string}[], isEmpty: boolean): void {
+	onBeginElement(_name: string, _attributes: {name: string; value: string}[], _isEmpty: boolean): void {
 	}
 
-	onEndElement(name: string): void {
+	onEndElement(_name: string): void {
 	}
 
-	onError(code: XMLParserErrorCode): void {
+	onError(_code: XMLParserErrorCode): void {
 	}
 }
 
@@ -825,23 +856,23 @@ export class XMLParser extends XMLParserBase {
 			lookup: Object.create(null),
 			inScopes: null
 		};
-		for (var q = 0; q < contentAttributes.length; ++q) {
-			var attribute = contentAttributes[q];
+		for (let q = 0; q < contentAttributes.length; ++q) {
+			const attribute = contentAttributes[q];
 			const attributeName = attribute.name;
 			if (attributeName.substring(0, 6) === 'xmlns:') {
 				const prefix = attributeName.substring(6);
-				var uri = attribute.value;
+				const uri = attribute.value;
 				if (this.lookupNs(prefix) !== uri) {
 					scope.lookup[prefix] = trimWhitespaces(uri);
-					var ns = internPrefixedNamespace(NamespaceType.Public, uri, prefix);
+					const ns = internPrefixedNamespace(NamespaceType.Public, uri, prefix);
 					scope.namespaces.push(ns);
 				}
 				contentAttributes[q] = null;
 			} else if (attributeName === 'xmlns') {
-				var uri = attribute.value;
+				const uri = attribute.value;
 				if (this.lookupDefaultNs() !== uri) {
 					scope['xmlns'] = trimWhitespaces(uri);
-					var ns = internNamespace(NamespaceType.Public, uri);
+					const ns = internNamespace(NamespaceType.Public, uri);
 					scope.namespaces.push(ns);
 				}
 				contentAttributes[q] = null;
@@ -859,9 +890,11 @@ export class XMLParser extends XMLParserBase {
 				inScopeNamespaces.push(ns);
 			}
 		});
-		scopes[scopes.length - 1].inScopes.forEach(function (ns) {
-			if ((ns.prefix && !(ns.prefix in scope.lookup)) ||
-        (!ns.prefix && !('xmlns' in scope))) {
+		scopes[scopes.length - 1].inScopes.forEach(function (ns: Namespace) {
+			if (
+				(ns.prefix && !(ns.prefix in scope.lookup)) ||
+				(!ns.prefix && !('xmlns' in scope))) {
+
 				inScopeNamespaces.push(ns);
 			}
 		});
@@ -869,8 +902,8 @@ export class XMLParser extends XMLParserBase {
 
 		scopes.push(scope);
 		const attributes = [];
-		for (q = 0; q < contentAttributes.length; ++q) {
-			attribute = contentAttributes[q];
+		for (let q = 0; q < contentAttributes.length; ++q) {
+			const attribute = contentAttributes[q];
 			if (attribute) {
 				attributes.push({
 					name: this.getName(attribute.name, false),
@@ -894,7 +927,7 @@ export class XMLParser extends XMLParserBase {
 		this.elementsStack.push(parent);
 		this.currentElement = createXML(this.sec, ASXMLKind.Element, name.namespace,
 			name.localName, name.prefix);
-		for (var i = 0; i < attrs.length; ++i) {
+		for (let i = 0; i < attrs.length; ++i) {
 			const rawAttr = attrs[i];
 			const attr = createXML(this.sec, ASXMLKind.Attribute, rawAttr.name.namespace,
 				rawAttr.name.localName, rawAttr.name.prefix);
@@ -902,7 +935,7 @@ export class XMLParser extends XMLParserBase {
 			attr._parent = this.currentElement;
 			this.currentElement._attributes.push(attr);
 		}
-		for (var i = 0; i < namespaces.length; ++i) {
+		for (let i = 0; i < namespaces.length; ++i) {
 			this.currentElement._inScopeNamespaces.push(namespaces[i]);
 		}
 		parent.insert(parent._children.length, this.currentElement);
@@ -911,11 +944,11 @@ export class XMLParser extends XMLParserBase {
 		}
 	}
 
-	endElement(name) {
+	endElement(_name: any) {
 		this.currentElement = this.elementsStack.pop();
 	}
 
-	text(text, isWhitespacePreserve) {
+	text(text: string, isWhitespacePreserve: boolean) {
 		if (this.sec.AXXML.ignoreWhitespace) {
 			text = trimWhitespaces(text);
 		}
@@ -928,13 +961,13 @@ export class XMLParser extends XMLParserBase {
 		this.currentElement.insert(this.currentElement._children.length, node);
 	}
 
-	cdata(text) {
+	cdata(text: string) {
 		const node = createXML(this.sec);
 		node._value = text;
 		this.currentElement.insert(this.currentElement._children.length, node);
 	}
 
-	comment(text) {
+	comment(text: string) {
 		if (this.sec.AXXML.ignoreComments) {
 			return;
 		}
@@ -943,7 +976,7 @@ export class XMLParser extends XMLParserBase {
 		this.currentElement.insert(this.currentElement._children.length, node);
 	}
 
-	pi(name, value) {
+	pi(name: string, value: any) {
 		if (this.sec.AXXML.ignoreProcessingInstructions) {
 			return;
 		}
@@ -952,9 +985,9 @@ export class XMLParser extends XMLParserBase {
 		this.currentElement.insert(this.currentElement._children.length, node);
 	}
 
-	doctype(text) { }
+	doctype(_text) { }
 
-	parseFromString(s, mimeType?) {
+	parseFromString(s: string, _mimeType?: string) {
 		// placeholder
 		const currentElement = this.currentElement = createXML(this.sec, ASXMLKind.Element,
 			'', '', '');
@@ -1002,7 +1035,7 @@ export class ASNamespace extends ASObject implements XMLType {
    * Namespace (uriValue)
    * Namespace (prefixValue, uriValue)
    */
-	public static axApply(self: ASNamespace, args: any[]): ASNamespace {
+	public static axApply(_self: ASNamespace, args: any[]): ASNamespace {
 		const a = args[0];
 		const b = args[1];
 		// 1. If (prefixValue is not specified and Type(uriValue) is Object and
@@ -1023,9 +1056,10 @@ export class ASNamespace extends ASObject implements XMLType {
 		}
 	}
 
-	static Create(uriOrPrefix_: any, uri_: any): ASNamespace {
+	static Create(_uriOrPrefix_: any, _uri_: any): ASNamespace {
 		const ns: ASNamespace = Object.create(this.sec.AXNamespace.tPrototype);
 		// The initializer relies on arguments.length being correct.
+		// eslint-disable-next-line prefer-spread, prefer-rest-params
 		ns.axInitializer.apply(ns, arguments);
 		return ns;
 	}
@@ -1053,13 +1087,16 @@ export class ASNamespace extends ASObject implements XMLType {
 		let uri: string = '';
 		let prefix: string = '';
 		// 2. If prefixValue is not specified and uriValue is not specified
+		/*
 		if (arguments.length === 0) {
 			// a. Let n.prefix be the empty string
 			// b. Let n.uri be the empty string
 		}
 		// 3. Else if prefixValue is not specified
-		else if (arguments.length === 1) {
-			var uriValue = uriOrPrefix_;
+		else
+		*/
+		if (arguments.length === 1) {
+			const uriValue = uriOrPrefix_;
 			if (uriValue instanceof Namespace) {
 				this._ns = uriValue;
 				return;
@@ -1072,49 +1109,44 @@ export class ASNamespace extends ASObject implements XMLType {
 					const uriValueAsNamespace: ASNamespace = uriValue;
 					// i. Let n.prefix = uriValue.prefix
 					prefix = uriValueAsNamespace.prefix;
-					// ii. Let n.uri = uriValue.uri
 					uri = uriValueAsNamespace.uri;
-				}
+
 				// b. Else if Type(uriValue) is Object and uriValue.[[Class]] == "QName" and uriValue.uri
 				// is not null
-				else if (uriValue.axClass === this.sec.AXQName &&
+				} else if (uriValue.axClass === this.sec.AXQName &&
                   (<ASQName>uriValue).uri !== null) {
 					// i. Let n.uri = uriValue.uri
 					uri = uriValue.uri;
 					// NOTE implementations that preserve prefixes in qualified names may also set n.prefix
 					// = uriValue.[[Prefix]]
 				}
-			}
-			// c. Else
-			else {
+			} else { // c. Else
 				// i. Let n.uri = ToString(uriValue)
 				uri = toString(uriValue, this.sec);
 				// ii. If (n.uri is the empty string), let n.prefix be the empty string
 				if (uri === '') {
 					prefix = '';
-				}
-				// iii. Else n.prefix = undefined
-				else {
+				} else {// iii. Else n.prefix = undefined
 					prefix = undefined;
 				}
 			}
-		}
-		// 4. Else
-		else {
+		} else { // 4. Else
 			const prefixValue = uriOrPrefix_;
-			var uriValue = uri_;
+			const uriValue = uri_;
 			// a. If Type(uriValue) is Object and uriValue.[[Class]] == "QName" and uriValue.uri is not
 			// null
-			if (isObject(uriValue) && uriValue.axClass === this.sec.AXQName &&
-          (<ASQName>uriValue).uri !== null) {
+			if (
+				isObject(uriValue) &&
+				uriValue.axClass === this.sec.AXQName &&
+				(<ASQName>uriValue).uri !== null) {
 				// i. Let n.uri = uriValue.uri
 				uri = uriValue.uri;
-			}
-			// b. Else
-			else {
+			} else {// b. Else
+
 				// i. Let n.uri = ToString(uriValue)
 				uri = toString(uriValue, this.sec);
 			}
+
 			// c. If n.uri is the empty string
 			if (uri === '') {
 				// i. If prefixValue is undefined or ToString(prefixValue) is the empty string
@@ -1125,18 +1157,15 @@ export class ASNamespace extends ASObject implements XMLType {
 					// ii. Else throw a TypeError exception
 					this.sec.throwError('TypeError', Errors.XMLNamespaceWithPrefixAndNoURI, prefixValue);
 				}
-			}
 			// d. Else if prefixValue is undefined, let n.prefix = undefined
-			else if (prefixValue === undefined) {
+			} else if (prefixValue === undefined) {
 				prefix = undefined;
-			}
 			// e. Else if isXMLName(prefixValue) == false
-			else if (isXMLName(prefixValue, this.sec) === false) {
+			} else if (isXMLName(prefixValue, this.sec) === false) {
 				// i. Let n.prefix = undefined
 				prefix = undefined;
-			}
 			// f. Else let n.prefix = ToString(prefixValue)
-			else {
+			} else {
 				prefix = toString(prefixValue, this.sec);
 			}
 		}
@@ -1183,9 +1212,10 @@ export class ASQName extends ASObject implements XMLType {
 		defineNonEnumerableProperty(proto, '$BgtoString', asProto.ecmaToString);
 	}
 
-	static Create(nameOrNS_: any, name_?: any, isAttribute?: boolean): ASQName {
+	static Create(_nameOrNS_: any, _name_?: any, _isAttribute?: boolean): ASQName {
 		const name: ASQName = Object.create(this.sec.AXQName.tPrototype);
 		// The initializer relies on arguments.length being correct.
+		// eslint-disable-next-line prefer-spread, prefer-rest-params
 		name.axInitializer.apply(name, arguments);
 		return name;
 	}
@@ -1206,7 +1236,7 @@ export class ASQName extends ASObject implements XMLType {
    * QName ( Name )
    * QName ( Namespace , Name )
    */
-	public static axApply(self: ASNamespace, args: any[]): ASQName {
+	public static axApply(_self: ASNamespace, args: any[]): ASQName {
 		const nameOrNS_ = args[0];
 		const name_ = args[1];
 		// 1. If Namespace is not specified and Type(Name) is Object and Name.[[Class]] == “QName”
@@ -1239,8 +1269,8 @@ export class ASQName extends ASObject implements XMLType {
 	constructor(nameOrNS_?: any, name_?: any) {
 		super();
 
-		let name;
-		let namespace;
+		let name: any;
+		let namespace: any;
 
 		if (arguments.length === 0) {
 			name = '';
@@ -1258,9 +1288,8 @@ export class ASQName extends ASObject implements XMLType {
 				release || assert(name !== tmpMultiname);
 				this.name = (<ASQName>name).name;
 				return;
-			}
 			// b. Else let Name = Name.localName
-			else {
+			} else {
 				name = (<ASQName>name).localName;
 			}
 		}
@@ -1268,9 +1297,8 @@ export class ASQName extends ASObject implements XMLType {
 		if (name === undefined) {
 			// a. Let Name = ""
 			name = '';
-		}
 		// 3. Else let Name = ToString(Name)
-		else {
+		} else {
 			name = toString(name, this.sec);
 		}
 		// 4. If (Namespace is undefined or not specified)
@@ -1279,9 +1307,8 @@ export class ASQName extends ASObject implements XMLType {
 			if (name === '*') {
 				// i. Let Namespace = null
 				namespace = null;
-			}
-			// b. Else
-			else {
+			} else {// b. Else
+
 				// i. Let Namespace = GetDefaultNamespace()
 				namespace = getDefaultNamespace(this.sec);
 			}
@@ -1657,19 +1684,21 @@ export class ASXML extends ASObject implements XMLType {
 			return false;
 		}
 		// Step 8.
-		attribOuter: for (var i = 0; i < attributes.length; i++) {
+		attribOuter:
+		for (let i = 0; i < attributes.length; i++) {
 			const attribute = attributes[i];
 			for (let j = 0; j < otherAttributes.length; j++) {
 				const otherAttribute = otherAttributes[j];
-				if (otherAttribute._name.equalsQName(attribute._name) &&
-            otherAttribute._value === attribute._value) {
+				if (
+					otherAttribute._name.equalsQName(attribute._name) &&
+					otherAttribute._value === attribute._value) {
 					continue attribOuter;
 				}
 			}
 			return false;
 		}
 		// Step 9.
-		for (var i = 0; i < children.length; i++) {
+		for (let i = 0; i < children.length; i++) {
 			if (!children[i].equals(otherChildren[i])) {
 				return false;
 			}
@@ -2168,9 +2197,8 @@ export class ASXML extends ASObject implements XMLType {
 			if (child._kind === ASXMLKind.Element) {
 				child.normalize();
 				i++;
-			}
 			// Step 2.b.
-			else if (child._kind === ASXMLKind.Text) {
+			} else if (child._kind === ASXMLKind.Text) {
 				// Step 2.b.i.
 				while (i + 1 < this._children.length) {
 					const nextChild = this._children[i + 1];
@@ -2185,14 +2213,10 @@ export class ASXML extends ASObject implements XMLType {
 				// nodes, too.
 				if (child._value.length === 0 || isWhitespaceString(child._value)) {
 					this.removeByIndex(i);
-				}
-				// Step 2.b.iii.
-				else {
+				} else {// Step 2.b.iii.
 					i++;
 				}
-			}
-			// Step 2.c.
-			else {
+			} else {// Step 2.c.
 				i++;
 			}
 		}
@@ -2260,9 +2284,8 @@ export class ASXML extends ASObject implements XMLType {
 		// Step 2.
 		if (!value || value.axClass !== this.axClass && value.axClass !== this.sec.AXXMLList) {
 			c = axCoerceString(value);
-		}
 		// Step 3.
-		else {
+		} else {
 			c = value._deepCopy();
 		}
 		// Step 4.
@@ -2334,9 +2357,8 @@ export class ASXML extends ASObject implements XMLType {
 			}
 			// Step 5.d.
 			children[p] = v;
-		}
 		// Step 6.
-		else if (v && v.axClass === this.sec.AXXMLList) {
+		} else if (v && v.axClass === this.sec.AXXMLList) {
 			// Inlined steps.
 			if (v._children.length === 0) {
 				this.deleteByIndex(p);
@@ -2344,19 +2366,18 @@ export class ASXML extends ASObject implements XMLType {
 				const n = v._children.length;
 				if (p < children.length) {
 					children[p]._parent = null;
-					for (var i = children.length - 1; i > p; i--) {
+					for (let i = children.length - 1; i > p; i--) {
 						children[i + n] = children[i];
 					}
 				}
-				for (var i = 0; i < n; i++) {
+				for (let i = 0; i < n; i++) {
 					const child = v._children[i];
 					child._parent = this;
 					children[i + p] = child;
 				}
 			}
-		}
 		// Step 7.
-		else {
+		} else {
 			// Step 7.a.
 			const s = axCoerceString(v);
 			// Step 7.b.
@@ -2450,7 +2471,7 @@ export class ASXML extends ASObject implements XMLType {
 	text() {
 		// 13.4.4.37 XML.prototype.text ( );
 		const xl = this.sec.AXXMLList.CreateList(this, this._name);
-		this._children && this._children.forEach(function (v, i) {
+		this._children && this._children.forEach((v) => {
 			if (v._kind === ASXMLKind.Text) {
 				xl.append(v);
 			}
@@ -2500,8 +2521,8 @@ export class ASXML extends ASObject implements XMLType {
 		const namespaceDeclarations: Namespace[] = [];
 
 		// 10. For each ns in x.[[InScopeNamespaces]]
-		for (var i = 0; node._inScopeNamespaces && i < node._inScopeNamespaces.length; i++) {
-			var ns = node._inScopeNamespaces[i];
+		for (let i = 0; node._inScopeNamespaces && i < node._inScopeNamespaces.length; i++) {
+			const ns = node._inScopeNamespaces[i];
 			if (ancestorNamespaces.every(function (ans) { return ans.uri !== ns.uri || ans.prefix !== ns.prefix; })) {
 				namespaceDeclarations.push(ns);
 			}
@@ -2509,7 +2530,7 @@ export class ASXML extends ASObject implements XMLType {
 		// 11. For each name in the set of names consisting of x.[[Name]] and the name of each
 		// attribute in x.[[Attributes]]
 		const currentNamespaces = ancestorNamespaces.concat(namespaceDeclarations);
-		var namespace = GetNamespace(node._name, currentNamespaces);
+		let namespace = GetNamespace(node._name, currentNamespaces);
 		if (namespace.prefix === undefined) {
 			// Let namespace.prefix be an arbitrary implementation defined namespace prefix, such that
 			// there is no ns2 ∈ (AncestorNamespaces ∪ namespaceDeclarations) with namespace.prefix ==
@@ -2528,9 +2549,9 @@ export class ASXML extends ASObject implements XMLType {
 		const elementName = (namespace.prefix ? namespace.prefix + ':' : '') + node._name.name;
 		s += '<' + elementName;
 
-		node._attributes && node._attributes.forEach(function (attr: ASXML) {
+		node._attributes && node._attributes.forEach((attr: ASXML) => {
 			const name = attr._name;
-			const namespace = GetNamespace(name, currentNamespaces);
+			namespace = GetNamespace(name, currentNamespaces);
 			if (namespace.prefix === undefined) {
 				// Let namespace.prefix be an arbitrary implementation defined namespace prefix, such that
 				// there is no ns2 ∈ (AncestorNamespaces ∪ namespaceDeclarations) with namespace.prefix ==
@@ -2543,8 +2564,8 @@ export class ASXML extends ASObject implements XMLType {
 			}
 		});
 
-		for (var i = 0; i < namespaceDeclarations.length; i++) {
-			var namespace = namespaceDeclarations[i];
+		for (let i = 0; i < namespaceDeclarations.length; i++) {
+			namespace = namespaceDeclarations[i];
 			if (namespace.uri === '' || namespace.uri === 'default') {
 				continue;
 			}
@@ -2575,7 +2596,7 @@ export class ASXML extends ASObject implements XMLType {
 		const nextIndentLevel = (prettyPrinting && indentChildren) ?
 			indentLevel + sec.AXXML._prettyIndent : 0;
 
-		node._children.forEach(function (childNode, i) {
+		node._children.forEach((childNode) => {
 			if (prettyPrinting && indentChildren) {
 				s += '\n';
 			}
@@ -2589,7 +2610,7 @@ export class ASXML extends ASObject implements XMLType {
 		return s;
 	}
 
-	toJSON(k: string) {
+	toJSON(_k: string) {
 		return 'XML';
 	}
 
@@ -2605,7 +2626,7 @@ export class ASXML extends ASObject implements XMLType {
 	}
 
 	// 9.1.1.2 [[Put]] (P, V)
-	setProperty(mn: Multiname, v) {
+	setProperty(mn: Multiname, v: any) {
 		// Step 1. (Step 3 in Tamarin source.)
 		const sec = this.sec;
 		if (!mn.isAnyName() && !mn.isAttribute() && mn.name === mn.name >>> 0) {
@@ -2618,8 +2639,11 @@ export class ASXML extends ASObject implements XMLType {
 		}
 		// Step 3.
 		let c;
-		if (!isXMLType(v, sec) || v._kind === ASXMLKind.Text ||
-        v._kind === ASXMLKind.Attribute) {
+		if (
+			!isXMLType(v, sec) ||
+			v._kind === ASXMLKind.Text ||
+			v._kind === ASXMLKind.Attribute) {
+
 			c = toString(v, sec);
 			// Step 4.
 		} else {
@@ -2637,9 +2661,9 @@ export class ASXML extends ASObject implements XMLType {
 					// Step 6.b.ii.
 				} else {
 					// Step 6.b.ii.1.
-					var s = toString(c._children[0], sec);
+					let s = toString(c._children[0], sec);
 					// Step 6.b.ii.2.
-					for (var j = 1; j < c._children.length; j++) {
+					for (let j = 1; j < c._children.length; j++) {
 						s += ' ' + toString(c._children[j], sec);
 					}
 					// Step 6.b.ii.3.
@@ -2654,7 +2678,7 @@ export class ASXML extends ASObject implements XMLType {
 			// Step 6.e.
 			const attributes = this._attributes;
 			const newAttributes = this._attributes = [];
-			for (var j = 0; attributes && j < attributes.length; j++) {
+			for (let j = 0; attributes && j < attributes.length; j++) {
 				const attribute = attributes[j];
 				if (attribute._name.matches(mn)) {
 					// Step 6.e.1.
@@ -2676,8 +2700,10 @@ export class ASXML extends ASObject implements XMLType {
 				if (mn.isAnyName()) {
 					return;
 				}
-				var uri = '';
-				// 80pro - added the "&& mn.namespaces[0]"" , because it appears sometimes mn.namespaces[0] can be undefined
+
+				let uri = '';
+				// 80pro - added the "&& mn.namespaces[0]"" ,
+				// because it appears sometimes mn.namespaces[0] can be undefined
 				if (mn.namespaces.length === 1 && mn.namespaces[0]) {
 					uri = mn.namespaces[0].uri;
 				}
@@ -2711,9 +2737,10 @@ export class ASXML extends ASObject implements XMLType {
 		if (i === undefined) {
 			i = this._children.length;
 			if (primitiveAssign) {
-				var ns = mn.namespaces[0];
-				var uri: string = null;
-				let prefix;
+				const ns = mn.namespaces[0];
+				let uri: string = null;
+				let prefix: string;
+
 				if (ns.uri !== null) {
 					uri = ns.uri;
 					prefix = ns.prefix;
@@ -2726,18 +2753,17 @@ export class ASXML extends ASObject implements XMLType {
 				const y = createXML(sec, ASXMLKind.Element, uri, mn.name, prefix);
 				y._parent = this;
 				this._replaceByIndex(i, y);
-				var ns = y._name.namespace;
-				y.addInScopeNamespace(ns);
+				y.addInScopeNamespace(y._name.namespace);
 			}
 		}
 		if (primitiveAssign) {
 			// Blow away kids of x[i].
 			const subChildren = this._children[i]._children;
-			for (var j = subChildren.length; j--;) {
+			for (let j = subChildren.length; j--;) {
 				subChildren[j]._parent = null;
 			}
 			subChildren.length = 0;
-			var s = toString(c, sec);
+			const s = toString(c, sec);
 			if (s !== '') {
 				this._children[i]._replaceByIndex(0, s);
 			}
@@ -2746,7 +2772,7 @@ export class ASXML extends ASObject implements XMLType {
 		}
 	}
 
-	axSetProperty(mn: Multiname, value: any, bc: Bytecode) {
+	axSetProperty(mn: Multiname, value: any, _bc: Bytecode) {
 		if (this === this.axClass.dPrototype) {
 			release || checkValue(value);
 			this[this.axResolveMultiname(mn)] = value;
@@ -2776,10 +2802,12 @@ export class ASXML extends ASObject implements XMLType {
 
 		// Step 4.
 		if (mn.isAttribute()) {
-			for (var i = 0; this._attributes && i < this._attributes.length; i++) {
-				var v = this._attributes[i];
-				if ((anyName || v._name.name === nm) &&
-            (anyNamespace || v._name.matches(mn))) {
+			for (let i = 0; this._attributes && i < this._attributes.length; i++) {
+				const v = this._attributes[i];
+				if (
+					(anyName || v._name.name === nm) &&
+					(anyNamespace || v._name.matches(mn))) {
+
 					list._children[length++] = v;
 					assert(list._children[0]);
 				}
@@ -2787,10 +2815,13 @@ export class ASXML extends ASObject implements XMLType {
 			return list;
 		}
 		// Step 5.
-		for (var i = 0; this._children && i < this._children.length; i++) {
-			var v = this._children[i];
-			if ((anyName || v._kind === ASXMLKind.Element && v._name.name === nm) &&
-          ((anyNamespace || v._name.matches(mn)))) {
+		for (let i = 0; this._children && i < this._children.length; i++) {
+			const v = this._children[i];
+			if (
+				(anyName || v._kind === ASXMLKind.Element && v._name.name === nm) &&
+				((anyNamespace || v._name.matches(mn)))
+			) {
+
 				list._children[length++] = v;
 				assert(list._children[0]);
 			}
@@ -2819,18 +2850,20 @@ export class ASXML extends ASObject implements XMLType {
 		const anyName = name.isAnyName();
 		const anyNamespace = name.isAnyNamespace();
 		if (mn.isAttribute()) {
-			for (var i = 0; this._attributes && i < this._attributes.length; i++) {
-				var v = this._attributes[i];
+			for (let i = 0; this._attributes && i < this._attributes.length; i++) {
+				const v = this._attributes[i];
 				if (anyName || v._name.matches(name)) {
 					return true;
 				}
 			}
 			return false;
 		}
-		for (var i = 0; this._children && i < this._children.length; i++) {
-			var v = this._children[i];
-			if ((anyName || v._kind === ASXMLKind.Element && v._name.name === name.name) &&
-          (anyNamespace || v._kind === ASXMLKind.Element && v._name.matches(name))) {
+		for (let i = 0; this._children && i < this._children.length; i++) {
+			const v = this._children[i];
+			if (
+				(anyName || v._kind === ASXMLKind.Element && v._name.name === name.name) &&
+				(anyNamespace || v._kind === ASXMLKind.Element && v._name.matches(name))
+			) {
 				return true;
 			}
 		}
@@ -2975,7 +3008,7 @@ export class ASXML extends ASObject implements XMLType {
 
 		// Step 8.
 		let ownChildren = this._children;
-		for (var j = ownChildren.length - 1; j >= i; j--) {
+		for (let j = ownChildren.length - 1; j >= i; j--) {
 			ownChildren[j + n] = ownChildren[j];
 			assert(ownChildren[0]);
 		}
@@ -2985,7 +3018,7 @@ export class ASXML extends ASObject implements XMLType {
 		// Step 10.
 		if (v && v.axClass === this.sec.AXXMLList) {
 			n = v._children.length;
-			for (var j = 0; j < n; j++) {
+			for (let j = 0; j < n; j++) {
 				v._children[j]._parent = this;
 				ownChildren[i + j] = v._children[j];
 			}
@@ -3134,7 +3167,7 @@ export class ASXMLList extends ASObject implements XMLType {
 		addPrototypeFunctionAlias(proto, '$BgtoJSON', asProto.toJSON);
 	}
 
-	public static axApply(self: ASXMLList, args: any[]): ASXMLList {
+	public static axApply(_self: ASXMLList, args: any[]): ASXMLList {
 		let value = args[0];
 		// 13.5.1 The XMLList Constructor Called as a Function
 		if (isNullOrUndefined(value)) {
@@ -3440,9 +3473,8 @@ export class ASXMLList extends ASObject implements XMLType {
 			if (child._kind === ASXMLKind.Element) {
 				child.normalize();
 				i++;
-			}
 			// Step 2.b.
-			else if (child._kind === ASXMLKind.Text) {
+			} else if (child._kind === ASXMLKind.Text) {
 				// Step 2.b.i.
 				for (i++; i < this._children.length;) {
 					const nextChild = this._children[i];
@@ -3455,14 +3487,11 @@ export class ASXMLList extends ASObject implements XMLType {
 				// Step 2.b.ii.
 				if (child._value.length === 0) {
 					this.removeByIndex(i);
-				}
-				// Step 2.b.iii.
-				else {
+				} else {// Step 2.b.iii.
+
 					i++;
 				}
-			}
-			// Step 2.c.
-			else {
+			} else { // Step 2.c.
 				i++;
 			}
 		}
@@ -3700,25 +3729,29 @@ export class ASXMLList extends ASObject implements XMLType {
 		const xl = this.sec.AXXMLList.CreateList(this._targetObject, mn);
 		const children = this._children;
 		for (let i = 0; i < children.length; i++) {
-			var v = children[i];
+			const v = children[i];
 			if (v._kind === ASXMLKind.Element) {
 				// i. Let gq be the result of calling the [[Get]] method of x[i] with argument P
 				// We do this inline instead to reduce the amount of temporarily created XMLLists.
 				if (isAttribute) {
 					const attributes = v._attributes;
-					for (var j = 0; attributes && j < attributes.length; j++) {
-						var v = attributes[j];
-						if ((isAnyName || v._name.name === nm) &&
-                (isAnyNamespace || v._name.matches(mn))) {
+					for (let j = 0; attributes && j < attributes.length; j++) {
+						const v = attributes[j];
+						if (
+							(isAnyName || v._name.name === nm) &&
+							(isAnyNamespace || v._name.matches(mn))
+						) {
 							xl._children.push(v);
 						}
 					}
 				} else {
 					const descendants = v._children;
-					for (var j = 0; descendants && j < descendants.length; j++) {
-						var v = descendants[j];
-						if ((isAnyName || v._kind === ASXMLKind.Element && v._name.name === nm) &&
-                (isAnyNamespace || v._name.matches(mn))) {
+					for (let j = 0; descendants && j < descendants.length; j++) {
+						const v = descendants[j];
+						if (
+							(isAnyName || v._kind === ASXMLKind.Element && v._name.name === nm) &&
+							(isAnyNamespace || v._name.matches(mn))
+						) {
 							xl._children.push(v);
 						}
 					}
@@ -3737,7 +3770,7 @@ export class ASXMLList extends ASObject implements XMLType {
 		return this.getProperty(coerceE4XMultiname(mn, this.sec));
 	}
 
-	axGetPublicProperty(nm): any {
+	axGetPublicProperty(nm: any): any {
 		if (this === this.axClass.dPrototype) {
 			const value = this[Multiname.getPublicMangledName(nm)];
 			release || checkValue(value);
@@ -3779,7 +3812,7 @@ export class ASXMLList extends ASObject implements XMLType {
 		if (isIndex(mn.name)) {
 			let i = mn.name|0;
 			// Step 2.b.
-			var r: any = null;
+			let r: any = null;
 			// Step 2.a.
 			if (this._targetObject) {
 				r = this._targetObject.resolveValue();
@@ -3815,14 +3848,13 @@ export class ASXMLList extends ASObject implements XMLType {
 						return;
 					}
 					yKind = ASXMLKind.Attribute;
-				}
 				// Step 2.c.v.
-				else if (!this._targetProperty || this._targetProperty.name === null) {
+				} else if (!this._targetProperty || this._targetProperty.name === null) {
 					yName = null;
 					yKind = ASXMLKind.Text;
-				}
+
 				// Step 2.c.vi.
-				else {
+				} else {
 					yKind = ASXMLKind.Element;
 				}
 				y.init(yKind, yName);
@@ -3832,7 +3864,7 @@ export class ASXMLList extends ASObject implements XMLType {
 				if (y._kind !== ASXMLKind.Attribute) {
 					// Step 2.c.viii.1.
 					if (r !== null) {
-						var j: number;
+						let j: number;
 						// Step 2.c.viii.1.a.
 						if (i > 0) {
 							const lastChild = this._children[i - 1];
@@ -3843,9 +3875,8 @@ export class ASXMLList extends ASObject implements XMLType {
 									break;
 								}
 							}
-						}
 						// Step 2.c.viii.1.b.
-						else {
+						} else {
 							j = r._children.length - 1;
 						}
 						// Step 2.c.viii.1.c.
@@ -3856,9 +3887,8 @@ export class ASXMLList extends ASObject implements XMLType {
 					// Step 2.c.viii.2.
 					if (value && value.axClass === this.sec.AXXML) {
 						y._name = value._name;
-					}
-					// Step 2.c.viii.3.
-					else if (value && value.axClass === this.sec.AXXMLList) {
+					// Step 2.c.viii.3
+					} else if (value && value.axClass === this.sec.AXXMLList) {
 						y._name = value._targetProperty;
 					}
 					// Step 2.c.ix.
@@ -3890,32 +3920,31 @@ export class ASXMLList extends ASObject implements XMLType {
 				// Step 2.f.iii.
 				if (parent !== null) {
 					// Step 2.f.iii.1.
-					var q = parent._children.indexOf(currentChild);
+					const q = parent._children.indexOf(currentChild);
 					// Step 2.f.iii.2.
 					parent._replaceByIndex(q, c);
 					// Step 2.f.iii.3.
-					for (var j = 0; j < cLength; j++) {
+					for (let j = 0; j < cLength; j++) {
 						c._children[j] = parent._children[q + j];
 					}
 				}
 				// Step 2.f.iv.
 				if (cLength === 0) {
-					for (var j = i + 1; j < length; j++) {
+					for (let j = i + 1; j < length; j++) {
 						this._children[j - 1] = this._children[j];
 						assert(this._children[0]);
 					}
 					// Step 2.f.vii. (only required if we're shrinking the XMLList).
 					this._children.length--;
-				}
 				// Step 2.f.v.
-				else {
-					for (var j = length - 1; j > i; j--) {
+				} else {
+					for (let j = length - 1; j > i; j--) {
 						this._children[j + cLength - 1] = this._children[j];
 						assert(this._children[0]);
 					}
 				}
 				// Step 2.f.vi.
-				for (var j = 0; j < cLength; j++) {
+				for (let j = 0; j < cLength; j++) {
 					this._children[i + j] = c._children[j];
 					assert(this._children[0]);
 				}
@@ -3927,7 +3956,7 @@ export class ASXMLList extends ASObject implements XMLType {
 				// Step 2.g.ii.
 				if (parent !== null) {
 					// Step 2.g.ii.1.
-					var q = parent._children.indexOf(currentChild);
+					const q = parent._children.indexOf(currentChild);
 					// Step 2.g.ii.2.
 					parent._replaceByIndex(q, value);
 					// Step 2.g.ii.3.
@@ -3938,9 +3967,9 @@ export class ASXMLList extends ASObject implements XMLType {
 					const t = this.sec.AXXML.Create(value);
 					this._children[i] = t;
 					assert(this._children[0]);
-				}
+
 				// Step 2.g.iv.
-				else {
+				} else {
 					release || assert(this.sec.AXXML.axIsType(value));
 					this._children[i] = value;
 					assert(this._children[0]);
@@ -3954,7 +3983,7 @@ export class ASXMLList extends ASObject implements XMLType {
 		// Step 3.
 		if (this._children.length === 0) {
 			// Step 3.a.i.
-			r = this.resolveValue();
+			const r = this.resolveValue();
 			// Step 3.a.ii.
 			if (r === null || r._children.length !== 1) {
 				return;
@@ -3972,7 +4001,7 @@ export class ASXMLList extends ASObject implements XMLType {
 		this.sec.throwError('TypeError', Errors.XMLAssigmentOneItemLists);
 	}
 
-	axSetProperty(mn: Multiname, value: any, bc: Bytecode) {
+	axSetProperty(mn: Multiname, value: any, _bc: Bytecode) {
 		if (this === this.axClass.dPrototype) {
 			release || checkValue(value);
 			this[this.axResolveMultiname(mn)] = value;
@@ -3986,7 +4015,7 @@ export class ASXMLList extends ASObject implements XMLType {
 		const name = mn.name;
 		// Steps 1-2.
 		if (isIndex(name)) {
-			var i = name|0;
+			const i = name|0;
 			// Step 2.a.
 			if (i >= this._children.length) {
 				return true;
@@ -3996,7 +4025,7 @@ export class ASXMLList extends ASObject implements XMLType {
 			return true;
 		}
 		// Step 3.
-		for (var i = 0; i < this._children.length; i++) {
+		for (let i = 0; i < this._children.length; i++) {
 			const child = this._children[i];
 			if (child._kind === ASXMLKind.Element) {
 				child.deleteProperty(mn);
