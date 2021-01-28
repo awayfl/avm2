@@ -836,7 +836,7 @@ export function affilate(methodInfo: MethodInfo): IAffilerResult | IAffilerError
 		for (let i: number = 0; i < body.catchBlocks.length; i++) {
 			const block = body.catchBlocks[i];
 
-			let stack = 0;
+			//let stack = 0;
 			let start = -1;
 			let end = -1;
 			let scope = 0;
@@ -844,13 +844,13 @@ export function affilate(methodInfo: MethodInfo): IAffilerResult | IAffilerError
 			for (let c: number = 0; c < q.length; c++) {
 				const pos = q[c].position;
 
-				if (pos > block.start) {
+				if (pos >= block.start) {
 					start = pos;
 					break;
 				}
 
 				// propogade it
-				stack = q[c].stack;
+				// stack = q[c].stack;
 				scope = q[c].scope;
 			}
 
@@ -878,7 +878,7 @@ export function affilate(methodInfo: MethodInfo): IAffilerResult | IAffilerError
 			// IMPORTANT! Catch block push error on top of stack
 			// this is why stack should start from 1 instead of 0
 
-			const s = propagateStack(block.target, stack + 1, q);
+			const s = propagateStack(block.target, 1, q);
 			if (s < minStack) minStack = s;
 
 			// IMPORTANT! SCOPE SHOULD BE PROPOGADED TOO
