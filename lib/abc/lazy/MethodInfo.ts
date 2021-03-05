@@ -11,10 +11,15 @@ import { METHOD } from './METHOD';
 import { Multiname } from './Multiname';
 import { ScriptInfo } from './ScriptInfo';
 import { COMPILATION_STATE, COMPILATION_FAIL_REASON } from '../../flags';
+import { IMethodReadableMeta } from '../../utils/reconstructMetadata';
 
 export class MethodInfo {
+	public meta: IMethodReadableMeta;
+	public parentInfo?: MethodInfo;
+
 	public trait: MethodTraitInfo = null;
 	public minArgs: number;
+
 	private _body: MethodBodyInfo;
 	private _returnType: AXClass;
 	private _retunTypeName: Multiname;

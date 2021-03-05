@@ -19,10 +19,6 @@ import { ScriptInfo } from './abc/lazy/ScriptInfo';
 import { ExceptionInfo } from './abc/lazy/ExceptionInfo';
 import { Bytecode } from './Bytecode';
 import { ASObject } from './nat/ASObject';
-import { InstanceInfo } from './abc/lazy/InstanceInfo';
-import { ClassInfo } from './abc/lazy/ClassInfo';
-import { MethodTraitInfo } from './abc/lazy/MethodTraitInfo';
-import { namespaceTypeNames } from './abc/lazy/NamespaceType';
 import { escapeAttributeValue, escapeElementValue } from './natives/xml';
 import { COMPILER_DEFAULT_OPT, COMPILER_OPT_FLAGS, COMPILATION_FAIL_REASON } from './flags';
 
@@ -49,11 +45,11 @@ import {
 	IS_EXTERNAL_CLASS,
 	needFastCheck
 } from './ext/external';
-import { TRAIT } from './abc/lazy/TRAIT';
 import { AXCallable } from './run/AXCallable';
 import { ASClass } from './nat/ASClass';
 import { AXObject } from './run/AXObject';
 import { COERCE_MODE_ENUM, Settings } from './Settings';
+import { AXFunction } from './run/AXFunction';
 
 const METHOD_HOOKS: StringMap<{path: string, place: 'begin' | 'return', hook: Function}> = {};
 
@@ -88,13 +84,6 @@ function escape(name: string) {
 	return JSON.stringify(name);
 }
 
-const validTest = /^[a-zA-Z_$][0-9a-zA-Z_$]*$/;
-function validate(name: string) {
-	return validTest.test(name);
-}
-
-const CLASS_NAME_METHOD_NAME: StringMap<number> = {};
-
 export interface ICompilerProcess {
 	error?: {
 		message: string, reason: COMPILATION_FAIL_REASON
@@ -109,8 +98,6 @@ export interface ICompilerOptions {
 	optimise?: COMPILER_OPT_FLAGS;
 	encrupted?: boolean
 }
-
-let SCRIPT_ID = 0;
 
 export function compile(methodInfo: MethodInfo, options: ICompilerOptions = {}): ICompilerProcess {
 	const {
@@ -151,86 +138,18 @@ export function compile(methodInfo: MethodInfo, options: ICompilerOptions = {}):
 		}
 	}
 
-	const prefix = ('' + (SCRIPT_ID++)).padLeft('0', 4);
-	const funcName = (methodInfo.getName()).replace(/([^a-z0-9]+)/gi, '_');
+	const meta = methodInfo.meta;
+	const methodName = meta.name;
 
-	let fullPath = `__root__/${prefix}_${funcName || 'unknown'}`;
-	let path = fullPath;
-	let methodName = funcName;
-	let isMemeber = true;
-	let methodType = 'Public';
-	let superClass = undefined;
-
-	if (methodInfo.trait) {
-		if (methodInfo.trait.holder instanceof ClassInfo) {
-			path =  methodInfo.trait.holder.instanceInfo.getClassName().replace(/\./g, '/');
-			isMemeber = false;
-		} else if (methodInfo.trait.holder instanceof InstanceInfo) {
-			path = methodInfo.trait.holder.getClassName().replace(/\./g, '/');
-			superClass =  methodInfo.trait.holder.getSuperName()?.
-				toFQNString(false).replace(/\./g, '/');
-		}
-		if (methodInfo.trait instanceof MethodTraitInfo) {
-			methodName = (<Multiname>methodInfo.trait.name).name;
-			methodType = namespaceTypeNames[(<Multiname>methodInfo.trait.name).namespace.type];
-		}
-
-		if (methodInfo.trait && methodInfo.trait.kind === TRAIT.Getter) {
-			methodName = 'get_' + methodName;
-		}
-
-		if (methodInfo.trait && methodInfo.trait.kind === TRAIT.Setter) {
-			methodName = 'set_' + methodName;
-		}
-
-		if (methodInfo.isConstructor) {
-			//constructor
-			methodName = 'constructor';
-		} else {
-			// member
-			methodName  = isMemeber ?  ('m_' + methodName) : methodName;
-		}
-
-		fullPath = path + '/' + methodName;
-
-		if (CLASS_NAME_METHOD_NAME[fullPath] !== undefined) {
-			const index = CLASS_NAME_METHOD_NAME[fullPath] = CLASS_NAME_METHOD_NAME[fullPath] + 1;
-			fullPath += '$' + index;
-		} else {
-			CLASS_NAME_METHOD_NAME[fullPath] = 0;
-		}
-	}
-
-	// for instances
-	if (methodInfo.instanceInfo) {
-		path = methodInfo.instanceInfo.getClassName().replace(/\./g, '/');
-		methodName = methodInfo.isConstructor ? 'constructor' : funcName;
-		superClass = methodInfo.instanceInfo.getSuperName()?.
-			toFQNString(false).replace(/\./g, '/');
-		fullPath = path + '/' + methodName;
-	}
-
-	const validMethodName = validate(methodName);
-	const validPathName = validate(path.replace('/','_'));
-
-	if (!validMethodName && !validPathName) {
-		return {
-			error: {
-				message: `Invalid method (${methodName}) and path (${path}) name, falling to interpret`,
-				reason: COMPILATION_FAIL_REASON.MANGLED_CLASSNAME
-			}
-		};
-	}
-
-	const hookMethodPath = `${path}${isMemeber ? '::' : '.'}${methodName}`;
 	const scriptHeader =
 `/*
-	Index: ${methodInfo.index()}
-	Path:  ${hookMethodPath}
-	Type:  ${methodType}
-	Super: ${superClass || '-'}
-	Return: ${methodInfo.getTypeName()?.toString() || '*'}
+	Index: ${meta.index}
+	Path:  ${meta.classPath}
+	Type:  ${meta.type}
+	Super: ${meta.superClass || '-'}
+	Return: ${meta.returnType}
 */\n\n`;
+
 	const {
 		error,
 		jumps,
@@ -504,9 +423,9 @@ export function compile(methodInfo: MethodInfo, options: ICompilerOptions = {}):
 
 	const genBrancher = jumps.length > 1 || catchStart;
 
-	if (METHOD_HOOKS && METHOD_HOOKS[hookMethodPath + '__begin']) {
+	if (METHOD_HOOKS && METHOD_HOOKS[meta.classPath + '__begin']) {
 		js.push(`${idnt} /* ATTACH METHOD HOOK */`);
-		js.push(`${idnt} context.executeHook(local0, '${hookMethodPath + '__begin'}')`);
+		js.push(`${idnt} context.executeHook(local0, '${meta.classPath + '__begin'}')`);
 	}
 
 	js.push(`${idnt} `);
@@ -537,7 +456,7 @@ export function compile(methodInfo: MethodInfo, options: ICompilerOptions = {}):
 			const loops = Settings.LOOP_GUARD_MAX_LOOPS;
 			js.push(
 				`${idnt} if (tick++ > ${loops}) {\n`
-				+ `${moveIdnt(1)} throw 'To many loops (> ${loops}) in "${hookMethodPath}" at '+ p +`
+				+ `${moveIdnt(1)} throw 'To many loops (> ${loops}) in "${meta.classPath}" at '+ p +`
 				+ '\',method was dropped to avoid stucking\';\n'
 				+ `${moveIdnt(-1)} };`
 			);
@@ -1094,7 +1013,7 @@ export function compile(methodInfo: MethodInfo, options: ICompilerOptions = {}):
 				case Bytecode.NEWFUNCTION:
 					js.push(`${idnt} // ${abc.getMethodInfo(param(0))}`);
 					// eslint-disable-next-line max-len
-					js.push(`${idnt} ${stackN} = sec.createFunction(context.abc.getMethodInfo(${param(0)}), ${scope}, true);`);
+					js.push(`${idnt} ${stackN} = context.createFunction(${param(0)}, ${scope}, true, ${methodInfo.index()});`);
 					break;
 				case Bytecode.NEWCLASS:
 					js.push(`${idnt} // ${abc.classes[param(0)]}`);
@@ -1412,9 +1331,9 @@ export function compile(methodInfo: MethodInfo, options: ICompilerOptions = {}):
 					break;
 				}
 				case Bytecode.RETURNVALUE:
-					if (METHOD_HOOKS && METHOD_HOOKS[hookMethodPath + '__return']) {
+					if (METHOD_HOOKS && METHOD_HOOKS[meta.classPath + '__return']) {
 						js.push(`${idnt} /* ATTACH METHOD HOOK */`);
-						js.push(`${idnt} context.executeHook(local0, '${hookMethodPath + '__return'}')`);
+						js.push(`${idnt} context.executeHook(local0, '${meta.classPath + '__return'}')`);
 					}
 
 					// Restict type conversion for boolean.
@@ -1426,9 +1345,9 @@ export function compile(methodInfo: MethodInfo, options: ICompilerOptions = {}):
 					js.push(`${idnt} return ${stack0};`);
 					break;
 				case Bytecode.RETURNVOID:
-					if (METHOD_HOOKS && METHOD_HOOKS[hookMethodPath + '__return']) {
+					if (METHOD_HOOKS && METHOD_HOOKS[meta.classPath + '__return']) {
 						js.push(`${idnt} /* ATTACH METHOD HOOK */`);
-						js.push(`${idnt} context.executeHook(local0, '${hookMethodPath + '__return'}')`);
+						js.push(`${idnt} context.executeHook(local0, '${meta.classPath + '__return'}')`);
 					}
 
 					js.push(`${idnt} return;`);
@@ -1653,7 +1572,7 @@ export function compile(methodInfo: MethodInfo, options: ICompilerOptions = {}):
 
 	const hasError = w.indexOf(underrun) > -1;
 
-	const compiled = generateFunc(w, fullPath);
+	const compiled = generateFunc(w, meta.filePath);
 
 	let underrunLine = -1;
 
@@ -1672,7 +1591,7 @@ export function compile(methodInfo: MethodInfo, options: ICompilerOptions = {}):
 	let errorMessage = null;
 	if (hasError) {
 		errorMessage = {
-			message:`STACK UNDERRUN at http://jit/${path}.js:${underrunLine}`,
+			message:`STACK UNDERRUN at http://jit/${meta.filePath}.js:${underrunLine}`,
 			reason: COMPILATION_FAIL_REASON.UNDERRUN,
 		};
 	}
@@ -1723,6 +1642,16 @@ export class Context {
 		}
 
 		return this.domain.internal_memoryView;
+	}
+
+	createFunction (methodId: number, scope: Scope, hasDynamicScope: boolean, parentMethodId: number): AXFunction {
+		const methodInfo = this.abc.getMethodInfo(methodId);
+
+		if (parentMethodId !== undefined) {
+			methodInfo.parentInfo = methodInfo.parentInfo || this.abc.getMethodInfo(parentMethodId);
+		}
+
+		return this.sec.createFunction(methodInfo, scope, hasDynamicScope);
 	}
 
 	escXElem(value: string): string {

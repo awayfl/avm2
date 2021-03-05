@@ -6,6 +6,8 @@ export interface IAVM2Settings {
 	LOOP_GUARD_MAX_LOOPS: number;
 	LOOP_GUARD_MIN_BRANCHES: number;
 	COERCE_MODE: COERCE_MODE_ENUM;
+	CHECK_OBFUSCATED_NAME: boolean;
+	NO_FALL_TO_INT: boolean;
 }
 
 export const enum COERCE_MODE_ENUM {
@@ -44,4 +46,14 @@ export const Settings: IAVM2Settings = {
 	 * @description Restirct coerce bechaviour
 	 */
 	COERCE_MODE: COERCE_MODE_ENUM.SOFT,
+
+	/**
+	 * @description Validate names in compile process and fall to interpret when it invalid for compilation
+	 */
+	CHECK_OBFUSCATED_NAME: false,
+
+	/**
+	 * @description Disallow falling to interpret mode
+	 */
+	NO_FALL_TO_INT: true,
 };

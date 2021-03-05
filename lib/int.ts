@@ -10,19 +10,18 @@ import { axEquals } from './run/axEquals';
 import { validateCall } from './run/validateCall';
 import { validateConstruct } from './run/validateConstruct';
 import { axGetDescendants } from './run/axGetDescendants';
-import { checkValue } from './run/checkValue';
 import { axCoerceString } from './run/axCoerceString';
 import { axCheckFilter } from './run/axCheckFilter';
 import { axConvertString } from './run/axConvertString';
 import { axAdd } from './run/axAdd';
 import { axTypeOf } from './run/axTypeOf';
-import { release, notImplemented, popManyInto, getPropertyDescriptor, isNumeric, SWFParser, AVMStage } from '@awayfl/swf-loader';
+import { release, notImplemented, popManyInto, getPropertyDescriptor, isNumeric, AVMStage } from '@awayfl/swf-loader';
 import { Multiname } from './abc/lazy/Multiname';
-import {  CONSTANT } from './abc/lazy/CONSTANT';
-import {  MethodInfo } from './abc/lazy/MethodInfo';
-import {  MethodBodyInfo } from './abc/lazy/MethodBodyInfo';
-import {  internNamespace } from './abc/lazy/internNamespace';
-import {  NamespaceType } from './abc/lazy/NamespaceType';
+import { CONSTANT } from './abc/lazy/CONSTANT';
+import { MethodInfo } from './abc/lazy/MethodInfo';
+import { MethodBodyInfo } from './abc/lazy/MethodBodyInfo';
+import { internNamespace } from './abc/lazy/internNamespace';
+import { NamespaceType } from './abc/lazy/NamespaceType';
 import { Bytecode, getBytecodeName } from './abc/ops';
 import { escapeAttributeValue, escapeElementValue } from './natives/xml';
 import { Errors } from './errors';
@@ -31,6 +30,8 @@ import { AXClass } from './run/AXClass';
 import { axCoerceName } from './run/axCoerceName';
 import { compile, Context } from './jit';
 import { COMPILATION_STATE } from './flags';
+import { Settings } from './Settings';
+import { reconstructMetadata, nextScriptID } from './utils/reconstructMetadata';
 
 const MAX_REPORTED_FAILINGS = 100;
 let FAILINGS = 0;
@@ -134,7 +135,13 @@ function popNameInto(stack: any [], mn: Multiname, rn: Multiname) {
 }
 
 export function interpret(methodInfo: MethodInfo, savedScope: Scope, callee: AXFunction) {
-	if (AVMStage.forceINT) {
+	try {
+		methodInfo.meta = methodInfo.meta || reconstructMetadata(methodInfo, nextScriptID());
+	} catch (e) {
+		console.warn('[Interpret] Fail reconstruct method metadata:', e);
+	}
+
+	if (AVMStage.forceINT && !Settings.NO_FALL_TO_INT) {
 		try {
 			const result = _interpret(methodInfo, savedScope, callee);
 			executionWriter && executionWriter.leave('< ' + methodInfo.trait);
@@ -165,6 +172,14 @@ export function interpret(methodInfo: MethodInfo, savedScope: Scope, callee: AXF
 	if (methodInfo.state === COMPILATION_STATE.COMPILLED) {
 		methodInfo.useCount++;
 		return methodInfo.compiled(new Context(methodInfo, savedScope, methodInfo.names));
+	}
+
+	if (Settings.NO_FALL_TO_INT) {
+		console.warn(
+			'[Interpret] NO_FALL_TO_INT is used, interpret is disable. Fix JIT machin or disable NO_FALL_TO_INT'
+		);
+
+		throw methodInfo.error.message + '\n Method:' + methodInfo.meta.classPath;
 	}
 
 	methodInfo.useCount++;
@@ -292,7 +307,7 @@ function _interpret(methodInfo: MethodInfo, savedScope: Scope, callee: AXFunctio
 	if (methodInfo.error && methodInfo.useCount <= 1) {
 		FAILINGS++;
 		if (FAILINGS < MAX_REPORTED_FAILINGS) {
-	  console.error('[INTERPRET] Compilation failed', methodInfo.error.reason, methodInfo.error.message);
+			console.error('[INTERPRET] Compilation failed', methodInfo.error.reason, methodInfo.error.message);
 		} else {
 			console.debug('[INTERPRET] To many compiler failings:', FAILINGS);
 		}
