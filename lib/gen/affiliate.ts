@@ -3,6 +3,7 @@ import { Bytecode } from './../Bytecode';
 import { ExceptionInfo } from './../abc/lazy/ExceptionInfo';
 import { MethodInfo } from './../abc/lazy/MethodInfo';
 import { COMPILATION_FAIL_REASON } from '../flags';
+import { Settings } from '../Settings';
 
 const BytecodeName = Bytecode;
 
@@ -851,7 +852,8 @@ export function affilate(methodInfo: MethodInfo): IAffilerResult | IAffilerError
 
 				// propogade it
 				// stack = q[c].stack;
-				scope = q[c].scope;
+				if (!Settings.NO_PROPAGATE_SCOPES_FOR_TRY)
+					scope = q[c].scope;
 			}
 
 			for (let c: number = q.length - 1; c >= 0; c--) {

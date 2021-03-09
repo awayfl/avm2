@@ -8,6 +8,7 @@ export interface IAVM2Settings {
 	COERCE_MODE: COERCE_MODE_ENUM;
 	CHECK_OBFUSCATED_NAME: boolean;
 	NO_FALL_TO_INT: boolean;
+	NO_PROPAGATE_SCOPES_FOR_TRY: boolean;
 }
 
 export const enum COERCE_MODE_ENUM {
@@ -56,4 +57,9 @@ export const Settings: IAVM2Settings = {
 	 * @description Disallow falling to interpret mode
 	 */
 	NO_FALL_TO_INT: true,
+
+	/**
+	 * @description Disable scope proporgardition for try-catch blocks
+	 */
+	NO_PROPAGATE_SCOPES_FOR_TRY: true,
 };
