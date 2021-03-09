@@ -142,7 +142,6 @@ export var Natives = {
 		return getCurrentABC().env.app.getClass(mn);
 	},
 	describeType(sec: AXSecurityDomain, value: any, flags: number): any {
-		console.log('describeType not implemented');
 		return describeTypeIntern(sec, value, flags);
 	},
 	describeTypeJSON(sec: AXSecurityDomain, value: any, flags: number) {
