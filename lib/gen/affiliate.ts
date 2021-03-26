@@ -372,76 +372,77 @@ export function affilate(methodInfo: MethodInfo): IAffilerResult | IAffilerError
 
 				break;
 
-			case Bytecode.IFEQ:
-				var j = s24();
+			case Bytecode.IFEQ: {
+				const j = s24();
 				ins = (new Instruction(oldi, z, [i + j], -2, 0, false, [i + j]));
 				break;
-
-			case Bytecode.IFNE:
-				var j = s24();
+			}
+			case Bytecode.IFNE: {
+				const j = s24();
 				ins = (new Instruction(oldi, z, [i + j], -2, 0, false, [i + j]));
 				break;
-
-			case Bytecode.IFSTRICTEQ:
-				var j = s24();
+			}
+			case Bytecode.IFSTRICTEQ: {
+				const j = s24();
 				ins = (new Instruction(oldi, z, [i + j], -2, 0, false, [i + j]));
 				break;
-			case Bytecode.IFSTRICTNE:
-				var j = s24();
+			}
+			case Bytecode.IFSTRICTNE: {
+				const j = s24();
 				ins = (new Instruction(oldi, z, [i + j], -2, 0, false, [i + j]));
 				break;
-
+			}
 			case Bytecode.IFGT:
-			case Bytecode.IFNLE:
-				var j = s24();
-				ins = (new Instruction(oldi, Bytecode.IFGT, [i + j], -2, 0, false, [i + j]));
+			case Bytecode.IFNLE: {
+				const j = s24();
+				ins = (new Instruction(oldi, z, [i + j], -2, 0, false, [i + j]));
 				break;
-
+			}
 			case Bytecode.IFGE:
-			case Bytecode.IFNLT:
-				var j = s24();
-				ins = (new Instruction(oldi, Bytecode.IFGE, [i + j], -2, 0, false, [i + j]));
+			case Bytecode.IFNLT: {
+				const j = s24();
+				ins = (new Instruction(oldi, z, [i + j], -2, 0, false, [i + j]));
 				break;
-
+			}
 			case Bytecode.IFLT:
-			case Bytecode.IFNGE:
-				var j = s24();
-				ins = (new Instruction(oldi, Bytecode.IFLT, [i + j], -2, 0, false, [i + j]));
+			case Bytecode.IFNGE: {
+				const j = s24();
+				ins = (new Instruction(oldi, z, [i + j], -2, 0, false, [i + j]));
 				break;
-
+			}
 			case Bytecode.IFLE:
-			case Bytecode.IFNGT:
-				var j = s24();
-				ins = (new Instruction(oldi, Bytecode.IFLE, [i + j], -2, 0, false, [i + j]));
+			case Bytecode.IFNGT: {
+				const j = s24();
+				ins = (new Instruction(oldi, z, [i + j], -2, 0, false, [i + j]));
 				break;
-
-			case Bytecode.IFTRUE:
-				var j = s24();
+			}
+			case Bytecode.IFTRUE: {
+				const j = s24();
 				ins = (new Instruction(oldi, z, [i + j], -1, 0, false, [i + j]));
 				break;
-
-			case Bytecode.IFFALSE:
-				var j = s24();
+			}
+			case Bytecode.IFFALSE: {
+				const j = s24();
 				ins = (new Instruction(oldi, z, [i + j], -1, 0, false, [i + j]));
 				break;
+			}
+			case Bytecode.LOOKUPSWITCH: {
+				const offset = oldi + s24();
+				const cases = u30();
 
-			case Bytecode.LOOKUPSWITCH:
-				var offset = oldi + s24();
-				var cases = u30();
-
-				var table = [offset];
+				const table = [offset];
 
 				for (let j = 0; j <= cases; j++)
 					table.push(oldi + s24());
 
 				ins = (new Instruction(oldi, z, table, -1, 0, true, table));
 				break;
-
-			case Bytecode.JUMP:
-				var j = s24();
+			}
+			case Bytecode.JUMP: {
+				const j = s24();
 				ins = (new Instruction(oldi, z, [i + j], 0, 0, true, [i + j]));
 				break;
-
+			}
 			case Bytecode.RETURNVALUE:
 				ins = (new Instruction(oldi, z, [], -1, 0, true));
 				break;

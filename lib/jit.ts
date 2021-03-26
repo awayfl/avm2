@@ -1,3 +1,4 @@
+/* eslint-disable no-fallthrough */
 import { assert } from '@awayjs/graphics';
 import { Scope } from './run/Scope';
 import { HasNext2Info } from './run/HasNext2Info';
@@ -666,20 +667,39 @@ export function compile(methodInfo: MethodInfo, options: ICompilerOptions = {}):
 				case Bytecode.IFSTRICTNE:
 					js.push(`${idnt} if (${stack0} !== ${stack1}) { p = ${param(0)}; continue; };`);
 					break;
+
+				case Bytecode.IFNLE:
+					/**
+					 * IFNLE and IFT is simmilar on valid values,
+					 * but when stack0 or stack1 is NaN - IFNE should jump, IFGT - NOT!
+					 */
+					js.push(`${idnt} if (!(${stack0} >= ${stack1})) { p = ${param(0)}; continue; };`);
+					break;
 				case Bytecode.IFGT:
 					js.push(`${idnt} if (${stack0} < ${stack1}) { p = ${param(0)}; continue; };`);
+					break;
+
+				case Bytecode.IFNLT:
+					js.push(`${idnt} if (!(${stack0} > ${stack1})) { p = ${param(0)}; continue; };`);
 					break;
 				case Bytecode.IFGE:
 					js.push(`${idnt} if (${stack0} <= ${stack1}) { p = ${param(0)}; continue; };`);
 					break;
-				case Bytecode.IFLT:
-					// JUMP is flipped, but there are case when this is not allowed
 
-					js.push(`${idnt} if (!(${stack1} >= ${stack0})) { p = ${param(0)}; continue; };`);
+				case Bytecode.IFNGE:
+					js.push(`${idnt} if (!(${stack0} <= ${stack1})) { p = ${param(0)}; continue; };`);
+					break;
+				case Bytecode.IFLT:
+					js.push(`${idnt} if (${stack0} > ${stack1}) { p = ${param(0)}; continue; };`);
+					break;
+
+				case Bytecode.IFNGT:
+					js.push(`${idnt} if (!(${stack0} < ${stack1})) { p = ${param(0)}; continue; };`);
 					break;
 				case Bytecode.IFLE:
 					js.push(`${idnt} if (${stack0} >= ${stack1}) { p = ${param(0)}; continue; };`);
 					break;
+
 				case Bytecode.IFFALSE:
 					js.push(`${idnt} if (!${stack0}) { p = ${param(0)}; continue; };`);
 					break;
