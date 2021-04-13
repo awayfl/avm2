@@ -853,10 +853,8 @@ export function compile(methodInfo: MethodInfo, options: ICompilerOptions = {}):
 					if (USE_OPT(blockSaver) && blockSaver.safe(obj)) {
 						js.push(`${idnt} /* This call maybe a safe, ${blockSaver.constructor.name} */`);
 					}
-
 					// eslint-disable-next-line max-len
-					js.push(`${idnt} ${obj} = context.call(${stackF(param(0) + 1)}, ${stackF(param(0))}, [${pp.join(', ')}]);`);
-
+					js.push(`${idnt} ${obj} = context.call(${stackF(param(0) + 1)}, ${stackF(param(0))}, [${pp.join(', ')}], ${scope});`);
 					break;
 				}
 				case Bytecode.CONSTRUCT: {
@@ -1744,7 +1742,10 @@ export class Context {
 		return type;
 	}
 
-	call(value: AXCallable, obj: ASObject, pp: any[]): any {
+	call(value: AXCallable, obj: ASObject, pp: any[], scope: Scope = null): any {
+		if (scope && (<any>value.methodInfo?.trait?.name)?.name == 'getDefinitionByName') {
+			return this.getdefinitionbyname(scope, obj, pp);
+		}
 		validateCall(this.sec, value, pp.length);
 		return value.axApply(obj, pp);
 	}
