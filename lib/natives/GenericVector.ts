@@ -425,7 +425,9 @@ export class GenericVector extends BaseVector {
 	}
 
 	_coerce(v) {
-		return (<any> this.axClass).type[IS_AX_CLASS] ? (<any> this.axClass).type.axCoerce(v) : v;
+		if ((<any> this.axClass).type)
+			return (<any> this.axClass).type[IS_AX_CLASS] ? (<any> this.axClass).type.axCoerce(v) : v;
+		return v;
 	}
 
 	shift() {
