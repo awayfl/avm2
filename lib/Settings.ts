@@ -9,6 +9,7 @@ export interface IAVM2Settings {
 	CHECK_OBFUSCATED_NAME: boolean;
 	NO_FALL_TO_INT: boolean;
 	NO_PROPAGATE_SCOPES_FOR_TRY: boolean;
+	HTTP_STRING: string;
 }
 
 export const enum COERCE_MODE_ENUM {
@@ -62,4 +63,9 @@ export const Settings: IAVM2Settings = {
 	 * @description Disable scope proporgardition for try-catch blocks
 	 */
 	NO_PROPAGATE_SCOPES_FOR_TRY: true,
+
+	/**
+	 * @description switch between http and https for jit files
+	 */
+	HTTP_STRING: 'http'
 };
