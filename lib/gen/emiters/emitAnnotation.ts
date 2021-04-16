@@ -27,7 +27,7 @@ export function emitAnnotation (methodInfo: MethodInfo, moveIdnt: (a: number) =>
 		if (p.hasOptionalValue()) {
 			switch (p.optionalValueKind) {
 				case CONSTANT.Utf8:
-					arg.value = `${escape(abc.getString(p.optionalValueIndex))}`;
+					arg.value = `${JSON.stringify(abc.getString(p.optionalValueIndex))}`;
 					break;
 				default:
 					arg.value = `${p.getOptionalValue()}`;
