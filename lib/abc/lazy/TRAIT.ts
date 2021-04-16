@@ -11,7 +11,7 @@ export const enum TRAIT {
 	GetterSetter       = 7 // This is a runtime addition, not a valid ABC Trait type.
 }
 
-const TRAITNames = ['Slot', 'Method', 'Getter', 'Setter', 'Class', 'Function', 'Const', 'GetterSetter'];
+export const TRAITNames = ['Slot', 'Method', 'Getter', 'Setter', 'Class', 'Function', 'Const', 'GetterSetter'];
 
 export function getTRAITName(trait: TRAIT): string {
 	return release ? String(trait) : TRAITNames[trait];

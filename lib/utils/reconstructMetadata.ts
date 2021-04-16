@@ -3,7 +3,7 @@ import { InstanceInfo } from '../abc/lazy/InstanceInfo';
 import { MethodTraitInfo } from '../abc/lazy/MethodTraitInfo';
 import { Multiname } from '../abc/lazy/Multiname';
 import { namespaceTypeNames } from '../abc/lazy/NamespaceType';
-import { TRAIT } from '../abc/lazy/TRAIT';
+import { getTRAITName, TRAIT, TRAITNames } from '../abc/lazy/TRAIT';
 import { MethodInfo } from './../abc/lazy/MethodInfo';
 
 let SCRIPT_ID = 0;
@@ -20,6 +20,7 @@ export interface IMethodReadableMeta {
 	returnType?: string;
 	isValidName: boolean;
 	isValidPath: boolean;
+	kind?: string;
 }
 
 export function validateName(name: string) {
@@ -112,6 +113,7 @@ export function reconstructMetadata (methodInfo: MethodInfo, id: number): IMetho
 		superClass: superClass,
 		returnType: methodInfo.getTypeName()?.toString() || '*',
 		isValidName: validateName(methodName),
-		isValidPath: validateName(path.replace('/','_'))
+		isValidPath: validateName(path.replace('/','_')),
+		kind: methodInfo.trait && TRAITNames[methodInfo.trait.kind]
 	};
 }

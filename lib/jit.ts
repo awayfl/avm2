@@ -50,6 +50,7 @@ import { ASClass } from './nat/ASClass';
 import { AXObject } from './run/AXObject';
 import { COERCE_MODE_ENUM, Settings } from './Settings';
 import { AXFunction } from './run/AXFunction';
+import { TRAIT } from './abc/lazy/TRAIT';
 
 const METHOD_HOOKS: StringMap<{path: string, place: 'begin' | 'return', hook: Function}> = {};
 
@@ -153,6 +154,7 @@ export function compile(methodInfo: MethodInfo, options: ICompilerOptions = {}):
 	Index: ${meta.index}
 	Path:  ${meta.classPath}
 	Type:  ${meta.type}
+	Kind:  ${meta.kind}
 	Super: ${meta.superClass || '-'}
 	Return: ${meta.returnType}
 */\n\n`;
@@ -208,7 +210,7 @@ export function compile(methodInfo: MethodInfo, options: ICompilerOptions = {}):
 		js.push(`${idnt} }`);
 
 		js.push(`${idnt} stack0 = e;`);
-		let lastCatchItem;
+		let lastCatchItem = '';
 		for (let i = 0; i < catchBlocks.length; i++) {
 			const typeName = catchBlocks[i].getType();
 			if (!typeName) {
@@ -257,15 +259,9 @@ export function compile(methodInfo: MethodInfo, options: ICompilerOptions = {}):
 		}
 	};
 
-	let temp = false;
 	let domMem = false;
 	for (const q_i of q) {
 		const b = q_i.name;
-
-		if (b == Bytecode.NEWOBJECT || b == Bytecode.SWAP || b == Bytecode.HASNEXT2) {
-			temp = true;
-		}
-
 		domMem = domMem || (b >= Bytecode.LI8 && b <= Bytecode.SF64);
 	}
 
@@ -318,7 +314,13 @@ export function compile(methodInfo: MethodInfo, options: ICompilerOptions = {}):
 
 		moveIdnt(1);
 
-		js0.push(`${idnt} let local0 = this === context.jsGlobal ? context.savedScope.global.object : this;`);
+		// this for get/set cann't be global
+		const kind = methodInfo.trait?.kind;
+		if (kind === TRAIT.Setter || kind === TRAIT.Getter) {
+			js0.push(`${idnt} let local0 = this;`);
+		} else {
+			js0.push(`${idnt} let local0 = this === context.jsGlobal ? context.savedScope.global.object : this;`);
+		}
 
 		for (const a of args) {
 			const name = a.name;
@@ -404,8 +406,7 @@ export function compile(methodInfo: MethodInfo, options: ICompilerOptions = {}):
 	for (let i: number = 0; i < maxscope; i++)
 		js0.push(`${idnt} let scope${i} = undefined;`);
 
-	if (temp)
-		js0.push(`${idnt} let temp = undefined;`);
+	js0.push(`${idnt} let temp = undefined;`);
 
 	if (domMem)
 		js0.push(`${idnt} let domainMemory; // domainMemory`);
