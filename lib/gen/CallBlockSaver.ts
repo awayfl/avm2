@@ -61,9 +61,3 @@ export class CallBlockSaver {
 		this._used = false;
 	}
 }
-
-export class TweenCallSaver extends CallBlockSaver {
-	test(mn: Multiname) {
-		return mn.namespaces && mn.namespace?.uri && mn.namespace.uri.includes('TweenLite');
-	}
-}

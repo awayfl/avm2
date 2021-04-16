@@ -26,7 +26,6 @@ import { COMPILER_DEFAULT_OPT, COMPILER_OPT_FLAGS, COMPILATION_FAIL_REASON } fro
 // generators
 import { affilate, Instruction, IAffilerResult, IAffilerError } from './gen/affiliate';
 import { TinyConstructor } from './gen/TinyConstructor';
-import { TweenCallSaver } from './gen/CallBlockSaver';
 import { FastCall, ICallEntry } from './gen/FastCall';
 
 import { Stat } from './gen/Stat';
@@ -114,8 +113,6 @@ export function compile(methodInfo: MethodInfo, options: ICompilerOptions = {}):
 		new TopLevelLex(), // generate alias for TopLevel props
 		//staticHoistLex // collided with fastCall yet, need fix it
 	]);
-
-	const blockSaver = new TweenCallSaver();
 
 	const tinyCtr = new TinyConstructor();
 
@@ -482,10 +479,6 @@ export function compile(methodInfo: MethodInfo, options: ICompilerOptions = {}):
 			// if we are in any try-catch-blocks, we must close them
 			if (openTryCatchBlockGroups) closeAllTryCatch();
 
-			if (USE_OPT(blockSaver)) {
-				blockSaver.drop();
-			}
-
 			if (genBrancher) {
 				moveIdnt(-1);
 				js.push(`${idnt} case ${z.position}:`);
@@ -850,9 +843,6 @@ export function compile(methodInfo: MethodInfo, options: ICompilerOptions = {}):
 					for (let j: number = 1; j <= param(0); j++)
 						pp.push(stackF(param(0) - j));
 
-					if (USE_OPT(blockSaver) && blockSaver.safe(obj)) {
-						js.push(`${idnt} /* This call maybe a safe, ${blockSaver.constructor.name} */`);
-					}
 					// eslint-disable-next-line max-len
 					js.push(`${idnt} ${obj} = context.call(${stackF(param(0) + 1)}, ${stackF(param(0))}, [${pp.join(', ')}], ${scope});`);
 					break;
@@ -1158,15 +1148,7 @@ export function compile(methodInfo: MethodInfo, options: ICompilerOptions = {}):
 					break;
 				case Bytecode.GETPROPERTY: {
 					const mn = abc.getMultiname(param(0));
-					let isSafe = false;
 
-					if (USE_OPT(blockSaver) && blockSaver.needSafe(stack0)) {
-						isSafe = true;
-
-						js.push(`${idnt} ${blockSaver.beginSafeBlock(stack0)}`);
-
-						moveIdnt(1);
-					}
 					{
 						let d: ICallEntry;
 						if (USE_OPT(fastCall) && (d = fastCall.sureThatFast(stack0, mn.name))) {
@@ -1201,20 +1183,10 @@ export function compile(methodInfo: MethodInfo, options: ICompilerOptions = {}):
 						js.push(`${idnt} }`);
 					}
 
-					if (isSafe) {
-						moveIdnt(-1);
-						js.push(`${idnt} ${blockSaver.endSafeBlock('undefined')}`);
-					}
-
 					break;
 				}
 				case Bytecode.GETPROPERTY_DYN: {
 					const mn = abc.getMultiname(param(0));
-
-					if (USE_OPT(blockSaver) && blockSaver.markToSafe(mn)) {
-						js.push(`${idnt} /* Mark lookup to safe call, ${blockSaver.constructor.name} */`);
-					}
-
 					const runtime = mn.isRuntimeName() && mn.isRuntimeNamespace();
 					const target = runtime ? stack2 : stack1;
 
@@ -1600,9 +1572,6 @@ export function compile(methodInfo: MethodInfo, options: ICompilerOptions = {}):
 
 	// reset lexer
 	USE_OPT(lexGen) && lexGen.reset();
-
-	// reset saver
-	USE_OPT(blockSaver) && blockSaver.reset();
 
 	Stat.end();
 
