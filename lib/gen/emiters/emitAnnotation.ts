@@ -1,13 +1,13 @@
 import { CONSTANT } from '../../abc/lazy/CONSTANT';
 import { TRAIT } from '../../abc/lazy/TRAIT';
-import { MethodInfo } from './../../abc/lazy/MethodInfo';
-
+import { MethodInfo } from '../../abc/lazy/MethodInfo';
+import { CompilerState } from './../CompilerState';
 export interface IFunctionAnnotation {
 	annotation: string,
 	paramsShift: number
 }
 
-export function emitAnnotation (methodInfo: MethodInfo, moveIdnt: (a: number) => string): IFunctionAnnotation  {
+export function emitAnnotation (methodInfo: MethodInfo, state: CompilerState): IFunctionAnnotation  {
 	const params = methodInfo.parameters;
 	const abc = methodInfo.abc;
 	const methodName = methodInfo.meta.name;
@@ -15,7 +15,7 @@ export function emitAnnotation (methodInfo: MethodInfo, moveIdnt: (a: number) =>
 	let paramsShift = 0;
 
 	// shift function body
-	const idnt = moveIdnt(1);
+	const idnt = state.setMoveIndent(1);
 
 	const args: {name: string, value?: any, type?: string}[] = [];
 	const js0 = [];
@@ -56,7 +56,7 @@ export function emitAnnotation (methodInfo: MethodInfo, moveIdnt: (a: number) =>
 
 	js0.push(`${idnt} return function compiled_${mname}(${argsFilled}) {`);
 
-	moveIdnt(1);
+	state.setMoveIndent(1);
 
 	// this for get/set cann't be global
 	const kind = methodInfo.trait?.kind;

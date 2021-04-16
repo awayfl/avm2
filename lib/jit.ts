@@ -56,6 +56,7 @@ import { ASClass } from './nat/ASClass';
 import { AXObject } from './run/AXObject';
 import { COERCE_MODE_ENUM, Settings } from './Settings';
 import { AXFunction } from './run/AXFunction';
+import { CompilerState } from './gen/CompilerState';
 
 const METHOD_HOOKS: StringMap<{path: string, place: 'begin' | 'return', hook: Function}> = {};
 
@@ -111,6 +112,7 @@ export function compile(methodInfo: MethodInfo, options: ICompilerOptions = {}):
 		scope,
 	} = options;
 
+	const state = new CompilerState(methodInfo);
 	const staticHoistLex = new StaticHoistLex();
 
 	// lex generator
@@ -183,14 +185,8 @@ export function compile(methodInfo: MethodInfo, options: ICompilerOptions = {}):
 	let js = [];
 
 	let idnt: string = '';
-	let idnLen = 0;
-	// move correr by 4 spaces - 1, for separate idnt =)
-	const moveIdnt = (offset: number) => {
-		idnLen += offset * 4;
-		if (idnLen < 0) idnLen = 0;
+	const moveIdnt = (offset) => idnt = state.setMoveIndent(offset);
 
-		return idnt = (' ').repeat(idnLen ? idnLen - 1 : 0);
-	};
 	const openTryCatchBlockGroups: ExceptionInfo[][] = [];
 	//	creates a catch condition for a list of ExceptionInfo
 	const createCatchConditions = (catchBlocks: ExceptionInfo[]) => {
@@ -270,8 +266,8 @@ export function compile(methodInfo: MethodInfo, options: ICompilerOptions = {}):
 
 	const useESArguments = optimise & COMPILER_OPT_FLAGS.USE_ES_PARAMS;
 	const  { paramsShift, annotation } = useESArguments
-		? emitAnnotation(methodInfo, moveIdnt)
-		: emitAnnotationOld(methodInfo, moveIdnt);
+		? emitAnnotation(methodInfo, state)
+		: emitAnnotationOld(methodInfo, state);
 
 	js0.push(annotation);
 

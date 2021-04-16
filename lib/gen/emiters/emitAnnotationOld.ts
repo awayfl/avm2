@@ -1,12 +1,13 @@
 import { CONSTANT } from '../../abc/lazy/CONSTANT';
 import { MethodInfo } from '../../abc/lazy/MethodInfo';
+import { CompilerState } from '../CompilerState';
 import { IFunctionAnnotation } from './emitAnnotation';
 
-export function emitAnnotationOld(methodInfo: MethodInfo, moveIdnt): IFunctionAnnotation {
+export function emitAnnotationOld(methodInfo: MethodInfo, state: CompilerState): IFunctionAnnotation {
 	const methodName = methodInfo.meta.name;
 	const params = methodInfo.parameters;
 	const js0 = [];
-	const idnt = moveIdnt(1);
+	const idnt = state.setMoveIndent(1);
 
 	js0.push(`${idnt} return function compiled_${methodName.replace(/([^a-z0-9]+)/gi, '_')}() {`);
 
