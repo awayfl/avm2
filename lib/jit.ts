@@ -38,6 +38,12 @@ import {
 } from './gen/LexImportsGenerator';
 
 import {
+	emitAnnotation,
+	emitAnnotationOld,
+	emitAccessor as emitAccess
+} from './gen/emiters';
+
+import {
 	extClassContructor,
 	getExtClassField,
 	emitIsAXOrPrimitive,
@@ -50,7 +56,6 @@ import { ASClass } from './nat/ASClass';
 import { AXObject } from './run/AXObject';
 import { COERCE_MODE_ENUM, Settings } from './Settings';
 import { AXFunction } from './run/AXFunction';
-import { TRAIT } from './abc/lazy/TRAIT';
 
 const METHOD_HOOKS: StringMap<{path: string, place: 'begin' | 'return', hook: Function}> = {};
 
@@ -83,15 +88,6 @@ function generateFunc(body: string, path: string) {
 
 function escape(name: string) {
 	return JSON.stringify(name);
-}
-
-const VALID_PROP_REG = /^[a-zA-Z$_][a-zA-Z0-9$_]*$/;
-function emitAccess (obj: string, prop: string): string {
-	if (prop && VALID_PROP_REG.test(prop)) {
-		return `${obj}.${prop}`;
-	}
-
-	return `${obj}[${prop}]`;
 }
 
 export interface ICompilerProcess {
@@ -268,121 +264,16 @@ export function compile(methodInfo: MethodInfo, options: ICompilerOptions = {}):
 	const params = methodInfo.parameters;
 
 	const underrun = '[stack underrun]';
-	let paramsShift = 0;
 
 	// shift function body
 	moveIdnt(1);
 
-	if (optimise & COMPILER_OPT_FLAGS.USE_ES_PARAMS) {
-		const args: {name: string, value?: any, type?: string}[] = [];
+	const useESArguments = optimise & COMPILER_OPT_FLAGS.USE_ES_PARAMS;
+	const  { paramsShift, annotation } = useESArguments
+		? emitAnnotation(methodInfo, moveIdnt)
+		: emitAnnotationOld(methodInfo, moveIdnt);
 
-		for (let i = 0; i < params.length; i++) {
-			const p = params[i];
-			const arg = { name: 'local' + (i + 1), value: null, type: '' };
-
-			if (p.hasOptionalValue()) {
-				switch (p.optionalValueKind) {
-					case CONSTANT.Utf8:
-						arg.value = `${escape(abc.getString(p.optionalValueIndex))}`;
-						break;
-					default:
-						arg.value = `${p.getOptionalValue()}`;
-				}
-			}
-
-			const t = p.getType();
-			t && (arg.type = t.name);
-
-			args[i] = arg;
-		}
-
-		if (methodInfo.needsRest()) {
-			args.push({ name: '...args' });
-		}
-
-		const argsFilled = args
-			.map((e) => {
-				return e.value
-					? `${e.name} /* ${e.type || '*'} */ = ${e.value}`
-					: `${e.name} /* ${e.type || '*'} */`;
-			})
-			.join(', ');
-
-		const mname =  methodName.replace(/([^a-z0-9]+)/gi, '_');
-
-		js0.push(`${idnt} return function compiled_${mname}(${argsFilled}) {`);
-
-		moveIdnt(1);
-
-		// this for get/set cann't be global
-		const kind = methodInfo.trait?.kind;
-		if (kind === TRAIT.Setter || kind === TRAIT.Getter) {
-			js0.push(`${idnt} let local0 = this;`);
-		} else {
-			js0.push(`${idnt} let local0 = this === context.jsGlobal ? context.savedScope.global.object : this;`);
-		}
-
-		for (const a of args) {
-			const name = a.name;
-			let argCoerce = '';
-
-			switch (a.type) {
-				case 'String':
-					// eslint-disable-next-line max-len
-					argCoerce = `${name} = (${name} != null && typeof ${name} !== 'string') ? ${name}.toString() : ${name};`;
-					break;
-				case 'Number':
-					argCoerce = `${name} = +${name};`;
-					break;
-				case 'int':
-					argCoerce = `${name} = ${name} | 0;`;
-					break;
-				default:
-					break;
-			}
-
-			if (argCoerce) {
-				js0.push(`${idnt} /* Force ${a.type} coerce */`);
-				js0.push(`${idnt} ${argCoerce}`);
-			}
-		}
-
-		if (methodInfo.needsRest()) {
-			js0.push(`${idnt} let local${params.length + 1} = context.sec.createArrayUnsafe(args);`);
-			paramsShift += 1;
-		}
-
-		if (methodInfo.needsArguments()) {
-			js0.push(`${idnt} let local${params.length + 1} = context.sec.createArrayUnsafe(Array.from(arguments));`);
-			paramsShift += 1;
-		}
-	} else {
-		js0.push(`${idnt} return function compiled_${methodName.replace(/([^a-z0-9]+)/gi, '_')}() {`);
-
-		for (let i: number = 0; i < params.length; i++)
-			if (params[i].hasOptionalValue()) {
-				js0.push(`${idnt} let argnum = arguments.length;`);
-				break;
-			}
-
-		js0.push(`${idnt} let local0 = this === context.jsGlobal ? context.savedScope.global.object : this;`);
-
-		for (let i: number = 0; i < params.length; i++) {
-			const p = params[i];
-			js0.push(`${idnt} let local${(i + 1)} = arguments[${i}];`);
-
-			if (params[i].hasOptionalValue())
-				switch (p.optionalValueKind) {
-					case CONSTANT.Utf8:
-						// eslint-disable-next-line max-len
-						js0.push(`${idnt} if (argnum <= ${i}) local${(i + 1)} = context.abc.getString(${p.optionalValueIndex});`);
-						break;
-					default:
-						js0.push(`${idnt} if (argnum <= ${i}) local${(i + 1)} = ${p.getOptionalValue()};`);
-						break;
-				}
-		}
-	}
+	js0.push(annotation);
 
 	const LOCALS_POS = js0.length;
 	// hack
@@ -1547,7 +1438,10 @@ export function compile(methodInfo: MethodInfo, options: ICompilerOptions = {}):
 		}
 		// todo: this is not 100% correct yet:
 		locals.push(`        let local${l.index} = undefined`);
-		if (!(optimise & COMPILER_OPT_FLAGS.USE_ES_PARAMS)) {
+
+		// for NO_ES mode we will generate REST as copy of arguments
+		// TODO: Move this to `emitAnnotationOld`
+		if (!useESArguments) {
 			if (l.index == params.length + 1 && !l.die) {
 				// eslint-disable-next-line max-len
 				locals.push(`    if(arguments && arguments.length) { local${l.index} = context.sec.createArrayUnsafe(Array.from(arguments).slice(${params.length})); }`);
