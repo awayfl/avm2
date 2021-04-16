@@ -410,8 +410,6 @@ export function compile(methodInfo: MethodInfo, options: ICompilerOptions = {}):
 	if (domMem)
 		js0.push(`${idnt} let domainMemory; // domainMemory`);
 
-	js0.push(`${idnt} let tr = undefined;`);
-
 	const names: Multiname[] = [];
 
 	const nameIdnt = idnt;
