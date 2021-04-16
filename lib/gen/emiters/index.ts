@@ -1,3 +1,5 @@
 export * from './emitAnnotation';
 export * from './emitAnnotationOld';
-export * from './emitAccessor';
+export * from './emitInlineAccessor';
+export * from './emitCatch';
+export * from './emitInlineMultiname';

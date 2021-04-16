@@ -40,7 +40,10 @@ import {
 import {
 	emitAnnotation,
 	emitAnnotationOld,
-	emitAccessor as emitAccess
+	emitInlineAccessor as emitAccess,
+	emitCloseTryCatch,
+	emitOpenTryCatch,
+	emitInlineMultiname
 } from './gen/emiters';
 
 import {
@@ -123,7 +126,6 @@ export function compile(methodInfo: MethodInfo, options: ICompilerOptions = {}):
 	]);
 
 	const tinyCtr = new TinyConstructor();
-
 	const fastCall = new FastCall(lexGen, scope);
 
 	Stat.begin('');
@@ -181,75 +183,11 @@ export function compile(methodInfo: MethodInfo, options: ICompilerOptions = {}):
 	const maxlocal = body.localCount - 1;
 	const maxscope = body.maxScopeDepth - body.initScopeDepth;
 
-	const js0 = [];
-	let js = [];
+	const js0 = state.headerBlock;
+	const js = state.mainBlock;
 
 	let idnt: string = '';
-	const moveIdnt = (offset) => idnt = state.setMoveIndent(offset);
-
-	const openTryCatchBlockGroups: ExceptionInfo[][] = [];
-	//	creates a catch condition for a list of ExceptionInfo
-	const createCatchConditions = (catchBlocks: ExceptionInfo[]) => {
-		js.push(`${idnt} catch(e){`);
-
-		moveIdnt(1);
-
-		js.push(`${idnt} // in case this is a error coming from stack0.__fast when stack0 is undefined,`);
-		js.push(`${idnt} // we convert it to a ASError, so that avm2 can still catch it`);
-		js.push(`${idnt} if (e instanceof TypeError) {`);
-		js.push(`${idnt}     var _e = context.sec.createError("TypeError", {code:1065, message:e.message})`);
-		js.push(`${idnt}     _e.source = e; e = _e;`);
-		js.push(`${idnt} }`);
-
-		js.push(`${idnt} stack0 = e;`);
-		let lastCatchItem = '';
-		for (let i = 0; i < catchBlocks.length; i++) {
-			const typeName = catchBlocks[i].getType();
-			if (!typeName) {
-				lastCatchItem = `${idnt} { p = ${catchBlocks[i].target}; continue; };`;
-				continue;
-			} else {
-				let n = names.indexOf(typeName);
-				if (n < 0) {
-					n = names.length;
-					names.push(typeName);
-					js0.push(`    let name${n} = context.names[${n}];`);
-				}
-				js.push(`${idnt} const errorClass$${i} = context.sec.application.getClass(name${n});`);
-				js.push(`${idnt} if(errorClass$${i} && errorClass$${i}.axIsType(e))`);
-				js.push(`${idnt}     { p = ${catchBlocks[i].target}; continue; };`);
-			}
-		}
-		if (lastCatchItem)
-			js.push(lastCatchItem);
-
-		// if error was not catched by now, we throw it
-		js.push(`${idnt} throw e;`);
-
-		moveIdnt(-1);
-
-		js.push(`${idnt} }`);
-		/*for (var i = 0; i < createFinally.length; i++) {
-			js.push(`            ${indent}${createFinally[i]}`);
-		}*/
-	};
-	//	closes all try-catch blocks. used when entering a new case-block
-	const closeAllTryCatch = () => {
-		//js.push(`//CLOSE ALL`);
-
-		for (let i = 0; i < openTryCatchBlockGroups.length; i++) {
-			moveIdnt(-1);
-			js.push(`${idnt} }`);
-			createCatchConditions(openTryCatchBlockGroups[i]);
-		}
-	};
-	//	reopen all try-catch blocks. used when entering a new case-block
-	const openAllTryCatch = () => {
-		for (let i = 0; i < openTryCatchBlockGroups.length; i++) {
-			js.push(`${idnt} try {`);
-			moveIdnt(1);
-		}
-	};
+	const moveIdnt = (offset: number) => idnt = state.moveIndent(offset);
 
 	let domMem = false;
 	for (const q_i of q) {
@@ -266,8 +204,11 @@ export function compile(methodInfo: MethodInfo, options: ICompilerOptions = {}):
 
 	const useESArguments = optimise & COMPILER_OPT_FLAGS.USE_ES_PARAMS;
 	const  { paramsShift, annotation } = useESArguments
-		? emitAnnotation(methodInfo, state)
-		: emitAnnotationOld(methodInfo, state);
+		? emitAnnotation(state)
+		: emitAnnotationOld(state);
+
+	// store indend after annotation
+	const namesIndent = state.indent;
 
 	js0.push(annotation);
 
@@ -298,19 +239,8 @@ export function compile(methodInfo: MethodInfo, options: ICompilerOptions = {}):
 	if (domMem)
 		js0.push(`${idnt} let domainMemory; // domainMemory`);
 
-	const names: Multiname[] = [];
-
-	const nameIdnt = idnt;
-	const getname = (n: number) => {
-		const mn = abc.getMultiname(n);
-		let i = names.indexOf(mn);
-		if (i < 0) {
-			i = names.length;
-			names.push(mn);
-			js0.push(`${nameIdnt} let name${i} = context.names[${i}];`);
-		}
-		return 'name' + i;
-	};
+	const names: Multiname[] = state.names;
+	const getname = (n: number) => emitInlineMultiname(state, state.getMultinameIndex(n));
 
 	js0.push(`${idnt} let sec = context.sec;`);
 
@@ -368,27 +298,32 @@ export function compile(methodInfo: MethodInfo, options: ICompilerOptions = {}):
 	for (let i: number = 0; i < q.length; i++) {
 		z && (lastZ = z);
 		z = q[i];
+		idnt = state.indent;
+
 		USE_OPT(fastCall) && fastCall.killFar(i);
 
 		if (jumps.indexOf(z.position) >= 0) {
 			// if we are in any try-catch-blocks, we must close them
-			if (openTryCatchBlockGroups) closeAllTryCatch();
+			//if (state.openTryCatchGroups)
+			state.openTryCatchGroups.forEach(e => emitCloseTryCatch(state, e));
 
 			if (genBrancher) {
 				moveIdnt(-1);
 				js.push(`${idnt} case ${z.position}:`);
 				moveIdnt(1);
 			}
+
 			// now we reopen all the try-catch again
-			if (openTryCatchBlockGroups) openAllTryCatch();
+			state.openTryCatchGroups.forEach(e => emitOpenTryCatch(state, e));
 		}
 
+		/* DIRTY */
 		currentCatchBlocks = catchStart ? catchStart[z.position] : null;
 		if (currentCatchBlocks) {
-			openTryCatchBlockGroups.push(currentCatchBlocks);
+			state.openTryCatchGroups.push(currentCatchBlocks);
 
-			js.push(`${idnt} try {`);
-			moveIdnt(1);
+			state.emitBeginMain('try');
+			idnt = state.moveIndent(1);
 		}
 
 		if (Settings.PRINT_BYTE_INSTRUCTION) {
@@ -1389,25 +1324,23 @@ export function compile(methodInfo: MethodInfo, options: ICompilerOptions = {}):
 			}
 		}
 
+		/* DIRTY */
 		currentCatchBlocks = catchEnd ? catchEnd[z.position] : null;
 		if (currentCatchBlocks) {
-			const lastCatchBlocks = openTryCatchBlockGroups.pop();
-			if (lastCatchBlocks) {
-				moveIdnt(-1);
+			const lastCatchBlocks = state.openTryCatchGroups.pop();
 
-				js.push(`${idnt}}`);
-				createCatchConditions(lastCatchBlocks);
+			if (lastCatchBlocks) {
+				emitCloseTryCatch(state, lastCatchBlocks);
 			}
 
 		}
 	}
-	if (openTryCatchBlockGroups.length > 0) {
-		const lastCatchBlocks = openTryCatchBlockGroups.pop();
-		if (lastCatchBlocks) {
-			moveIdnt(-1);
 
-			js.push(`${idnt}}`);
-			createCatchConditions(lastCatchBlocks);
+	if (state.openTryCatchGroups.length > 0) {
+		const lastCatchBlocks = state.openTryCatchGroups.pop();
+
+		if (lastCatchBlocks) {
+			emitCloseTryCatch(state, lastCatchBlocks);
 		}
 	}
 
@@ -1430,10 +1363,10 @@ export function compile(methodInfo: MethodInfo, options: ICompilerOptions = {}):
 		}
 
 		if (l.die) {
-			locals.push(`        // local${l.index} is assigned before read, skip init`);
+			locals.push(`${namesIndent}// local${l.index} is assigned before read, skip init`);
 		}
 		// todo: this is not 100% correct yet:
-		locals.push(`        let local${l.index} = undefined`);
+		locals.push(`${namesIndent} let local${l.index} = undefined`);
 
 		// for NO_ES mode we will generate REST as copy of arguments
 		// TODO: Move this to `emitAnnotationOld`
@@ -1446,25 +1379,29 @@ export function compile(methodInfo: MethodInfo, options: ICompilerOptions = {}):
 		}
 	}
 
+	// eslint-disable-next-line max-len
+	state.names.forEach((_, i) => state.emitHead(`let ${emitInlineMultiname(state, i)} = context.names[${i}];`, namesIndent));
+
 	js0[LOCALS_POS] = locals.join('\n');
 
 	const genHeader = ['const AX_CLASS_SYMBOL = context.AX_CLASS_SYMBOL;'];
 	const genBody = [];
 
+	let resulMain = state.mainBlock;
 	if (USE_OPT(lexGen)) {
 		genHeader.push(lexGen.genHeader(idnt));
 		genBody.push(lexGen.genBody(idnt));
 
 		// mutated generated codeblock
-		js = lexGen.genPost(js);
+		resulMain = lexGen.genPost(resulMain);
 	}
 
 	const w =
 		scriptHeader +
 		genHeader.join('\n') +
-		js0.join('\n') + '\n' +
+		state.headerBlock.join('\n') + '\n' +
 		genBody.join('\n') + '\n' +
-		js.join('\n');
+		resulMain.join('\n');
 
 	const hasError = w.indexOf(underrun) > -1;
 
