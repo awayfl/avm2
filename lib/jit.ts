@@ -84,6 +84,15 @@ function escape(name: string) {
 	return JSON.stringify(name);
 }
 
+const VALID_PROP_REG = /^[a-zA-Z$_][a-zA-Z0-9$_]*$/;
+function emitAccess (obj: string, prop: string): string {
+	if (prop && VALID_PROP_REG.test(prop)) {
+		return `${obj}.${prop}`;
+	}
+
+	return `${obj}[${prop}]`;
+}
+
 export interface ICompilerProcess {
 	error?: {
 		message: string, reason: COMPILATION_FAIL_REASON
@@ -870,15 +879,14 @@ export function compile(methodInfo: MethodInfo, options: ICompilerOptions = {}):
 						// eslint-disable-next-line max-len
 						js.push(`${idnt} ${stackF(param(0))} = context.getdefinitionbyname(${scope}, ${obj}, [${pp.join(', ')}]);`);
 					} else {
-						let d;
+						let d: ICallEntry;
 						if (USE_OPT(fastCall) && (d = fastCall.sureThatFast(`${obj}`, mn.getMangledName()))) {
 							const n = d.isMangled ? Multiname.getPublicMangledName(mn.name) : mn.name;
 							fastCall.kill(`${obj}`);
 
 							js.push(`${idnt} /* We sure that this safe call */ `);
-
 							if (d.isFunc) {
-								js.push(`${idnt} ${stackF(param(0))} = ${obj}['${n}'](${pp.join(', ')});`);
+								js.push(`${idnt} ${stackF(param(0))} = ${emitAccess(obj, n)}(${pp.join(', ')});`);
 							} else {
 								// eslint-disable-next-line max-len
 								js.push(`${idnt} ${stackF(param(0))} = /*fast*/${obj}.axCallProperty(${getname(param(1))}, [${pp.join(', ')}], false);`);
@@ -889,7 +897,7 @@ export function compile(methodInfo: MethodInfo, options: ICompilerOptions = {}):
 						if (needFastCheck()) {
 							js.push(`${idnt} if (!${emitIsAXOrPrimitive(obj)}) {`);
 							// fast instruction already binded
-							js.push(`${idnt}    ${stackF(param(0))} = ${obj}['${mn.name}'](${pp.join(', ')});`);
+							js.push(`${idnt}    ${stackF(param(0))} = ${emitAccess(obj, mn.name)}(${pp.join(', ')});`);
 							js.push(`${idnt} } else {`);
 
 							moveIdnt(1);
@@ -900,8 +908,11 @@ export function compile(methodInfo: MethodInfo, options: ICompilerOptions = {}):
 
 						moveIdnt(1);
 						js.push(`${idnt} let t = ${obj};`);
+
+						const accessor = emitAccess('t', '$Bg' + mn.name);
+
 						// eslint-disable-next-line max-len
-						js.push(`${idnt} const m = ${obj}['$Bg${mn.name}'] || (t = sec.box(${obj}), t['$Bg${mn.name}']);`);
+						js.push(`${idnt} const m = ${accessor} || (t = sec.box(${obj}), ${accessor});`);
 						js.push(`${idnt} if( typeof m === 'function' ) { `);
 						js.push(`${idnt}     ${stackF(param(0))} = m.call(t${pp.length ? ', ' : ''}${pp.join(', ')});`);
 						js.push(`${idnt} } else {  `);
@@ -927,8 +938,11 @@ export function compile(methodInfo: MethodInfo, options: ICompilerOptions = {}):
 						pp.push(stackF(param(0) - j));
 
 					js.push(`${idnt} temp = sec.box(${pp.shift()});`);
+
+					const accessor = emitAccess('temp', '$Bg' + mn.name);
+
 					// eslint-disable-next-line max-len
-					js.push(`${idnt} ${stackF(param(0))} = (typeof temp['$Bg${mn.name}'] === 'function')? temp['$Bg${mn.name}'](${pp.join(', ')}) : temp.axCallProperty(${getname(param(1))}, [${pp.join(', ')}], true);`);
+					js.push(`${idnt} ${stackF(param(0))} = (typeof ${accessor} === 'function')? ${accessor}(${pp.join(', ')}) : temp.axCallProperty(${getname(param(1))}, [${pp.join(', ')}], true);`);
 				}
 					break;
 				case Bytecode.CALLPROPVOID: {
@@ -946,7 +960,7 @@ export function compile(methodInfo: MethodInfo, options: ICompilerOptions = {}):
 								: mn.name;
 
 							js.push(`${idnt} /* We sure that this safe call */ `);
-							js.push(`${idnt} ${obj}['${n}'](${pp.join(', ')});`);
+							js.push(`${idnt} ${emitAccess(obj, n)}(${pp.join(', ')});`);
 
 							fastCall.kill(`${obj}`);
 							break;
@@ -955,7 +969,7 @@ export function compile(methodInfo: MethodInfo, options: ICompilerOptions = {}):
 
 					if (needFastCheck()) {
 						js.push(`${idnt} if (!${emitIsAXOrPrimitive(obj)}) {`);
-						js.push(`${idnt}     ${obj}['${mn.name}'](${pp.join(', ')});`);
+						js.push(`${idnt}     ${emitAccess(obj, mn.name)}(${pp.join(', ')});`);
 						js.push(`${idnt} } else {`);
 
 						moveIdnt(1);
@@ -966,7 +980,10 @@ export function compile(methodInfo: MethodInfo, options: ICompilerOptions = {}):
 
 					moveIdnt(1);
 					js.push(`${idnt} let t = ${obj};`);
-					js.push(`${idnt} const m = ${obj}['$Bg${mn.name}'] || (t = sec.box(${obj}), t['$Bg${mn.name}']);`);
+
+					const accessor = emitAccess('t', '$Bg' + mn.name);
+
+					js.push(`${idnt} const m = ${accessor} || (t = sec.box(${obj}), ${accessor});`);
 					js.push(`${idnt} if( typeof m === 'function' ) { `);
 					js.push(`${idnt}     m.call(t${pp.length ? ', ' : ''}${pp.join(', ')});`);
 					js.push(`${idnt} } else {  `);
@@ -1173,7 +1190,7 @@ export function compile(methodInfo: MethodInfo, options: ICompilerOptions = {}):
 					}
 
 					js.push(`${idnt} temp = ${stack0}[AX_CLASS_SYMBOL] ? ${stack0} : sec.box(${stack0});`);
-					js.push(`${idnt} ${stack0} = temp['$Bg${mn.name}'];`);
+					js.push(`${idnt} ${stack0} = ${emitAccess('temp', '$Bg' + mn.name)};`);
 					js.push(`${idnt} if (${stack0} === undefined || typeof ${stack0} === 'function') {`);
 					js.push(`${idnt}     ${stack0} = temp.axGetProperty(${getname(param(0))});`);
 					js.push(`${idnt} }`);
@@ -1224,7 +1241,7 @@ export function compile(methodInfo: MethodInfo, options: ICompilerOptions = {}):
 
 					if (needFastCheck()) {
 						js.push(`${idnt} if (!${emitIsAX(stack1)}){`);
-						js.push(`${idnt}     ${stack1}['${mn.name}'] = ${stack0};`);
+						js.push(`${idnt}     ${emitAccess(stack1, mn.name)} = ${stack0};`);
 						js.push(`${idnt} } else {`);
 						moveIdnt(1);
 					}
@@ -1313,7 +1330,7 @@ export function compile(methodInfo: MethodInfo, options: ICompilerOptions = {}):
 					} else {
 						js.push(`${idnt} // ${mn}`);
 						js.push(`${idnt} temp = ${scope}.findScopeProperty(${getname(param(0))}, true, false);`);
-						js.push(`${idnt} ${stackN} = temp['$Bg${mn.name}'];`);
+						js.push(`${idnt} ${stackN} = ${emitAccess('temp', '$Bg' + mn.name)};`);
 						js.push(`${idnt} if (${stackN} === undefined || typeof ${stackN} === 'function') {`);
 						js.push(`${idnt}     ${stackN} = temp.axGetProperty(${getname(param(0))});`);
 						js.push(`${idnt} }`);
