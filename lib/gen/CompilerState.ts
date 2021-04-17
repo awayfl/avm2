@@ -22,6 +22,8 @@ export class CompilerState {
 	public oppcodes: Instruction[];
 	public currentOppcode: Instruction;
 
+	public thisAlliases: Set<string> = new Set();
+
 	public get indent() {
 		return this._indent;
 	}
@@ -111,4 +113,21 @@ export class CompilerState {
 		return pos;
 	}
 
+	public isThisAlias(alias: string): boolean {
+		return this.thisAlliases.has(alias);
+	}
+
+	public pushThisAlias(alias: string, from?: string): boolean {
+		if (from && !this.thisAlliases.has(from))
+			return false;
+
+		if (this.thisAlliases.has(alias))
+			return false;
+
+		this.thisAlliases.add(alias);
+	}
+
+	public popThisAlias(alias: string): boolean {
+		return this.thisAlliases.delete(alias);
+	}
 }
