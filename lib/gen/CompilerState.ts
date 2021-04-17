@@ -30,7 +30,12 @@ export class CompilerState {
 		const kind = this.methodInfo.trait && this.methodInfo.trait.kind;
 
 		// because in AS3 methods/get/set is stricted with this, it can't be global
-		return kind !== TRAIT.Method && kind !== TRAIT.Getter && kind !== TRAIT.Setter;
+		return (
+			kind !== TRAIT.Method &&
+			kind !== TRAIT.Getter &&
+			kind !== TRAIT.Setter &&
+			!this.methodInfo.isConstructor
+		);
 	}
 
 	public get canUseRealThis() {
