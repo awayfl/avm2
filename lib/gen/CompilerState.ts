@@ -74,7 +74,7 @@ export class CompilerState {
 	 * @param line Line to emit to generated code
 	 * @returns line count
 	 */
-	public emitMain(line: string): number {
+	public emitMain(line: string = ''): number {
 		return this.mainBlock.push(this.indent + ' ' + line);
 	}
 
