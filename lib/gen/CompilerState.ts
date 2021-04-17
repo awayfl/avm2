@@ -1,6 +1,8 @@
 import { ABCFile } from '../abc/lazy/ABCFile';
 import { ExceptionInfo } from '../abc/lazy/ExceptionInfo';
 import { MethodInfo } from '../abc/lazy/MethodInfo';
+import { TRAIT } from '../abc/lazy/TRAIT';
+import { Settings } from '../Settings';
 import { Multiname } from './../abc/lazy/Multiname';
 
 export class CompilerState {
@@ -19,6 +21,19 @@ export class CompilerState {
 
 	public get indent() {
 		return this._indent;
+	}
+
+	public get isPossibleGlobalThis() {
+		const kind = this.methodInfo.trait && this.methodInfo.trait.kind;
+
+		// because in AS3 methods/get/set is stricted with this, it can't be global
+		return kind !== TRAIT.Method && kind !== TRAIT.Getter && kind !== TRAIT.Setter;
+	}
+
+	public get canUseRealThis() {
+		if (!Settings.EMIT_REAL_THIS) return false;
+
+		return !this.isPossibleGlobalThis;
 	}
 
 	constructor(

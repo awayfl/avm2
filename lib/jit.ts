@@ -43,7 +43,8 @@ import {
 	emitInlineAccessor as emitAccess,
 	emitCloseTryCatch,
 	emitOpenTryCatch,
-	emitInlineMultiname
+	emitInlineMultiname,
+	emitLocal
 } from './gen/emiters';
 
 import {
@@ -148,17 +149,6 @@ export function compile(methodInfo: MethodInfo, options: ICompilerOptions = {}):
 
 	const meta = methodInfo.meta;
 	const methodName = meta.name;
-
-	const scriptHeader =
-`/*
-	Index: ${meta.index}
-	Path:  ${meta.classPath}
-	Type:  ${meta.type}
-	Kind:  ${meta.kind}
-	Super: ${meta.superClass || '-'}
-	Return: ${meta.returnType}
-*/\n\n`;
-
 	const {
 		error,
 		jumps,
@@ -327,7 +317,7 @@ export function compile(methodInfo: MethodInfo, options: ICompilerOptions = {}):
 		}
 
 		if (Settings.PRINT_BYTE_INSTRUCTION) {
-			js.push(`${idnt} //${BytecodeName[z.name]} ${z.params.join(' / ')} -> ${z.returnTypeId}`);
+			state.emitMain(`//${BytecodeName[z.name]} ${z.params.join(' / ')} -> ${z.returnTypeId}`);
 		}
 
 		const stackF = (n: number) => {
@@ -345,9 +335,9 @@ export function compile(methodInfo: MethodInfo, options: ICompilerOptions = {}):
 		const scope = z.scope > 0 ? `scope${(z.scope - 1)}` : 'context.savedScope';
 		const scopeN = 'scope' + z.scope;
 
-		const local = (n: number) => 'local' + n;
-
+		const local = (n: number) => emitLocal(state, n);
 		const param = (n: number) => z.params[n];
+
 		if (z.stack < 0) {
 			js.push(`${idnt} // unreachable`);
 		} else {
@@ -1395,6 +1385,16 @@ export function compile(methodInfo: MethodInfo, options: ICompilerOptions = {}):
 		// mutated generated codeblock
 		resulMain = lexGen.genPost(resulMain);
 	}
+
+	const scriptHeader =
+	`/*
+		Index: ${meta.index}
+		Path:  ${meta.classPath}
+		Type:  ${meta.type}
+		Kind:  ${meta.kind}
+		Super: ${meta.superClass || '-'}
+		Return: ${meta.returnType}
+	*/\n\n`;
 
 	const w =
 		scriptHeader +

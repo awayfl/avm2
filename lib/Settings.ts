@@ -10,6 +10,7 @@ export interface IAVM2Settings {
 	NO_FALL_TO_INT: boolean;
 	NO_PROPAGATE_SCOPES_FOR_TRY: boolean;
 	HTTP_STRING: string;
+	EMIT_REAL_THIS: boolean;
 }
 
 export const enum COERCE_MODE_ENUM {
@@ -67,5 +68,10 @@ export const Settings: IAVM2Settings = {
 	/**
 	 * @description switch between http and https for jit files
 	 */
-	HTTP_STRING: 'http'
+	HTTP_STRING: 'http',
+
+	/**
+	 * @description Use `this` when poosible use real context without store it as local0, this should help debug
+	 */
+	EMIT_REAL_THIS: true
 };
