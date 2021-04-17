@@ -1049,7 +1049,7 @@ export function compile(methodInfo: MethodInfo, options: ICompilerOptions = {}):
 							fastCall.kill(stack0);
 
 							state.emitMain('/* We sure that this safe call */ ');
-							state.emitMain(`${target} = ${stack0}['${n}'];`);
+							state.emitMain(`${target} = ${emitAccess(stack0, n)};`);
 							break;
 						}
 					}
