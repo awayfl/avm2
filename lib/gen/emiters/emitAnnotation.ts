@@ -55,11 +55,16 @@ export function emitAnnotation (state: CompilerState): IFunctionAnnotation  {
 
 	state.moveIndent(1);
 
-	if (state.isPossibleGlobalThis) {
-		// eslint-disable-next-line max-len
-		js0.push(`${state.indent}let ${emitInlineLocal(state, 0)} = this === context.jsGlobal ? context.savedScope.global.object : this;`);
+	const thisAlias = emitInlineLocal(state, 0);
+	if (thisAlias !== 'this') {
+		if (state.isPossibleGlobalThis) {
+			// eslint-disable-next-line max-len
+			js0.push(`${state.indent}let ${thisAlias} = this === context.jsGlobal ? context.savedScope.global.object : this;`);
+		} else {
+			js0.push(`${state.indent}let ${thisAlias} = this;`);
+		}
 	} else {
-		js0.push(`${state.indent}let ${emitInlineLocal(state, 0)} = this;`);
+		js0.push(`${state.indent}// Possible use a real "this"`);
 	}
 
 	for (const a of args) {

@@ -1,6 +1,9 @@
 import { CompilerState } from '../CompilerState';
 
 export function emitInlineLocal(_state: CompilerState, n: number): string {
+	if (_state.canUseRealThis && n === 0)
+		return 'this';
+
 	return n === 0  ? '_this' : 'local' + n;
 }
 
