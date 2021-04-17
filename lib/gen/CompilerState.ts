@@ -4,7 +4,7 @@ import { MethodInfo } from '../abc/lazy/MethodInfo';
 import { TRAIT } from '../abc/lazy/TRAIT';
 import { Settings } from '../Settings';
 import { Multiname } from './../abc/lazy/Multiname';
-import { Instruction } from './affiliate';
+import { Instruction } from './Instruction';
 
 export class CompilerState {
 	private _indent: string = '';

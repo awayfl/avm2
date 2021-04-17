@@ -1,13 +1,11 @@
-
-import { Bytecode } from './../Bytecode';
-import { ExceptionInfo } from './../abc/lazy/ExceptionInfo';
-import { MethodInfo } from './../abc/lazy/MethodInfo';
+import { Bytecode } from '../Bytecode';
+import { ExceptionInfo } from '../abc/lazy/ExceptionInfo';
+import { MethodInfo } from '../abc/lazy/MethodInfo';
+import { Instruction } from './Instruction';
 import { COMPILATION_FAIL_REASON } from '../flags';
 import { Settings } from '../Settings';
 
 const BytecodeName = Bytecode;
-
-const DEFAULT_STACK_INDEX = -1024;
 
 const enum PRIMITIVE_TYPE {
 	VOID = -1,
@@ -19,36 +17,13 @@ const enum PRIMITIVE_TYPE {
 	ANY = -1000
 }
 
-export class Instruction {
-	public stack: number = DEFAULT_STACK_INDEX;
-	public scope: number = DEFAULT_STACK_INDEX;
-	public catchBlock: ExceptionInfo;
-	public catchStart: boolean = false;
-	public catchEnd: boolean = false;
-	public returnTypeId: number = -1; // void
-	public childs: number[] = [];
-
-	constructor(
-		readonly position: number,
-		readonly name: Bytecode,
-		readonly params: Array<any> = [],
-		readonly delta: number = 0,
-		readonly deltaScope: number = 0,
-		readonly terminal: boolean = false,
-		readonly refs: Array<number> = []) {
-	}
-
-	toString() {
-		return `Instruction(${this.position}, ${BytecodeName[this.name]} (${this.name}), [${this.params}], ${this.stack} -> ${this.stack + this.delta}, ${this.scope} -> ${this.scope + this.deltaScope}, ${this.terminal}, [${this.refs}])`;
-	}
-}
-export interface IAffilerError {
+export interface IAnalyzeError {
 	error: {
 		message: string, reason: COMPILATION_FAIL_REASON
 	};
 }
 
-export interface IAffilerResult {
+export interface IAnalyseResult {
 	jumps: Array<number>;
 	set: Array<Instruction>;
 	catchStart: NumberMap<ExceptionInfo[]>,
@@ -150,10 +125,10 @@ export function propogateTree(q: Array<Instruction>, jumps: number[]): void {
 }
 
 /**
- * Affilate instruction set from method info
+ * Analyzing instruction set from method info
  * @param methodInfo
  */
-export function affilate(methodInfo: MethodInfo): IAffilerResult | IAffilerError {
+export function analyze(methodInfo: MethodInfo): IAnalyseResult | IAnalyzeError {
 	const abc = methodInfo.abc;
 	const body = methodInfo.getBody();
 	const code = body.code;

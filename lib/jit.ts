@@ -24,7 +24,7 @@ import { escapeAttributeValue, escapeElementValue } from './natives/xml';
 import { COMPILER_DEFAULT_OPT, COMPILER_OPT_FLAGS, COMPILATION_FAIL_REASON } from './flags';
 
 // generators
-import { affilate, Instruction, IAffilerResult, IAffilerError } from './gen/affiliate';
+import { analyze, IAnalyseResult, IAnalyzeError } from './gen/analyze';
 import { TinyConstructor } from './gen/TinyConstructor';
 import { FastCall, ICallEntry } from './gen/FastCall';
 
@@ -64,6 +64,7 @@ import { AXObject } from './run/AXObject';
 import { COERCE_MODE_ENUM, Settings } from './Settings';
 import { AXFunction } from './run/AXFunction';
 import { CompilerState } from './gen/CompilerState';
+import { Instruction } from './gen/Instruction';
 
 const METHOD_HOOKS: StringMap<{path: string, place: 'begin' | 'return', hook: Function}> = {};
 
@@ -158,7 +159,7 @@ export function compile(methodInfo: MethodInfo, options: ICompilerOptions = {}):
 		catchStart,
 		catchEnd,
 		set : q
-	} = affilate(methodInfo) as IAffilerResult & IAffilerError;
+	} = analyze(methodInfo) as IAnalyseResult & IAnalyzeError;
 
 	// if affilate a generate error, broadcast it
 	if (error) {
