@@ -180,19 +180,15 @@ export function compile(methodInfo: MethodInfo, options: ICompilerOptions = {}):
 	const js0 = state.headerBlock;
 	const js = state.mainBlock;
 
-	let idnt: string = '';
-	const moveIdnt = (offset: number) => idnt = state.moveIndent(offset);
-
 	let domMem = false;
 	for (const q_i of q) {
 		const b = q_i.name;
 		domMem = domMem || (b >= Bytecode.LI8 && b <= Bytecode.SF64);
 	}
 
-	const params = methodInfo.parameters;
-	// shift function body
-	moveIdnt(1);
+	state.moveIndent(1);
 
+	const params = methodInfo.parameters;
 	const useESArguments = optimise & COMPILER_OPT_FLAGS.USE_ES_PARAMS;
 	const  { paramsShift, annotation } = useESArguments
 		? emitAnnotation(state)
@@ -220,20 +216,20 @@ export function compile(methodInfo: MethodInfo, options: ICompilerOptions = {}):
 	}
 
 	for (let i = 0; i < maxstack; i++)
-		js0.push(`${namesIndent} let stack${i} = undefined;`);
+		js0.push(`${namesIndent}let stack${i} = undefined;`);
 
 	for (let i: number = 0; i < maxscope; i++)
-		js0.push(`${namesIndent} let scope${i} = undefined;`);
+		js0.push(`${namesIndent}let scope${i} = undefined;`);
 
-	js0.push(`${namesIndent} let temp = undefined;`);
+	js0.push(`${namesIndent}let temp = undefined;`);
 
 	if (domMem)
-		js0.push(`${namesIndent} let domainMemory; // domainMemory`);
+		js0.push(`${namesIndent}let domainMemory; // domainMemory`);
 
 	const names: Multiname[] = state.names;
 	const getname = (n: number) => emitInlineMultiname(state, state.getMultinameIndex(n));
 
-	js0.push(`${namesIndent} let sec = context.sec;`);
+	js0.push(`${namesIndent}let sec = context.sec;`);
 
 	const genBrancher = jumps.length > 1 || catchStart;
 
@@ -261,12 +257,12 @@ export function compile(methodInfo: MethodInfo, options: ICompilerOptions = {}):
 		}
 
 		state.emitMain('let p = 0;');
-		state.emitBeginMain('while (true)'); // add { automatically
+		state.emitBeginMain('while (true) {'); // add { automatically
 
 		if (useLoopGuard) {
 			const loops = Settings.LOOP_GUARD_MAX_LOOPS;
 
-			state.emitBeginMain(`if (tick++ > ${loops})`);
+			state.emitBeginMain(`if (tick++ > ${loops}) {`);
 			state.emitMain(
 				// eslint-disable-next-line max-len
 				`throw 'To many loops (> ${loops}) in "${meta.classPath}" at' + p + ' ,method was dropped to avoid stucking';\n'`
@@ -274,7 +270,7 @@ export function compile(methodInfo: MethodInfo, options: ICompilerOptions = {}):
 			state.emitEndMain();
 		}
 
-		state.emitBeginMain('switch (p)');
+		state.emitBeginMain('switch (p) {');
 	}
 
 	let currentCatchBlocks: ExceptionInfo[];
@@ -282,7 +278,7 @@ export function compile(methodInfo: MethodInfo, options: ICompilerOptions = {}):
 	let z: Instruction;
 
 	// case + case int
-	genBrancher && moveIdnt(2);
+	genBrancher && state.moveIndent(2);
 
 	const stackF = (n: number) => emitInlineStack(state, n);
 	const local = (n: number) => emitInlineLocal(state, n);
@@ -294,7 +290,6 @@ export function compile(methodInfo: MethodInfo, options: ICompilerOptions = {}):
 
 		z && (lastZ = z);
 		z = q[i];
-		idnt = state.indent;
 
 		USE_OPT(fastCall) && fastCall.killFar(i);
 
@@ -318,8 +313,8 @@ export function compile(methodInfo: MethodInfo, options: ICompilerOptions = {}):
 		if (currentCatchBlocks) {
 			state.openTryCatchGroups.push(currentCatchBlocks);
 
-			state.emitBeginMain('try');
-			idnt = state.moveIndent(1);
+			state.emitBeginMain('try {');
+			state.moveIndent(1);
 		}
 
 		if (Settings.PRINT_BYTE_INSTRUCTION) {
@@ -705,15 +700,11 @@ export function compile(methodInfo: MethodInfo, options: ICompilerOptions = {}):
 							state.emitMain(`if (!${emitIsAXOrPrimitive(obj)}) {`);
 							// fast instruction already binded
 							state.emitMain(`   ${stackF(param(0))} = ${emitAccess(obj, mn.name)}(${pp.join(', ')});`);
-							state.emitMain('} else {');
-
-							moveIdnt(1);
+							state.emitBeginMain('} else {');
 						}
 
 						state.emitMain(`// ${mn}`);
-						state.emitMain('{');
-
-						moveIdnt(1);
+						state.emitBeginMain(); // {
 						state.emitMain(`let t = ${obj};`);
 
 						const accessor = emitAccess('t', '$Bg' + mn.name);
@@ -727,12 +718,10 @@ export function compile(methodInfo: MethodInfo, options: ICompilerOptions = {}):
 						state.emitMain(`    ${stackF(param(0))} = ${obj}.axCallProperty(${getname(param(1))}, [${pp.join(', ')}], false);`);
 						state.emitMain('}');
 
-						moveIdnt(-1);
-						state.emitMain('}');
+						state.emitEndMain(); // }
 
 						if (needFastCheck()) {
-							moveIdnt(-1);
-							state.emitMain('}');
+							state.emitEndMain(); // }
 						}
 					}
 					break;
@@ -778,14 +767,11 @@ export function compile(methodInfo: MethodInfo, options: ICompilerOptions = {}):
 						state.emitMain(`if (!${emitIsAXOrPrimitive(obj)}) {`);
 						state.emitMain(`    ${emitAccess(obj, mn.name)}(${pp.join(', ')});`);
 						state.emitMain('} else {');
-
-						moveIdnt(1);
+						state.moveIndent(1);
 					}
 
 					state.emitMain(`// ${mn}`);
-					state.emitMain('{');
-
-					moveIdnt(1);
+					state.emitBeginMain(); // {
 					state.emitMain(`let t = ${obj};`);
 
 					const accessor = emitAccess('t', '$Bg' + mn.name);
@@ -796,12 +782,10 @@ export function compile(methodInfo: MethodInfo, options: ICompilerOptions = {}):
 					state.emitMain('} else { ');
 					state.emitMain(`   ${obj}.axCallProperty(${getname(param(1))}, [${pp.join(', ')}], false);`);
 					state.emitMain('}');
+					state.emitEndMain(); // }
 
-					moveIdnt(-1);
-					state.emitMain('}');
 					if (needFastCheck()) {
-						moveIdnt(-1);
-						state.emitMain('}');
+						state.emitEndMain(); // }
 					}
 
 				}
@@ -862,8 +846,7 @@ export function compile(methodInfo: MethodInfo, options: ICompilerOptions = {}):
 						const runtime = mn.isRuntimeName() && mn.isRuntimeNamespace();
 						const target = runtime ? stack2 : stack1;
 
-						state.emitMain('{');
-						moveIdnt(1);
+						state.emitBeginMain(); //{
 
 						if (runtime) {
 							// eslint-disable-next-line max-len
@@ -874,8 +857,7 @@ export function compile(methodInfo: MethodInfo, options: ICompilerOptions = {}):
 
 						state.emitMain(`${target} = ${target}.descendants(rn);`);
 
-						moveIdnt(-1);
-						js.push(`${idnt}}`);
+						state.emitEndMain(); // }
 						break;
 
 					} else {
@@ -991,9 +973,7 @@ export function compile(methodInfo: MethodInfo, options: ICompilerOptions = {}):
 					if (needFastCheck()) {
 						state.emitMain(`if (!${emitIsAX(stack0)}) {`);
 						state.emitMain(`    ${stack0} = ${stack0}['${mn.name}'];`);
-						state.emitMain('} else {');
-
-						moveIdnt(1);
+						state.emitBeginMain('} else {');
 					}
 
 					state.emitMain(`temp = ${stack0}[AX_CLASS_SYMBOL] ? ${stack0} : sec.box(${stack0});`);
@@ -1003,8 +983,7 @@ export function compile(methodInfo: MethodInfo, options: ICompilerOptions = {}):
 					state.emitMain('}');
 
 					if (needFastCheck()) {
-						moveIdnt(-1);
-						state.emitMain('}');
+						state.emitEndMain();
 					}
 
 					break;
@@ -1015,31 +994,26 @@ export function compile(methodInfo: MethodInfo, options: ICompilerOptions = {}):
 					const target = runtime ? stack2 : stack1;
 
 					state.emitMain(`// ${mn}`);
-					state.emitMain('{');
-					moveIdnt(1);
+					state.emitBeginMain(); // {
 
 					if (runtime) {
 						state.emitMain(`const rm = context.runtimename(${getname(param(0))}, ${stack0}, ${stack1});`);
 					} else {
 						state.emitMain(`const rm = context.runtimename(${getname(param(0))}, ${stack0});`);
 					}
+
 					state.emitMain(`const b_obj = ${target}[AX_CLASS_SYMBOL] ? ${target} : sec.box(${target});\n`);
 					state.emitMain('if (typeof rm === "number") {');
 					state.emitMain(`    ${target} = b_obj.axGetNumericProperty(rm);`);
-					state.emitMain('} else {');
+					state.emitBeginMain('} else {');
 
-					moveIdnt(1);
 					state.emitMain(`${target} = b_obj['$Bg' + rm.name];`);
 					state.emitMain(`if (${target} === undefined || typeof ${target} === 'function') {`);
 					state.emitMain(`    ${target} = b_obj.axGetProperty(rm);`);
 					state.emitMain('}');
 
-					moveIdnt(-1);
-					state.emitMain('}');
-
-					moveIdnt(-1);
-					state.emitMain('}');
-
+					state.emitEndMain(); // }
+					state.emitEndMain(); // }
 					break;
 				}
 				case Bytecode.SETPROPERTY: {
@@ -1049,15 +1023,13 @@ export function compile(methodInfo: MethodInfo, options: ICompilerOptions = {}):
 					if (needFastCheck()) {
 						state.emitMain(`if (!${emitIsAX(stack1)}){`);
 						state.emitMain(`    ${emitAccess(stack1, mn.name)} = ${stack0};`);
-						state.emitMain('} else {');
-						moveIdnt(1);
+						state.emitBeginMain('} else {');
 					}
 
 					state.emitMain(`context.setproperty(${getname(param(0))}, ${stack0}, ${stack1});`);
 
 					if (needFastCheck()) {
-						moveIdnt(-1);
-						state.emitMain('}');
+						state.emitEndMain();
 					}
 					break;
 				}
@@ -1187,11 +1159,11 @@ export function compile(methodInfo: MethodInfo, options: ICompilerOptions = {}):
 
 					if (Settings.COERCE_MODE == COERCE_MODE_ENUM.DEFAULT) {
 						// eslint-disable-next-line max-len
-						js.push(`${moveIdnt(1)} ${stack0} = ${scope}.getScopeProperty(${getname(param(0))}, true, false).axCoerce(${stack0});`);
+						js.push(`${state.moveIndent(1)} ${stack0} = ${scope}.getScopeProperty(${getname(param(0))}, true, false).axCoerce(${stack0});`);
 
 					} else {
 						// eslint-disable-next-line max-len
-						js.push(`${moveIdnt(1)} var _e = ${scope}.getScopeProperty(${getname(param(0))}, true, false);`);
+						js.push(`${state.moveIndent(1)} var _e = ${scope}.getScopeProperty(${getname(param(0))}, true, false);`);
 
 						if (Settings.COERCE_MODE === COERCE_MODE_ENUM.SOFT) {
 							// eslint-disable-next-line max-len
@@ -1200,7 +1172,7 @@ export function compile(methodInfo: MethodInfo, options: ICompilerOptions = {}):
 
 						state.emitMain(`${stack0} = _e ? _e.axCoerce(${stack0}) : ${stack0};`);
 					}
-					js.push(`${moveIdnt(-1)} }`);
+					js.push(`${state.moveIndent(-1)} }`);
 
 					break;
 				}
@@ -1291,14 +1263,13 @@ export function compile(methodInfo: MethodInfo, options: ICompilerOptions = {}):
 
 	if (genBrancher) {
 		// close switch
-		js.push(`${moveIdnt(-1)} }`);
+		state.emitEndMain();
 		// close while
-		js.push(`${moveIdnt(-1)} }`);
+		state.emitEndMain();
 	}
 
-	js.push(`${moveIdnt(-1)} }`);
-
-	moveIdnt(-1);
+	// close closure
+	state.emitEndMain();
 
 	const locals = [];
 
@@ -1311,7 +1282,7 @@ export function compile(methodInfo: MethodInfo, options: ICompilerOptions = {}):
 			locals.push(`${namesIndent}// local${l.index} is assigned before read, skip init`);
 		}
 		// todo: this is not 100% correct yet:
-		locals.push(`${namesIndent} let local${l.index} = undefined`);
+		locals.push(`${namesIndent}let local${l.index} = undefined`);
 
 		// for NO_ES mode we will generate REST as copy of arguments
 		// TODO: Move this to `emitAnnotationOld`
@@ -1334,22 +1305,22 @@ export function compile(methodInfo: MethodInfo, options: ICompilerOptions = {}):
 
 	let resulMain = state.mainBlock;
 	if (USE_OPT(lexGen)) {
-		genHeader.push(lexGen.genHeader(idnt));
-		genBody.push(lexGen.genBody(idnt));
+		genHeader.push(lexGen.genHeader(state.indent));
+		genBody.push(lexGen.genBody(state.indent));
 
 		// mutated generated codeblock
 		resulMain = lexGen.genPost(resulMain);
 	}
 
 	const scriptHeader =
-	`/*
-		Index: ${meta.index}
-		Path:  ${meta.classPath}
-		Type:  ${meta.type}
-		Kind:  ${meta.kind}
-		Super: ${meta.superClass || '-'}
-		Return: ${meta.returnType}
-	*/\n\n`;
+`/*
+	Index: ${meta.index}
+	Path:  ${meta.classPath}
+	Type:  ${meta.type}
+	Kind:  ${meta.kind}
+	Super: ${meta.superClass || '-'}
+	Return: ${meta.returnType}
+*/\n\n`;
 
 	const w =
 		scriptHeader +

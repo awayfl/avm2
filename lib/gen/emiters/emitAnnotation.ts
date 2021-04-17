@@ -14,9 +14,6 @@ export function emitAnnotation (state: CompilerState): IFunctionAnnotation  {
 
 	let paramsShift = 0;
 
-	// shift function body
-	const idnt = state.moveIndent(1);
-
 	const args: {name: string, value?: any, type?: string}[] = [];
 	const js0 = [];
 
@@ -54,15 +51,15 @@ export function emitAnnotation (state: CompilerState): IFunctionAnnotation  {
 
 	const mname =  methodName.replace(/([^a-z0-9]+)/gi, '_');
 
-	js0.push(`${idnt} return function compiled_${mname}(${argsFilled}) {`);
+	js0.push(`${state.indent}return function compiled_${mname}(${argsFilled}) {`);
 
 	state.moveIndent(1);
 
 	if (state.isPossibleGlobalThis) {
 		// eslint-disable-next-line max-len
-		js0.push(`${idnt} let ${emitInlineLocal(state, 0)} = this === context.jsGlobal ? context.savedScope.global.object : this;`);
+		js0.push(`${state.indent}let ${emitInlineLocal(state, 0)} = this === context.jsGlobal ? context.savedScope.global.object : this;`);
 	} else {
-		js0.push(`${idnt} let ${emitInlineLocal(state, 0)} = this;`);
+		js0.push(`${state.indent}let ${emitInlineLocal(state, 0)} = this;`);
 	}
 
 	for (const a of args) {
@@ -85,19 +82,20 @@ export function emitAnnotation (state: CompilerState): IFunctionAnnotation  {
 		}
 
 		if (argCoerce) {
-			js0.push(`${idnt} /* Force ${a.type} coerce */`);
-			js0.push(`${idnt} ${argCoerce}`);
+			js0.push(`${state.indent}/* Force ${a.type} coerce */`);
+			js0.push(`${state.indent}${argCoerce}`);
 		}
 	}
 
 	if (methodInfo.needsRest()) {
-		js0.push(`${idnt} let ${emitInlineLocal(state, params.length + 1)} = context.sec.createArrayUnsafe(args);`);
+		// eslint-disable-next-line max-len
+		js0.push(`${state.indent}let ${emitInlineLocal(state, params.length + 1)} = context.sec.createArrayUnsafe(args);`);
 		paramsShift += 1;
 	}
 
 	if (methodInfo.needsArguments()) {
 		// eslint-disable-next-line max-len
-		js0.push(`${idnt} let ${emitInlineLocal(state, params.length + 1)} = context.sec.createArrayUnsafe(Array.from(arguments));`);
+		js0.push(`${state.indent}let ${emitInlineLocal(state, params.length + 1)} = context.sec.createArrayUnsafe(Array.from(arguments));`);
 		paramsShift += 1;
 	}
 

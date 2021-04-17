@@ -49,7 +49,7 @@ export class CompilerState {
 		if (this._indentLen < 0)
 			this._indentLen = 0;
 
-		this._indent = (' ').repeat(this._indentLen ? this._indentLen - 1 : 0);
+		this._indent = (' ').repeat(this._indentLen);
 
 		return this._indent;
 	}
@@ -75,7 +75,7 @@ export class CompilerState {
 	 * @returns line count
 	 */
 	public emitMain(line: string = ''): number {
-		return this.mainBlock.push(this.indent + ' ' + line);
+		return this.mainBlock.push(this.indent + line);
 	}
 
 	/**
@@ -84,15 +84,15 @@ export class CompilerState {
 	 * @returns line count
 	 */
 	public emitHead(line: string, indent: string = ''): number {
-		return this.headerBlock.push(indent + ' ' + line);
+		return this.headerBlock.push(indent + line);
 	}
 
 	/**
 	 * Emit block begin ({) and move indent right
-	 * @param beforeBracket string that was emited before {
+	 * @param value string that was emited instead of {
 	 */
-	public emitBeginMain(beforeBracket = '') {
-		const pos = this.emitMain(beforeBracket + ' {');
+	public emitBeginMain(value: string = '{') {
+		const pos = this.emitMain(value);
 		this.moveIndent(1);
 		return pos;
 	}

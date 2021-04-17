@@ -3,8 +3,7 @@ import { CompilerState } from './../CompilerState';
 import { emitInlineMultiname } from './emitInlineMultiname';
 
 export function emitOpenCatchConditions (state: CompilerState, catchBlocks: ExceptionInfo[]) {
-	state.emitMain('catch(e) {');
-	state.moveIndent(1);
+	state.emitBeginMain('catch(e) {');
 
 	state.emitMain('// in case this is a error coming from stack0.__fast when stack0 is undefined,');
 	state.emitMain('// we convert it to a ASError, so that avm2 can still catch it');
@@ -47,8 +46,7 @@ export function emitOpenCatchConditions (state: CompilerState, catchBlocks: Exce
 
 //	reopen all try-catch blocks. used when entering a new case-block
 export function emitOpenTryCatch(state: CompilerState, _group: ExceptionInfo[]) {
-	state.emitMain('try {');
-	state.moveIndent(1);
+	state.emitBeginMain('try {');
 }
 
 export function emitCloseTryCatch (state: CompilerState, group: ExceptionInfo[]) {
