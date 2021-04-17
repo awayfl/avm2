@@ -4,20 +4,23 @@ import { MethodInfo } from '../abc/lazy/MethodInfo';
 import { TRAIT } from '../abc/lazy/TRAIT';
 import { Settings } from '../Settings';
 import { Multiname } from './../abc/lazy/Multiname';
+import { Instruction } from './affiliate';
 
 export class CompilerState {
 	private _indent: string = '';
 	private _indentLen: number = 0;
 
+	public methodInfo: MethodInfo
+	public abc: ABCFile;
 	public names: Multiname[] = [];
 	public openTryCatchGroups: ExceptionInfo[][] = [];
-
 	// same as js0 in compile
 	public mainBlock: string[] = [];
 	// same as js in compile
 	public headerBlock: string[] = [];
 
-	public abc: ABCFile;
+	public oppcodes: Instruction[];
+	public currentOppcode: Instruction;
 
 	public get indent() {
 		return this._indent;
@@ -36,9 +39,8 @@ export class CompilerState {
 		return !this.isPossibleGlobalThis;
 	}
 
-	constructor(
-		public methodInfo: MethodInfo
-	) {
+	constructor (methodInfo: MethodInfo) {
+		this.methodInfo = methodInfo;
 		this.abc = methodInfo.abc;
 	}
 

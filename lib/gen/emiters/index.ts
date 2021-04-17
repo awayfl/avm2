@@ -3,4 +3,5 @@ export * from './emitAnnotationOld';
 export * from './emitInlineAccessor';
 export * from './emitCatch';
 export * from './emitInlineMultiname';
-export * from './emitLocal';
+export * from './emitInlineVars';
+export * from './emitDomainMemOppcodes';

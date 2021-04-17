@@ -1,7 +1,6 @@
 import { CONSTANT } from '../../abc/lazy/CONSTANT';
-import { TRAIT } from '../../abc/lazy/TRAIT';
 import { CompilerState } from './../CompilerState';
-import { emitLocal } from './emitLocal';
+import { emitInlineLocal } from './emitInlineVars';
 export interface IFunctionAnnotation {
 	annotation: string,
 	paramsShift: number
@@ -23,7 +22,7 @@ export function emitAnnotation (state: CompilerState): IFunctionAnnotation  {
 
 	for (let i = 0; i < params.length; i++) {
 		const p = params[i];
-		const arg = { name: emitLocal(state, i + 1), value: null, type: '' };
+		const arg = { name: emitInlineLocal(state, i + 1), value: null, type: '' };
 
 		if (p.hasOptionalValue()) {
 			switch (p.optionalValueKind) {
@@ -61,9 +60,9 @@ export function emitAnnotation (state: CompilerState): IFunctionAnnotation  {
 
 	if (state.isPossibleGlobalThis) {
 		// eslint-disable-next-line max-len
-		js0.push(`${idnt} let ${emitLocal(state, 0)} = this === context.jsGlobal ? context.savedScope.global.object : this;`);
+		js0.push(`${idnt} let ${emitInlineLocal(state, 0)} = this === context.jsGlobal ? context.savedScope.global.object : this;`);
 	} else {
-		js0.push(`${idnt} let ${emitLocal(state, 0)} = this;`);
+		js0.push(`${idnt} let ${emitInlineLocal(state, 0)} = this;`);
 	}
 
 	for (const a of args) {
@@ -92,13 +91,13 @@ export function emitAnnotation (state: CompilerState): IFunctionAnnotation  {
 	}
 
 	if (methodInfo.needsRest()) {
-		js0.push(`${idnt} let ${emitLocal(state, params.length + 1)} = context.sec.createArrayUnsafe(args);`);
+		js0.push(`${idnt} let ${emitInlineLocal(state, params.length + 1)} = context.sec.createArrayUnsafe(args);`);
 		paramsShift += 1;
 	}
 
 	if (methodInfo.needsArguments()) {
 		// eslint-disable-next-line max-len
-		js0.push(`${idnt} let ${emitLocal(state, params.length + 1)} = context.sec.createArrayUnsafe(Array.from(arguments));`);
+		js0.push(`${idnt} let ${emitInlineLocal(state, params.length + 1)} = context.sec.createArrayUnsafe(Array.from(arguments));`);
 		paramsShift += 1;
 	}
 

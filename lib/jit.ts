@@ -44,7 +44,10 @@ import {
 	emitCloseTryCatch,
 	emitOpenTryCatch,
 	emitInlineMultiname,
-	emitLocal
+	emitInlineLocal,
+	emitInlineStack,
+	UNDERRUN,
+	emitDomainMemOppcodes
 } from './gen/emiters';
 
 import {
@@ -113,7 +116,7 @@ export interface ICompilerOptions {
 export function compile(methodInfo: MethodInfo, options: ICompilerOptions = {}): ICompilerProcess {
 	const {
 		optimise = COMPILER_DEFAULT_OPT,
-		scope,
+		scope: executionScope,
 	} = options;
 
 	const state = new CompilerState(methodInfo);
@@ -127,7 +130,7 @@ export function compile(methodInfo: MethodInfo, options: ICompilerOptions = {}):
 	]);
 
 	const tinyCtr = new TinyConstructor();
-	const fastCall = new FastCall(lexGen, scope);
+	const fastCall = new FastCall(lexGen, executionScope);
 
 	Stat.begin('');
 
@@ -186,9 +189,6 @@ export function compile(methodInfo: MethodInfo, options: ICompilerOptions = {}):
 	}
 
 	const params = methodInfo.parameters;
-
-	const underrun = '[stack underrun]';
-
 	// shift function body
 	moveIdnt(1);
 
@@ -285,7 +285,14 @@ export function compile(methodInfo: MethodInfo, options: ICompilerOptions = {}):
 	// case + case int
 	genBrancher && moveIdnt(2);
 
+	const stackF = (n: number) => emitInlineStack(state, n);
+	const local = (n: number) => emitInlineLocal(state, n);
+	const param = (n: number) => state.currentOppcode.params[n];
+
 	for (let i: number = 0; i < q.length; i++) {
+		// store oppcode in state
+		state.currentOppcode = q[i];
+
 		z && (lastZ = z);
 		z = q[i];
 		idnt = state.indent;
@@ -320,23 +327,13 @@ export function compile(methodInfo: MethodInfo, options: ICompilerOptions = {}):
 			state.emitMain(`//${BytecodeName[z.name]} ${z.params.join(' / ')} -> ${z.returnTypeId}`);
 		}
 
-		const stackF = (n: number) => {
-			return ((z.stack - 1 - n) >= 0)
-				? `stack${(z.stack - 1 - n)}`
-				: `/*${underrun} ${z.stack - 1 - n}*/ stack0`;
-		};
-
 		const stack0 = stackF(0);
 		const stack1 = stackF(1);
 		const stack2 = stackF(2);
 		const stack3 = stackF(3);
 		const stackN = stackF(-1);
-
 		const scope = z.scope > 0 ? `scope${(z.scope - 1)}` : 'context.savedScope';
 		const scopeN = 'scope' + z.scope;
-
-		const local = (n: number) => emitLocal(state, n);
-		const param = (n: number) => z.params[n];
 
 		if (z.stack < 0) {
 			js.push(`${idnt} // unreachable`);
@@ -1254,51 +1251,8 @@ export function compile(methodInfo: MethodInfo, options: ICompilerOptions = {}):
 
 				default:
 					if (!(optimise & COMPILER_OPT_FLAGS.SKIP_DOMAIN_MEM)) {
-						switch (z.name) {
-							//http://docs.redtamarin.com/0.4.1T124/avm2/intrinsics/memory/package.html#si32()
-							case Bytecode.SI8:
-								js.push(`${idnt} domainMemory = domainMemory || context.domainMemory;`);
-								js.push(`${idnt} domainMemory.setInt8(${stack0}, ${stack1})`);
-								break;
-							case Bytecode.SI16:
-								js.push(`${idnt} domainMemory = domainMemory || context.domainMemory;`);
-								js.push(`${idnt} domainMemory.setInt16(${stack0}, ${stack1}, true);`);
-								break;
-							case Bytecode.SI32:
-								js.push(`${idnt} domainMemory = domainMemory || context.domainMemory;`);
-								js.push(`${idnt} domainMemory.setInt32(${stack0}, ${stack1}, true);`);
-								break;
-							case Bytecode.SF32:
-								js.push(`${idnt} domainMemory = domainMemory || context.domainMemory;`);
-								js.push(`${idnt} domainMemory.setFloat32(${stack0}, ${stack1}, true);`);
-								break;
-							case Bytecode.SF64:
-								js.push(`${idnt} domainMemory = domainMemory || context.domainMemory;`);
-								js.push(`${idnt} domainMemory.setFloat64(${stack0}, ${stack1}, true);`);
-								break;
-
-							//http://docs.redtamarin.com/0.4.1T124/avm2/intrinsics/memory/package.html#li32()
-							case Bytecode.LI8:
-								js.push(`${idnt} domainMemory = domainMemory || context.domainMemory;`);
-								js.push(`${idnt} ${stack0} = domainMemory.getInt8(${stack0})`);
-								break;
-							case Bytecode.LI16:
-								js.push(`${idnt} domainMemory = domainMemory || context.domainMemory;`);
-								js.push(`${idnt} ${stack0} = getInt16(${stack0}, true);`);
-								break;
-							case Bytecode.LI32:
-								js.push(`${idnt} domainMemory = domainMemory || context.domainMemory;`);
-								js.push(`${idnt} ${stack0} = domainMemory.getInt32(${stack0}, true);`);
-								break;
-							case Bytecode.LF32:
-								js.push(`${idnt} domainMemory = domainMemory || context.domainMemory;`);
-								js.push(`${idnt} ${stack0} = domainMemory.getFloat32(${stack0}, true);`);
-								break;
-							case Bytecode.LF64:
-								js.push(`${idnt} domainMemory = domainMemory || context.domainMemory;`);
-								js.push(`${idnt} ${stack0} = domainMemory.getFloat64(${stack0}, true);`);
-								break;
-						}
+						// not required push oppcode, because state should store active
+						emitDomainMemOppcodes(state);
 					}
 
 					if ((z.name <= Bytecode.LI8 && z.name >= Bytecode.SF64)) {
@@ -1403,14 +1357,14 @@ export function compile(methodInfo: MethodInfo, options: ICompilerOptions = {}):
 		genBody.join('\n') + '\n' +
 		resulMain.join('\n');
 
-	const hasError = w.indexOf(underrun) > -1;
+	const hasError = w.indexOf(UNDERRUN) > -1;
 
 	const compiled = generateFunc(w, meta.filePath);
 
 	let underrunLine = -1;
 
 	if (hasError) {
-		underrunLine = w.split('\n').findIndex(v => v.indexOf(underrun) >= 0) + 3;
+		underrunLine = w.split('\n').findIndex(v => v.indexOf(UNDERRUN) >= 0) + 3;
 	}
 
 	// reset lexer
