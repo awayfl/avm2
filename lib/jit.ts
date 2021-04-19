@@ -72,7 +72,7 @@ export function UNSAFE_attachMethodHook(
 }
 
 function generateFunc(body: string, path: string) {
-	body += `\n//# sourceURL=${Settings.HTTP_STRING}://jit/${path}.js`;
+	body += `\n//# sourceURL=jit/${path}.js`;
 
 	try {
 		return  new Function('context', body);
