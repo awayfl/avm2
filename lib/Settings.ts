@@ -67,5 +67,5 @@ export const Settings: IAVM2Settings = {
 	/**
 	 * @description switch between http and https for jit files
 	 */
-	HTTP_STRING: 'http'
+	HTTP_STRING: 'http://'
 };
