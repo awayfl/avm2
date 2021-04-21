@@ -57,6 +57,10 @@ export class AVM2Handler implements IAVMHandler {
 		});
 	}
 
+	public dispose() {
+		this._playerglobal.dispose();
+	}
+
 	public enterFrame(dt: number) {
 		this._playerglobal.enterFrame();
 	}
