@@ -68,7 +68,7 @@ export const Settings: IAVM2Settings = {
 	/**
 	 * @description switch between http and https for jit files
 	 */
-	HTTP_STRING: 'http',
+	HTTP_STRING: 'http://'
 
 	/**
 	 * @description Use `this` when poosible use real context without store it as local0, this should help debug

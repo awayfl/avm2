@@ -12,6 +12,8 @@ export interface IPlayerGlobal{
 
 	enterFrame();
 
+	dispose();
+
 	resizeStage();
 
 	addAsset(asset: IAsset, addScene: boolean);

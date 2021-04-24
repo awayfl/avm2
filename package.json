@@ -1,6 +1,6 @@
 {
   "name": "@awayfl/avm2",
-  "version": "0.2.161",
+  "version": "0.2.165",
   "description": "Virtual machine for executing AS3 code",
   "main": "bundle/awayfl-avm2.umd.js",
   "module": "dist/index.js",
@@ -67,7 +67,7 @@
     "rollup-plugin-commonjs": "^9.1.0",
     "rollup-plugin-includepaths": "^0.2.1",
     "rollup-plugin-node-resolve": "^3.3.0",
-    "tslib": "^2.0.3",
+    "tslib": "^1.9.0",
     "typescript": "^3.7.3",
     "uglify-js": "^3.0.15"
   },
