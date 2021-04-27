@@ -11,6 +11,7 @@ export interface IAVM2Settings {
 	NO_PROPAGATE_SCOPES_FOR_TRY: boolean;
 	HTTP_STRING: string;
 	EMIT_REAL_THIS: boolean;
+	USE_WEAK_REF: boolean;
 }
 
 export const enum COERCE_MODE_ENUM {
@@ -73,5 +74,10 @@ export const Settings: IAVM2Settings = {
 	/**
 	 * @description Use `this` when poosible use real context without store it as local0, this should help debug
 	 */
-	EMIT_REAL_THIS: true
+	EMIT_REAL_THIS: false,
+
+	/**
+	 * @description Use `WeakRef` for holding a Orphan in OrphanaManager on supported platforms
+	 */
+	USE_WEAK_REF: true
 };

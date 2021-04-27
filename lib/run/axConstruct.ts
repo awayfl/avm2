@@ -4,6 +4,7 @@ import { AXClass, IS_AX_CLASS } from './AXClass';
 import { Multiname } from '../abc/lazy/Multiname';
 import { ASObject } from '../nat/ASObject';
 import { RuntimeTraits } from '../abc/lazy/RuntimeTraits';
+import { Settings } from '../Settings';
 
 export class ActiveLoaderContext {
 	//	ActiveLoaderContext.loaderContext is a hack !
@@ -16,40 +17,52 @@ interface IAwayApplicationDomain {
 	getSymbolDefinition(clasName: string): any;
 	getSymbolAdaptee(clasName: string): any;
 }
+declare global {
+	interface Window { WeakRef: typeof WeakRef}
+}
+
+const USE_WEAK = ('WeakRef' in self) && Settings.USE_WEAK_REF;
+
+if (USE_WEAK) {
+	console.debug('[OrphanManager] `WeakRef` used for orphans!');
+}
 
 // todo: move OrphanManager elsewhere and add strong type
 // maybe eve solve the orphan-issue in otherway alltogether
 export class OrphanManager {
 
-	static orphans: DisplayObject[] = [];
+	static orphans: Record<number, WeakRef<DisplayObject> | DisplayObject> = {};
 
 	static addOrphan(orphan: DisplayObject) {
-
-		if (OrphanManager.orphans.indexOf(orphan) !== -1)
+		if (orphan.id in this.orphans)
 			return;
 
-		OrphanManager.orphans.push(orphan);
+		this.orphans[orphan.id] = USE_WEAK ? new self.WeakRef(orphan) : orphan;
 	}
 
 	static removeOrphan(orphan: DisplayObject) {
-
-		const index: number = OrphanManager.orphans.indexOf(orphan);
-
-		if (index === -1)
-			return;
-
-		OrphanManager.orphans.splice(index, 1);
+		delete this.orphans[orphan.id];
 	}
 
 	static updateOrphans() {
 
 		let orphan: DisplayObject;
 
-		for (let i = 0; i < OrphanManager.orphans.length; i++) {
-			orphan = OrphanManager.orphans[i];
-			if (orphan.isAsset(MovieClip) && !orphan.parent) {
-				(<MovieClip>orphan).advanceFrame();
-				FrameScriptManager.execute_as3_constructors_recursiv(<MovieClip> orphan);
+		for (const key in this.orphans) {
+			orphan = <DisplayObject> this.orphans[key];
+
+			if (USE_WEAK && orphan) {
+				orphan = (<any> orphan)?.deref();
+			}
+
+			if (orphan) {
+				if (orphan.isAsset(MovieClip) && !orphan.parent) {
+					(<MovieClip>orphan).advanceFrame();
+					FrameScriptManager.execute_as3_constructors_recursiv(<MovieClip> orphan);
+				}
+			} else {
+				console.debug('[OrphanManager] Orphan was deleted by GC:', key);
+				delete this.orphans[key];
 			}
 		}
 	}
