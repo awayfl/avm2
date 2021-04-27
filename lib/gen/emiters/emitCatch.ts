@@ -3,6 +3,8 @@ import { CompilerState } from './../CompilerState';
 import { emitInlineMultiname } from './emitInlineMultiname';
 
 export function emitOpenCatchConditions (state: CompilerState, catchBlocks: ExceptionInfo[]) {
+	// catch push Error on stack top
+	state.popThisAlias('stack0');
 	state.emitBeginMain('catch(e) {');
 
 	state.emitMain('// in case this is a error coming from stack0.__fast when stack0 is undefined,');
