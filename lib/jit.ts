@@ -872,17 +872,18 @@ export function compile(methodInfo: MethodInfo, options: ICompilerOptions = {}):
 					state.emitMain(`// ${mn}`);
 					state.popThisAlias(stackF(-1, false));
 
+					const target = stackF(-1);
 					if (USE_OPT(lexGen) && lexGen.test(mn, false)) {
 						state.emitMain('/* GenerateLexImports */');
 						// eslint-disable-next-line max-len
-						state.emitMain(`${stackF(-1)} = ${lexGen.getPropStrictAlias(mn,<any>{
+						state.emitMain(`${target} = ${lexGen.getPropStrictAlias(mn,<any>{
 							nameAlias: getname(param(0)),
 							/*findProp: true,*/
 						})};`);
 
 						if (USE_OPT(fastCall)) {
 							const mangled = (lexGen.getGenerator(mn, false) instanceof TopLevelLex);
-							fastCall.mark(stackN, i, mangled, mn);
+							fastCall.mark(target, i, mangled, mn);
 						}
 						break;
 					}
@@ -1044,12 +1045,12 @@ export function compile(methodInfo: MethodInfo, options: ICompilerOptions = {}):
 					const target = stackF(0);
 					{
 						let d: ICallEntry;
-						if (USE_OPT(fastCall) && (d = fastCall.sureThatFast(stack0, mn.name))) {
+						if (USE_OPT(fastCall) && (d = fastCall.sureThatFast(target, mn.name))) {
 							const n = d.isMangled ? Multiname.getPublicMangledName(mn.name) : mn.name;
-							fastCall.kill(stack0);
+							fastCall.kill(target);
 
-							state.emitMain('/* We sure that this safe call */ ');
-							state.emitMain(`${target} = ${emitAccess(stack0, n)};`);
+							state.emitMain('/* We sure that this safe get */ ');
+							state.emitMain(`${target} = ${emitAccess(target, n)};`);
 							break;
 						}
 					}
