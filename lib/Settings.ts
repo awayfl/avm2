@@ -11,6 +11,7 @@ export interface IAVM2Settings {
 	NO_PROPAGATE_SCOPES_FOR_TRY: boolean;
 	HTTP_STRING: string;
 	EMIT_REAL_THIS: boolean;
+	UNSAFE_PROPOGATE_THIS: boolean;
 	USE_WEAK_REF: boolean;
 }
 
@@ -75,6 +76,11 @@ export const Settings: IAVM2Settings = {
 	 * @description Use `this` when poosible use real context without store it as local0, this should help debug
 	 */
 	EMIT_REAL_THIS: false,
+
+	/**
+	 * @description Try propagade `this` in instruction set, super unsafe. Disable it when any errors is exist
+	 */
+	UNSAFE_PROPOGATE_THIS: true,
 
 	/**
 	 * @description Use `WeakRef` for holding a Orphan in OrphanaManager on supported platforms

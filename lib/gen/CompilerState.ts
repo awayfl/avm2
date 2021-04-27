@@ -114,10 +114,16 @@ export class CompilerState {
 	}
 
 	public isThisAlias(alias: string): boolean {
+		if (!Settings.UNSAFE_PROPOGATE_THIS)
+			return false;
+
 		return this.thisAlliases.has(alias);
 	}
 
 	public pushThisAlias(alias: string, from?: string): boolean {
+		if (!Settings.UNSAFE_PROPOGATE_THIS)
+			return false;
+
 		if (from && !this.thisAlliases.has(from))
 			return false;
 
@@ -125,6 +131,8 @@ export class CompilerState {
 			return false;
 
 		this.thisAlliases.add(alias);
+
+		return true;
 	}
 
 	public popThisAlias(alias: string): boolean {
