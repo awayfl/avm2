@@ -75,7 +75,7 @@ export const Settings: IAVM2Settings = {
 	/**
 	 * @description Use `this` when poosible use real context without store it as local0, this should help debug
 	 */
-	EMIT_REAL_THIS: false,
+	EMIT_REAL_THIS: true,
 
 	/**
 	 * @description Try propagade `this` in instruction set, super unsafe. Disable it when any errors is exist
