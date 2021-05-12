@@ -7,7 +7,7 @@ const LONG_NAMES = /nape./;
 
 export const extClasses = {
 	lib: null
-}
+};
 
 export function getExtClassField(name: string, namespace: string = undefined): Ctr | null {
 	const lib = extClasses.lib;
