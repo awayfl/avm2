@@ -11,6 +11,7 @@ export {
 	registerNativeFunction,
 } from './lib/nat/initializeBuiltins';
 
+export { ASMethodClosure } from './lib/nat/ASMethodClosure';
 export { XMLDocument, XMLNode } from './lib/natives/xml-document';
 
 export { ByteArray, ObjectEncoding } from './lib/natives/byteArray';
@@ -52,7 +53,7 @@ export { IPlayerGlobal } from './lib/IPlayerGlobal';
 export { AVM2Handler } from './lib/AVM2Handler';
 export { AVM2LoadLibrariesFlags } from './lib/AVM2LoadLibrariesFlags';
 
-export { PREF_BOX2D_VERSION, BOX2D_PREFERENCE } from './lib/external';
+export { extClasses } from './lib/ext/external';
 
 export { Natives } from './lib/nat/Natives';
 export { UNSAFE_attachMethodHook } from './lib/jit';
