@@ -1,5 +1,5 @@
 import { Multiname } from './../abc/lazy/Multiname';
-import { getExtClassField } from '../ext/external';
+import { getExtClassField, extClasses } from '../ext/external';
 import { IGenerator } from './IGenerator';
 import { NamespaceType } from '../abc/lazy/NamespaceType';
 
@@ -244,7 +244,7 @@ export class PhysicsLex extends LexImportsGenerator {
 	public test(mn: Multiname) {
 		const uri = mn.namespace?.uri;
 
-		if (!uri) {
+		if (!uri || !extClasses.lib) {
 			return false;
 		}
 
@@ -260,6 +260,7 @@ export class PhysicsLex extends LexImportsGenerator {
 		if (mn.name.includes('Debug')) {
 			return false;
 		}
+
 		return true;
 	}
 }
