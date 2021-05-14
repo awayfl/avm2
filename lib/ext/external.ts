@@ -1,27 +1,26 @@
 import { Multiname } from './../abc/lazy/Multiname';
-import { BOX2D_PREFERENCE } from './../external';
 
 export const IS_EXTERNAL_CLASS = Symbol('External class marker');
 type Ctr = { new (): Object };
 
 const LONG_NAMES = /nape./;
 
-let extClassLib = undefined;
-export function getExtClassField(name: string, namespace: string = undefined): Ctr | null {
-	const lib = extClassLib  || (extClassLib =  BOX2D_PREFERENCE.prefer);
+export const extClasses = {
+	lib: null
+};
 
-	if (!lib || !name) {
+export function getExtClassField(name: string, namespace: string = undefined): Ctr | null {
+	const lib = extClasses.lib;
+
+	if (!lib || !name)
 		return null;
-	}
 
 	// fast check, for Box2D
-	if (!namespace || typeof lib[name] !== 'undefined') {
+	if (!namespace || typeof lib[name] !== 'undefined')
 		return lib[name];
-	}
 
-	if (!namespace) {
+	if (!namespace)
 		return null;
-	}
 
 	let trace = lib;
 	const path = namespace.split('.');
@@ -41,13 +40,8 @@ export function getExtClassField(name: string, namespace: string = undefined): C
  * @param args {any[]}
  */
 export function extClassContructor(mn: Multiname, args: any[]) {
-	if (!extClassLib) {
-		extClassLib = BOX2D_PREFERENCE.prefer;
-	}
-
-	if (!extClassLib) {
+	if (!extClasses.lib)
 		return null;
-	}
 
 	const ns = mn.namespace?.uri;
 	const name = mn.name;
@@ -72,28 +66,27 @@ export function extClassContructor(mn: Multiname, args: any[]) {
 }
 
 export function emitIsAX(name: string) {
-	if (!BOX2D_PREFERENCE.prefer) {
+	if (!extClasses.lib)
 		return 'true';
-	}
 
 	return `(${name} != undefined && ${name}[AX_CLASS_SYMBOL])`;
 }
 
 export function needFastCheck() {
-	return !!BOX2D_PREFERENCE.prefer;
+	return !!extClasses.lib;
 }
 
 export function emitIsAXOrPrimitive(name: string, explictNull = false): string {
-	if (!BOX2D_PREFERENCE.prefer) {
+	if (!extClasses.lib)
 		return 'true';
-	}
+
 	const nullTest = explictNull ? '' : `|| ${name} == null`;
 	return `(_a = typeof ${name}, ((_a !== 'object' && _a !== 'function' ) ${nullTest} || ${name}[AX_CLASS_SYMBOL]))`;
 }
 
 export function emitIsCallableNative(name: string, func: string) {
-	if (!BOX2D_PREFERENCE.prefer) {
+	if (!extClasses.lib)
 		return 'false';
-	}
+
 	return `( !${name}[AX_CLASS_SYMBOL] && typeof ${name}['${func}'] === 'function')`;
 }
