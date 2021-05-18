@@ -25,8 +25,6 @@ export class OrphanManager {
 
 	static addOrphan(orphan: DisplayObject) {
 
-		if (orphan.adapter && (<any>orphan.adapter).axClassName == 'Tile')
-			return;
 		if (OrphanManager.orphans.indexOf(orphan) !== -1)
 			return;
 
