@@ -32,15 +32,28 @@ if (USE_WEAK) {
 export class OrphanManager {
 
 	static orphans: Record<number, WeakRef<DisplayObject> | DisplayObject> = Object.create(null);
+	static totalOrphansCount: number = 0;
 
-	static addOrphan(orphan: DisplayObject) {
+	static addOrphan(orphan: DisplayObject = null) {
+		if (!orphan) {
+			return;
+		}
+
+		if (!orphan.isAsset || !orphan.isAsset(MovieClip) && !orphan.isAsset(Sprite))
+			return;
+
 		if (orphan.id in this.orphans)
 			return;
 
 		this.orphans[orphan.id] = USE_WEAK ? new self.WeakRef(orphan) : orphan;
+		this.totalOrphansCount++;
 	}
 
 	static removeOrphan(orphan: DisplayObject) {
+		if (!(orphan.id in this.orphans))
+			return;
+
+		this.totalOrphansCount--;
 		delete this.orphans[orphan.id];
 	}
 
@@ -56,12 +69,13 @@ export class OrphanManager {
 			}
 
 			if (orphan) {
-				if ((orphan.isAsset(MovieClip) || orphan.isAsset(Sprite)) && !orphan.parent) {
+				if (!orphan.parent) {
 					(<MovieClip>orphan).advanceFrame();
 					FrameScriptManager.execute_as3_constructors_recursiv(<MovieClip> orphan);
 				}
 			} else {
 				console.debug('[OrphanManager] Orphan was deleted by GC:', key);
+				this.totalOrphansCount--;
 				delete this.orphans[key];
 			}
 		}
@@ -205,8 +219,8 @@ export function axConstruct(argArray?: any[]) {
 	object.axInitializer.apply(object,argArray);
 	object.constructorHasRun = true;
 
-	if (object.adaptee instanceof MovieClip)
-		OrphanManager.addOrphan(object.adaptee);
+	// check internally to allow add as orphan
+	OrphanManager.addOrphan(object.adaptee);
 
 	if (object.isAVMFont) {
 		// hack for font: make sure the fontName is set on Font
