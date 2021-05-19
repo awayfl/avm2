@@ -1,4 +1,4 @@
-import { MovieClip, FrameScriptManager, DisplayObject } from '@awayjs/scene';
+import { MovieClip, FrameScriptManager, DisplayObject, Sprite } from '@awayjs/scene';
 import { AssetBase } from '@awayjs/core';
 import { AXClass, IS_AX_CLASS } from './AXClass';
 import { Multiname } from '../abc/lazy/Multiname';
@@ -28,10 +28,10 @@ if (USE_WEAK) {
 }
 
 // todo: move OrphanManager elsewhere and add strong type
-// maybe eve solve the orphan-issue in otherway alltogether
+// 	maybe eve solve the orphan-issue in otherway alltogether
 export class OrphanManager {
 
-	static orphans: Record<number, WeakRef<DisplayObject> | DisplayObject> = {};
+	static orphans: Record<number, WeakRef<DisplayObject> | DisplayObject> = Object.create(null);
 
 	static addOrphan(orphan: DisplayObject) {
 		if (orphan.id in this.orphans)
@@ -56,7 +56,7 @@ export class OrphanManager {
 			}
 
 			if (orphan) {
-				if (orphan.isAsset(MovieClip) && !orphan.parent) {
+				if ((orphan.isAsset(MovieClip) || orphan.isAsset(Sprite)) && !orphan.parent) {
 					(<MovieClip>orphan).advanceFrame();
 					FrameScriptManager.execute_as3_constructors_recursiv(<MovieClip> orphan);
 				}
