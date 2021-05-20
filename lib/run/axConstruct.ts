@@ -1,4 +1,4 @@
-import { MovieClip, FrameScriptManager, DisplayObject, Sprite } from '@awayjs/scene';
+import { MovieClip, FrameScriptManager, DisplayObject, Sprite, DisplayObjectContainer } from '@awayjs/scene';
 import { AssetBase } from '@awayjs/core';
 import { AXClass, IS_AX_CLASS } from './AXClass';
 import { Multiname } from '../abc/lazy/Multiname';
@@ -24,7 +24,9 @@ export class OrphanManager {
 	static orphans: DisplayObject[] = [];
 
 	static addOrphan(orphan: DisplayObject) {
-
+		if (!orphan.isAsset || (!(orphan.isAsset(MovieClip) || orphan.isAsset(Sprite) ||
+			orphan.isAsset(DisplayObjectContainer))))
+			return;
 		if (OrphanManager.orphans.indexOf(orphan) !== -1)
 			return;
 
@@ -44,13 +46,24 @@ export class OrphanManager {
 	static updateOrphans() {
 
 		let orphan: DisplayObject;
-
+		let orphansWithParents = 0;
 		for (let i = 0; i < OrphanManager.orphans.length; i++) {
 			orphan = OrphanManager.orphans[i];
-			if (orphan.isAsset(MovieClip) || orphan.isAsset(Sprite) && !orphan.parent) {
+			if (!orphan.parent) {
 				(<MovieClip>orphan).advanceFrame();
 				FrameScriptManager.execute_as3_constructors_recursiv(<MovieClip> orphan);
+			} else {
+				orphansWithParents++;
 			}
+		}
+		if (orphansWithParents > 10) {
+			const cleanOrphans = [];
+			for (let i = 0; i < OrphanManager.orphans.length; i++) {
+				orphan = OrphanManager.orphans[i];
+				if (!orphan.parent)
+					cleanOrphans.push(orphan);
+			}
+			OrphanManager.orphans = cleanOrphans;
 		}
 	}
 }
@@ -192,7 +205,7 @@ export function axConstruct(argArray?: any[]) {
 	object.axInitializer.apply(object,argArray);
 	object.constructorHasRun = true;
 
-	if (object.adaptee instanceof MovieClip || object.adaptee instanceof Sprite)
+	if (object.adaptee)
 		OrphanManager.addOrphan(object.adaptee);
 
 	if (object.isAVMFont) {
