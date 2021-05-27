@@ -1,4 +1,4 @@
-import { Multiname } from './../abc/lazy/Multiname';
+import { Multiname } from '../abc/lazy/Multiname';
 
 export const IS_EXTERNAL_CLASS = Symbol('External class marker');
 type Ctr = { new (): Object };
@@ -6,11 +6,19 @@ type Ctr = { new (): Object };
 const LONG_NAMES = /nape./;
 
 export const extClasses = {
-	lib: null
+	_lib: null,
+	set lib(v: any) {
+		v && console.debug('[AVM2] Register external lib:', v);
+		this._lib = v;
+	},
+
+	get lib() {
+		return this._lib;
+	}
 };
 
 export function getExtClassField(name: string, namespace: string = undefined): Ctr | null {
-	const lib = extClasses.lib;
+	const lib = extClasses._lib;
 
 	if (!lib || !name)
 		return null;
@@ -36,11 +44,11 @@ export function getExtClassField(name: string, namespace: string = undefined): C
 }
 /**
  * Try construct object from external lib, like as Box2D or Nape
- * @param mn {Multiname}
- * @param args {any[]}
+ * @param mn
+ * @param args
  */
 export function extClassContructor(mn: Multiname, args: any[]) {
-	if (!extClasses.lib)
+	if (!extClasses._lib)
 		return null;
 
 	const ns = mn.namespace?.uri;
@@ -66,18 +74,18 @@ export function extClassContructor(mn: Multiname, args: any[]) {
 }
 
 export function emitIsAX(name: string) {
-	if (!extClasses.lib)
+	if (!extClasses._lib)
 		return 'true';
 
 	return `(${name} != undefined && ${name}[AX_CLASS_SYMBOL])`;
 }
 
 export function needFastCheck() {
-	return !!extClasses.lib;
+	return !!extClasses._lib;
 }
 
 export function emitIsAXOrPrimitive(name: string, explictNull = false): string {
-	if (!extClasses.lib)
+	if (!extClasses._lib)
 		return 'true';
 
 	const nullTest = explictNull ? '' : `|| ${name} == null`;
@@ -85,7 +93,7 @@ export function emitIsAXOrPrimitive(name: string, explictNull = false): string {
 }
 
 export function emitIsCallableNative(name: string, func: string) {
-	if (!extClasses.lib)
+	if (!extClasses._lib)
 		return 'false';
 
 	return `( !${name}[AX_CLASS_SYMBOL] && typeof ${name}['${func}'] === 'function')`;
