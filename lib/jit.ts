@@ -1716,18 +1716,17 @@ export class Context {
 		if (mn.isRuntimeName()) {
 			let name = <any>stack0;
 			// Unwrap content script-created AXQName instances.
-			if (name && name.axClass && name.axClass === name.sec.AXQName) {
+			if (typeof name === 'object' && name.axClass === name.sec.AXQName) {
 				name = name.name;
 				release || assert(name instanceof Multiname);
+
 				this.rn.kind = mn.isAttribute() ? CONSTANT.RTQNameLA : CONSTANT.RTQNameL;
 				this.rn.id = name.id;
 				this.rn.name = name.name;
 				this.rn.namespaces = name.namespaces;
-				return this.rn;
-			}
 
-			// appriory number
-			if (typeof name === 'number') {
+				return this.rn;
+			} else if (typeof name === 'number') {
 				this.rn.numeric = true;
 				this.rn.numericValue = name;
 			} else {

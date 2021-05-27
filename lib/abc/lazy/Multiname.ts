@@ -129,14 +129,16 @@ export class Multiname {
 	}
 
 	public isRuntimeNamespace(): boolean {
+		/*
 		switch (this.kind) {
 			case CONSTANT.RTQName:
 			case CONSTANT.RTQNameA:
 			case CONSTANT.RTQNameL:
 			case CONSTANT.RTQNameLA:
 				return true;
-		}
-		return false;
+		}*/
+
+		return this.kind >= CONSTANT.RTQName && this.kind <= CONSTANT.RTQNameLA;
 	}
 
 	public isAnyName(): boolean {

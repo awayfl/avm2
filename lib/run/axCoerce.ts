@@ -1,9 +1,9 @@
-import { isNullOrUndefined } from '@awayfl/swf-loader';
 import { Errors } from '../errors';
 import { IS_AX_CLASS } from './AXClass';
 
 export function axCoerce(x: any) {
-	if (isNullOrUndefined(x)) {
+	// fast path, null == void 0 is true
+	if (x == void 0) {
 		return null;
 	}
 
@@ -12,7 +12,7 @@ export function axCoerce(x: any) {
 	}
 
 	// propagate fast mode for arrays with fast entries
-	if (Array.isArray(x) && (x.length && x[0].__fast__ || !x.length)) {
+	if ((x.length && x[0] && x[0].__fast__ || !x.length) && Array.isArray(x)) {
 		return x;
 	}
 
@@ -20,5 +20,6 @@ export function axCoerce(x: any) {
 		this.sec.throwError('TypeError', Errors.CheckTypeFailedError, x,
 			this.classInfo.instanceInfo.getClassName());
 	}
+
 	return x;
 }
