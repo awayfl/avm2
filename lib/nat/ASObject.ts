@@ -99,11 +99,13 @@ export class ASObject implements IMetaobjectProtocol {
 		addPrototypeFunctionAlias(proto, '$BgtoLocaleString', asProto.toString);
 	}
 
+	/*
 	constructor() {
 		// To prevent accidental instantiation of template classes, make sure that we throw
 		// right during construction.
 		release;// 80pro: this errors when instancing our Loader class: || checkValue(this);
 	}
+	*/
 
 	static _init() {
 		// Nop.
@@ -141,11 +143,13 @@ export class ASObject implements IMetaobjectProtocol {
 			this.sec.throwError('ReferenceError', Errors.WriteSealedError, nm, instanceInfo.name.name);
 		}
 		// Silently ignore trait properties.
-		var descriptor = Object.getOwnPropertyDescriptor(this.axClass.tPrototype, qualifiedName);
+		let descriptor = Object.getOwnPropertyDescriptor(this.axClass.tPrototype, qualifiedName);
+
 		if (descriptor && this !== this.axClass.dPrototype) {
 			return;
 		}
-		var descriptor = Object.getOwnPropertyDescriptor(this, qualifiedName);
+
+		descriptor = Object.getOwnPropertyDescriptor(this, qualifiedName);
 		// ... and non-existent properties.
 		if (!descriptor) {
 			return;
@@ -189,7 +193,7 @@ export class ASObject implements IMetaobjectProtocol {
 		rn.set(nm);
 
 		const result = this.axHasProperty(rn);
-		release || assert(rn.name === nm || isNaN(rn.name) && isNaN(nm));
+		//release || assert(rn.name === nm || isNaN(rn.name) && isNaN(nm));
 
 		rn.drop();
 
@@ -199,10 +203,10 @@ export class ASObject implements IMetaobjectProtocol {
 	axSetProperty(mn: Multiname, value: any, bc: Bytecode) {
 		//if(typeof value == "number" && isNaN(value))
 		//    console.log("try to set NaN", mn);
-		release || checkValue(value);
+		//release || checkValue(value);
 		let name = mn.name;
 		if (typeof name === 'number' || isNumeric(name = axCoerceName(name))) {
-			release || assert(mn.isRuntimeName());
+			//release || assert(mn.isRuntimeName());
 			this[+name] = value;
 			return;
 		}
@@ -251,16 +255,17 @@ export class ASObject implements IMetaobjectProtocol {
 	axGetProperty(mn: Multiname): any {
 		const name = this.axResolveMultiname(mn);
 
-		let value = this[name];
+		const value = this[name];
 
 		if (typeof value === 'function')
 			return this.axGetMethod(name);
 
 		//80pro: workaround:
-		if (typeof value === 'undefined' && typeof name !== 'number')
-			value = this[name.replace('$Bg', '')];
+		if (typeof value === 'undefined' && typeof name !== 'number') {
+			return this[mn.name];
+		}
 
-		release || checkValue(value);
+		//release || checkValue(value);
 		return value;
 	}
 

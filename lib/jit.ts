@@ -1086,18 +1086,25 @@ export function compile(methodInfo: MethodInfo, options: ICompilerOptions = {}):
 					state.emitBeginMain(); // {
 
 					if (runtime) {
-						state.emitMain(`let rm = context.runtimename(${getname(param(0))}, ${stack0}, ${stack1});`);
+						state.emitMain(`const rm = context.runtimename(${getname(param(0))}, ${stack0}, ${stack1});`);
+						state.emitMain('const simple = rm.numeric ? rm.numericValue : rm.name;');
 					} else {
-						state.emitMain(`let rm = context.runtimename(${getname(param(0))}, ${stack0});`);
+						state.emitMain(`let simple = ${stack0};`);
 					}
-					state.emitMain('rm = rm.numeric ? rm.numericValue : rm;');
+
 					state.emitMain(`const b_obj = ${target}[AX_CLASS_SYMBOL] ? ${target} : sec.box(${target});\n`);
-					state.emitMain('if (typeof rm === "number") {');
-					state.emitMain(`    ${target} = b_obj.axGetNumericProperty(rm);`);
+					state.emitMain('if (typeof simple === "number") {');
+					state.emitMain(`    ${target} = b_obj.axGetNumericProperty(simple);`);
+
 					state.emitBeginMain('} else {');
 
-					state.emitMain(`${target} = b_obj['$Bg' + rm.name];`);
+					state.emitMain(`${target} = b_obj['$Bg' + simple];`);
 					state.emitMain(`if (${target} === undefined || typeof ${target} === 'function') {`);
+
+					if (!runtime) {
+						state.emitMain(`    const rm = context.runtimename(${getname(param(0))}, ${stack0});`);
+					}
+
 					state.emitMain(`    ${target} = b_obj.axGetProperty(rm);`);
 					state.emitMain('}');
 
@@ -1706,7 +1713,7 @@ export class Context {
 		return [info.object, info.index];
 	}
 
-	runtimename(mn: Multiname, stack0: Multiname & ASClass | string , stack1: string): Multiname {
+	runtimename(mn: Multiname, propName: Multiname & ASClass | string , nsName?: string): Multiname {
 		this.rn.resolved = {};
 		this.rn.script = null;
 		this.rn.numeric = false;
@@ -1714,7 +1721,7 @@ export class Context {
 		this.rn.kind = mn.kind;
 
 		if (mn.isRuntimeName()) {
-			let name = <any>stack0;
+			let name = <any>propName;
 			// Unwrap content script-created AXQName instances.
 			if (typeof name === 'object' && name.axClass === name.sec.AXQName) {
 				name = name.name;
@@ -1742,10 +1749,11 @@ export class Context {
 			this.rn.id = -1;
 		} else {
 			this.rn.name = mn.name;
-			stack1 = <string>stack0;
+			nsName = <string>propName;
 		}
+
 		if (mn.isRuntimeNamespace()) {
-			let ns = <any> stack1;
+			let ns = <any> nsName;
 			// Unwrap content script-created AXNamespace instances.
 			if (ns._ns) {
 				release || assert(ns.sec && ns.axClass === ns.sec.AXNamespace);
