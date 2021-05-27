@@ -1633,24 +1633,27 @@ export class Context {
 				`[AVM2] Unexpected property assignment: ${typeof obj}[${JSON.stringify(mn?.name)}] = ${value?.toString()}`
 			);
 		}
-		// unsafe SET into plain Object
-		if (!obj[IS_AX_CLASS]) {
-			obj[mn.name] = value;
-			return;
+
+		if (needFastCheck()) {
+			// unsafe SET into plain Object
+			if (!obj[IS_AX_CLASS]) {
+				obj[mn.name] = value;
+				return;
+			}
+
+			// Hubrid
+			// Mom is Human, Dad is Marsian
+			// and it not has a axSetProp
+			if (obj[IS_EXTERNAL_CLASS]) {
+				// create prop and proxy to JS side.
+				ASObject.prototype.axSetProperty.call(obj, mn, value, <any>Bytecode.INITPROPERTY);
+				Object.defineProperty(obj, mn.name, { value, configurable: true, writable: true });
+				return;
+			}
 		}
 
 		if (typeof mn === 'number') {
 			return obj.axSetNumericProperty(mn, value);
-		}
-
-		// Hubrid
-		// Mom is Human, Dad is Marsian
-		// and it not has a axSetProp
-		if (obj[IS_EXTERNAL_CLASS]) {
-			// create prop and proxy to JS side.
-			ASObject.prototype.axSetProperty.call(obj, mn, value, <any>Bytecode.INITPROPERTY);
-			Object.defineProperty(obj, mn.name, { value, configurable: true, writable: true });
-			return;
 		}
 
 		obj.axSetProperty(mn, value, <any>Bytecode.INITPROPERTY);
