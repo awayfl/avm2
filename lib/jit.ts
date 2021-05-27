@@ -1086,11 +1086,11 @@ export function compile(methodInfo: MethodInfo, options: ICompilerOptions = {}):
 					state.emitBeginMain(); // {
 
 					if (runtime) {
-						state.emitMain(`const rm = context.runtimename(${getname(param(0))}, ${stack0}, ${stack1});`);
+						state.emitMain(`let rm = context.runtimename(${getname(param(0))}, ${stack0}, ${stack1});`);
 					} else {
-						state.emitMain(`const rm = context.runtimename(${getname(param(0))}, ${stack0});`);
+						state.emitMain(`let rm = context.runtimename(${getname(param(0))}, ${stack0});`);
 					}
-
+					state.emitMain('rm = rm.numeric ? rm.numericValue : rm;');
 					state.emitMain(`const b_obj = ${target}[AX_CLASS_SYMBOL] ? ${target} : sec.box(${target});\n`);
 					state.emitMain('if (typeof rm === "number") {');
 					state.emitMain(`    ${target} = b_obj.axGetNumericProperty(rm);`);
