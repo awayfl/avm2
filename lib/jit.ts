@@ -1725,8 +1725,13 @@ export class Context {
 
 		if (mn.isRuntimeName()) {
 			let name = <any>propName;
-			// Unwrap content script-created AXQName instances.
-			if (typeof name === 'object' && name.axClass === name.sec.AXQName) {
+
+			// so, undef and null is valid keys, but unsafe
+			if (name == void 0) {
+				console.warn(`[AVM2 SetProperty DYN] Key is ${name}, are you sure that this is valid?`);
+				name = '' + name;
+				// Unwrap content script-created AXQName instances.
+			} else if (typeof name === 'object' && name.axClass === name.sec.AXQName) {
 				name = name.name;
 				release || assert(name instanceof Multiname);
 
