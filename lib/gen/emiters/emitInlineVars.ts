@@ -9,7 +9,7 @@ export function emitInlineLocal(_state: CompilerState, n: number): string {
 
 export const UNDERRUN = '[stack underrun]';
 export function emitInlineStack(_state: CompilerState, n: number, aliasThis = true): string {
-	const current = _state.currentOppcode;
+	const current = _state.currentOpcode;
 	const stack = current.stack;
 	const underrun = ((stack - 1 - n) < 0);
 

@@ -282,11 +282,11 @@ export function compile(methodInfo: MethodInfo, options: ICompilerOptions = {}):
 
 	const stackF = (n: number, alias = true) => emitInlineStack(state, n, alias);
 	const local = (n: number) => emitInlineLocal(state, n);
-	const param = (n: number) => state.currentOppcode.params[n];
+	const param = (n: number) => state.currentOpcode.params[n];
 
 	for (let i: number = 0; i < q.length; i++) {
 		// store oppcode in state
-		state.currentOppcode = q[i];
+		state.currentOpcode = q[i];
 
 		z && (lastZ = z);
 		z = q[i];
@@ -876,8 +876,9 @@ export function compile(methodInfo: MethodInfo, options: ICompilerOptions = {}):
 					if (USE_OPT(lexGen) && lexGen.test(mn, false)) {
 						state.emitMain('/* GenerateLexImports */');
 						// eslint-disable-next-line max-len
-						state.emitMain(`${target} = ${lexGen.getPropStrictAlias(mn,<any>{
-							nameAlias: getname(param(0)),
+						state.emitMain(`${target} = ${lexGen.getPropStrictAlias(mn,{
+							//nameAlias: getname(param(0)),
+							mnIndex: state.getMultinameIndex(param(0))
 							/*findProp: true,*/
 						})};`);
 
@@ -1202,8 +1203,8 @@ export function compile(methodInfo: MethodInfo, options: ICompilerOptions = {}):
 						state.emitMain(`// ${mn}`);
 						state.emitMain('/* GenerateLexImports */');
 						// eslint-disable-next-line max-len
-						state.emitMain(`${target} = ${lexGen.getLexAlias(mn,<any>{
-							nameAlias : getname(param(0)),
+						state.emitMain(`${target} = ${lexGen.getLexAlias(mn,{
+							mnIndex: state.getMultinameIndex(param(0)),
 							/*findProp: false,*/
 							scope: scope
 						})};`);
@@ -1412,8 +1413,13 @@ export function compile(methodInfo: MethodInfo, options: ICompilerOptions = {}):
 		}
 	}
 
-	// eslint-disable-next-line max-len
-	state.names.forEach((_, i) => state.emitHead(`let ${emitInlineMultiname(state, i)} = context.names[${i}];`, namesIndent));
+	if (!state.noHoistMultiname) {
+		for (let i = 0, l = this.state.names.length; i < l; i++) {
+			state.emitHead(`let ${emitInlineMultiname(state, i)} = context.names[${i}];`, namesIndent);
+		}
+	} else {
+		state.emitHead('let $names = context.names;', namesIndent);
+	}
 
 	js0[LOCALS_POS] = locals.join('\n');
 

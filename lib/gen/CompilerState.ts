@@ -19,10 +19,11 @@ export class CompilerState {
 	// same as js in compile
 	public headerBlock: string[] = [];
 
-	public oppcodes: Instruction[];
-	public currentOppcode: Instruction;
+	public opcodes: Instruction[];
+	public currentOpcode: Instruction;
 
 	public thisAlliases: Set<string> = new Set();
+	public noHoistMultiname: boolean = Settings.NO_HOIST_MULTINAME;
 
 	public get indent() {
 		return this._indent;

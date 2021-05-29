@@ -11,6 +11,7 @@ export interface IImportDefinition {
 export interface IImportGenOptions {
 	findProp?: boolean;
 	scope?: string;
+	mnIndex: number;
 }
 
 export interface ILexGenerator extends IGenerator {
@@ -57,14 +58,14 @@ export abstract class LexImportsGenerator implements ILexGenerator {
 
 	public getLexAlias(mn: Multiname, options?: IImportGenOptions): string {
 		this._lexMode = true;
-		const res = this.getPropStrictAlias(mn, Object.assign({ findProp: true }, options || {}));
+		const res = this.getPropStrictAlias(mn, Object.assign({ findProp: true, mnIndex: -1 }, options || {}));
 
 		this._lexMode = false;
 		return res;
 	}
 
 	public getPropStrictAlias(
-		mn: Multiname, options: IImportGenOptions = { findProp: false }): string {
+		mn: Multiname, options: IImportGenOptions = { findProp: false, mnIndex: -1 }): string {
 
 		if (!this.test(mn, this._lexMode)) {
 			throw `Can't generate static alias for ${mn.name} of ${mn.namespace?.uri}`;
@@ -176,7 +177,7 @@ export class ComplexGenerator implements ILexGenerator {
 		return gen.getLexAlias(mn, options);
 	}
 
-	public getPropStrictAlias(mn: Multiname, options?: any): string {
+	public getPropStrictAlias(mn: Multiname, options?: IImportGenOptions): string {
 		const gen = this.getGenerator(mn, false);
 
 		if (!gen) {
@@ -314,13 +315,13 @@ export class TopLevelLex extends LexImportsGenerator {
 		const uri = def.name.namespace.uri;
 		const name = def.name.name;
 
-		const { nameAlias, findProp } =  <ITopGenOptions> def.options || {};
+		const { mnIndex, findProp } =  <ITopGenOptions> def.options || {};
 
-		if (!nameAlias) {
+		if (typeof mnIndex !== 'number' || mnIndex < 0) {
 			throw 'Name alias required for generatin Toplevel exports!';
 		}
 
-		const id = Number(nameAlias.replace('name', ''));
+		const id = mnIndex;
 		const mnname =  `['${Multiname.getPublicMangledName(name)}']`;
 
 		return `const ${def.alias} = context.getTopLevel(${id})${ findProp ? mnname : ''}; // ${uri}:${name}`;
@@ -328,7 +329,7 @@ export class TopLevelLex extends LexImportsGenerator {
 
 	protected _genAlias(mn: Multiname, options: IImportGenOptions): string {
 		const uri = mn.namespace.uri.split(/\./g);
-		if (!(<any>options).nameAlias) {
+		if (typeof options.mnIndex !== 'number' || options.mnIndex < 0) {
 			throw 'Name alias required for generatin Toplevel exports!';
 		}
 		return `${uri.join('_')}__${mn.name}${options.findProp ? '' : '_def'}`;

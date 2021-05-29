@@ -1,4 +1,5 @@
 export interface IAVM2Settings {
+	NO_HOIST_MULTINAME: boolean;
 	ENABLE_DEBUG: boolean;
 	PRINT_BYTE_INSTRUCTION: boolean;
 	EMULATE_LOOKBEHIND: boolean;
@@ -82,6 +83,10 @@ export const Settings: IAVM2Settings = {
 	 */
 	UNSAFE_PROPOGATE_THIS: true,
 
+	/**
+	 * @description No hoist multiname (no emit name1 in generated script), this can save a lot of codelines
+	 */
+	NO_HOIST_MULTINAME: true,
 	/**
 	 * @description Use `WeakRef` for holding a Orphan in OrphanaManager on supported platforms
 	 */

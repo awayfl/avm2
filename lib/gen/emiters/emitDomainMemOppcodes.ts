@@ -3,7 +3,7 @@ import { CompilerState } from '../CompilerState';
 import { emitInlineStack } from './emitInlineVars';
 
 export function emitDomainMemOppcodes(state: CompilerState) {
-	const z = state.currentOppcode;
+	const z = state.currentOpcode;
 	const stack0 = emitInlineStack(state, 0);
 	const stack1 = emitInlineStack(state, 1);
 
