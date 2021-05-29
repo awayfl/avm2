@@ -1,4 +1,6 @@
 export interface IAVM2Settings {
+	NO_CHECK_FASTCALL_FOR_THIS: boolean;
+	NO_CHECK_BOXED_THIS: boolean;
 	NO_HOIST_MULTINAME: boolean;
 	ENABLE_DEBUG: boolean;
 	PRINT_BYTE_INSTRUCTION: boolean;
@@ -87,6 +89,16 @@ export const Settings: IAVM2Settings = {
 	 * @description No hoist multiname (no emit name1 in generated script), this can save a lot of codelines
 	 */
 	NO_HOIST_MULTINAME: true,
+	/**
+	 * @description Disable use fast path call and property get/set when used external lib on `this`,
+	 * because we not emit unwrapped code for it, and fast check will fail for it
+	 * this remove 3 lines for call/get/set
+	 */
+	NO_CHECK_FASTCALL_FOR_THIS: true,
+	/**
+	 * @description Not require check boxing for this, it already always should be boxed to AVM object,
+	 */
+	NO_CHECK_BOXED_THIS: true,
 	/**
 	 * @description Use `WeakRef` for holding a Orphan in OrphanaManager on supported platforms
 	 */

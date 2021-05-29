@@ -755,7 +755,8 @@ export function compile(methodInfo: MethodInfo, options: ICompilerOptions = {}):
 							break;
 						}
 
-						if (needFastCheck()) {
+						const fast = needFastCheck() && (obj !== 'this' || !Settings.NO_CHECK_FASTCALL_FOR_THIS);
+						if (fast) {
 							state.emitMain(`if (!${emitIsAXOrPrimitive(obj)}) {`);
 							// fast instruction already binded
 							state.emitMain(`   ${targetStack} = ${emitAccess(obj, mn.name)}(${pp.join(', ')});`);
@@ -764,14 +765,20 @@ export function compile(methodInfo: MethodInfo, options: ICompilerOptions = {}):
 
 						state.emitMain(`// ${mn}`);
 						state.emitBeginMain(); // {
-						state.emitMain(`let t = ${obj};`);
 
-						const accessor = emitAccess('t', '$Bg' + mn.name);
+						const box = !Settings.NO_CHECK_BOXED_THIS || obj !== 'this';
+						if (box) {
+							state.emitMain(`let t = ${obj};`);
+							const accessor = emitAccess('t', '$Bg' + mn.name);
+							// eslint-disable-next-line max-len
+							state.emitMain(`const m = ${accessor} || (t = sec.box(${obj}), ${accessor});`);
+						} else {
+							state.emitMain(`const m = ${emitAccess(obj, '$Bg' + mn.name)};`);
+						}
 
-						// eslint-disable-next-line max-len
-						state.emitMain(`const m = ${accessor} || (t = sec.box(${obj}), ${accessor});`);
 						state.emitMain('if( typeof m === "function" ) { ');
-						state.emitMain(`    ${targetStack} = m.call(t${pp.length ? ', ' : ''}${pp.join(', ')});`);
+						// eslint-disable-next-line max-len
+						state.emitMain(`    ${targetStack} = ${emitAccess(box ? 't' : obj, '$Bg' + mn.name)} (${pp.join(', ')});`);
 						state.emitMain('} else { ');
 						// eslint-disable-next-line max-len
 						state.emitMain(`    ${targetStack} = ${obj}.axCallProperty(${getname(param(1))}, [${pp.join(', ')}], false);`);
@@ -779,7 +786,7 @@ export function compile(methodInfo: MethodInfo, options: ICompilerOptions = {}):
 
 						state.emitEndMain(); // }
 
-						if (needFastCheck()) {
+						if (fast) {
 							state.emitEndMain(); // }
 						}
 
@@ -827,7 +834,8 @@ export function compile(methodInfo: MethodInfo, options: ICompilerOptions = {}):
 						}
 					}
 
-					if (needFastCheck()) {
+					const fast = needFastCheck() && (obj !== 'this' || !Settings.NO_CHECK_FASTCALL_FOR_THIS);
+					if (fast) {
 						state.emitMain(`if (!${emitIsAXOrPrimitive(obj)}) {`);
 						state.emitMain(`    ${emitAccess(obj, mn.name)}(${pp.join(', ')});`);
 						state.emitMain('} else {');
@@ -848,7 +856,7 @@ export function compile(methodInfo: MethodInfo, options: ICompilerOptions = {}):
 					state.emitMain('}');
 					state.emitEndMain(); // }
 
-					if (needFastCheck()) {
+					if (fast) {
 						state.emitEndMain(); // }
 					}
 
@@ -1057,20 +1065,24 @@ export function compile(methodInfo: MethodInfo, options: ICompilerOptions = {}):
 					}
 
 					state.emitMain(`// ${mn}`);
-
-					if (needFastCheck()) {
+					const fast = needFastCheck() && (stack0 !== 'this' || !Settings.NO_CHECK_FASTCALL_FOR_THIS);
+					if (fast) {
 						state.emitMain(`if (!${emitIsAX(stack0)}) {`);
 						state.emitMain(`    ${target} = ${stack0}['${mn.name}'];`);
 						state.emitBeginMain('} else {');
 					}
 
-					state.emitMain(`temp = ${stack0}[AX_CLASS_SYMBOL] ? ${stack0} : sec.box(${stack0});`);
-					state.emitMain(`${target} = ${emitAccess('temp', '$Bg' + mn.name)};`);
+					const box = !Settings.NO_CHECK_BOXED_THIS || stack0 !== 'this';
+					if (box) {
+						state.emitMain(`temp = ${stack0}[AX_CLASS_SYMBOL] ? ${stack0} : sec.box(${stack0});`);
+					}
+
+					state.emitMain(`${target} = ${emitAccess(box ?  'temp' : stack0, '$Bg' + mn.name)};`);
 					state.emitMain(`if (${target} === undefined || typeof ${target} === 'function') {`);
-					state.emitMain(`    ${target} = temp.axGetProperty(${getname(param(0))});`);
+					state.emitMain(`    ${target} = ${box ?  'temp' : stack0}.axGetProperty(${getname(param(0))});`);
 					state.emitMain('}');
 
-					if (needFastCheck()) {
+					if (fast) {
 						state.emitEndMain();
 					}
 					break;
@@ -1093,7 +1105,14 @@ export function compile(methodInfo: MethodInfo, options: ICompilerOptions = {}):
 						state.emitMain(`let simple = ${stack0};`);
 					}
 
-					state.emitMain(`const b_obj = ${target}[AX_CLASS_SYMBOL] ? ${target} : sec.box(${target});\n`);
+					const box = !Settings.NO_CHECK_BOXED_THIS || target !== 'this';
+
+					if (box) {
+						state.emitMain(`const b_obj = ${target}[AX_CLASS_SYMBOL] ? ${target} : sec.box(${target});\n`);
+					} else {
+						state.emitMain(`const b_obj = ${target}`);
+					}
+
 					state.emitMain('if (typeof simple === "number") {');
 					state.emitMain(`    ${target} = b_obj.axGetNumericProperty(simple);`);
 
@@ -1117,7 +1136,8 @@ export function compile(methodInfo: MethodInfo, options: ICompilerOptions = {}):
 					const mn = abc.getMultiname(param(0));
 					state.emitMain(`// ${mn}`);
 
-					if (needFastCheck()) {
+					const fast = needFastCheck() && (stack1 !== 'this' || !Settings.NO_CHECK_FASTCALL_FOR_THIS);
+					if (fast) {
 						state.emitMain(`if (!${emitIsAX(stack1)}){`);
 						state.emitMain(`    ${emitAccess(stack1, mn.name)} = ${stack0};`);
 						state.emitBeginMain('} else {');
@@ -1125,7 +1145,7 @@ export function compile(methodInfo: MethodInfo, options: ICompilerOptions = {}):
 
 					state.emitMain(`context.setproperty(${getname(param(0))}, ${stack0}, ${stack1});`);
 
-					if (needFastCheck()) {
+					if (fast) {
 						state.emitEndMain();
 					}
 					break;
