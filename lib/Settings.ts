@@ -4,6 +4,7 @@ export interface IAVM2Settings {
 	NO_HOIST_MULTINAME: boolean;
 	CHEK_TRAIT_GET_CALL: boolean;
 	CHEK_TRAIT_SET: boolean;
+	CHEK_SUPER_TRAITS: boolean;
 	ENABLE_DEBUG: boolean;
 	PRINT_BYTE_INSTRUCTION: boolean;
 	EMULATE_LOOKBEHIND: boolean;
@@ -111,6 +112,10 @@ export const Settings: IAVM2Settings = {
 	 * @todo Atm we not call coerse, result can be unstable
 	 */
 	CHEK_TRAIT_SET: true,
+	/**
+	 * @description Check super class traits when field was extended, this can be unstable and has performance hit
+	 */
+	CHEK_SUPER_TRAITS: true,
 	/**
 	 * @description Use `WeakRef` for holding a Orphan in OrphanaManager on supported platforms
 	 */

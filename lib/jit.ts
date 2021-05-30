@@ -62,6 +62,9 @@ import { Instruction } from './gen/Instruction';
 import { TRAIT, TRAITNames } from './abc/lazy/TRAIT';
 import { InstanceInfo } from './abc/lazy/InstanceInfo';
 import { SlotTraitInfo } from './abc/lazy/SlotTraitInfo';
+import { AXApplicationDomain } from './run/AXApplicationDomain';
+import { TraitInfo } from './abc/lazy/TraitInfo';
+import { RuntimeTraitInfo } from './abc/lazy/RuntimeTraitInfo';
 
 const METHOD_HOOKS: StringMap<{path: string, place: 'begin' | 'return', hook: Function}> = {};
 
@@ -94,6 +97,34 @@ function generateFunc(body: string, path: string) {
 
 function escape(name: string) {
 	return JSON.stringify(name);
+}
+
+function resolveTrait(info: InstanceInfo, name: Multiname): TraitInfo | RuntimeTraitInfo {
+	info.traits.resolve();
+
+	let trait = info.traits.getTrait(name);
+	let superInstance = info;
+
+	while (Settings.CHEK_SUPER_TRAITS && !trait && superInstance && superInstance.getSuperName()) {
+		const superName = superInstance.getSuperName();
+		const addDom = <AXApplicationDomain> (<any> superName.value).applicationDomain;
+		const superClass = addDom.getClass(superName);
+
+		superInstance = superClass.classInfo.instanceInfo;
+
+		if (superInstance.runtimeTraits) {
+			trait = <any> superInstance.runtimeTraits.getTrait(name.namespaces, name.name);
+		} else {
+			superInstance.traits.resolve();
+			trait = superInstance.traits.getTrait(name);
+		}
+
+		if (trait) {
+			return  trait;
+		}
+	}
+
+	return trait;
 }
 
 export interface ICompilerProcess {
@@ -755,9 +786,8 @@ export function compile(methodInfo: MethodInfo, options: ICompilerOptions = {}):
 						// we can check trite for `this` or any types that has trite
 						// @todo move this to fast-call
 						if (Settings.CHEK_TRAIT_GET_CALL && obj === 'this' && instanceInfo) {
-							instanceInfo.traits.resolve();
+							const trait = resolveTrait(instanceInfo, mn);
 
-							const trait = instanceInfo.traits.getTrait(mn);
 							if (trait) {
 								// eslint-disable-next-line max-len
 								state.emitMain(`/* We sure that this safe get, represented in TRAIT as ${TRAITNames[trait.kind]}  */ `);
@@ -1089,9 +1119,7 @@ export function compile(methodInfo: MethodInfo, options: ICompilerOptions = {}):
 					// we can check trite for `this` or any types that has trite
 					// @todo Move this inside fast-call optimiser
 					if (Settings.CHEK_TRAIT_GET_CALL && stack0 === 'this' && instanceInfo) {
-						instanceInfo.traits.resolve();
-						const trait = instanceInfo.traits.getTrait(mn);
-
+						const trait = resolveTrait(instanceInfo, mn);
 						if (trait) {
 							// eslint-disable-next-line max-len
 							state.emitMain(`/* We sure that this safe get, represented in TRAIT as ${TRAITNames[trait.kind]}  */ `);
@@ -1183,8 +1211,7 @@ export function compile(methodInfo: MethodInfo, options: ICompilerOptions = {}):
 					// we can check trite for `this` or any types that has trite
 					// @todo Move this to fast-set optimisator
 					if (Settings.CHEK_TRAIT_SET && stack1 === 'this' && instanceInfo) {
-						instanceInfo.traits.resolve();
-						const trait = instanceInfo.traits.getTrait(mn);
+						const trait = resolveTrait(instanceInfo, mn);
 
 						if (trait && trait) {
 							// eslint-disable-next-line max-len
