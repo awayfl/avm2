@@ -7,21 +7,20 @@ import { validateCall } from './run/validateCall';
 import { validateConstruct } from './run/validateConstruct';
 import { axCoerceString } from './run/axCoerceString';
 import { axCheckFilter } from './run/axCheckFilter';
-import { release } from '@awayfl/swf-loader';
+import { isNumeric, jsGlobal, release } from '@awayfl/swf-loader';
 import { Multiname } from './abc/lazy/Multiname';
 import { CONSTANT } from './abc/lazy/CONSTANT';
 import { MethodInfo } from './abc/lazy/MethodInfo';
 import { internNamespace } from './abc/lazy/internNamespace';
 import { AXClass, IS_AX_CLASS } from './run/AXClass';
 import { axCoerceName } from './run/axCoerceName';
-import { isNumeric, jsGlobal } from '@awayfl/swf-loader';
 import { ABCFile } from './abc/lazy/ABCFile';
 import { ScriptInfo } from './abc/lazy/ScriptInfo';
 import { ExceptionInfo } from './abc/lazy/ExceptionInfo';
 import { Bytecode } from './Bytecode';
 import { ASObject } from './nat/ASObject';
 import { escapeAttributeValue, escapeElementValue } from './natives/xml';
-import { COMPILER_DEFAULT_OPT, COMPILER_OPT_FLAGS, COMPILATION_FAIL_REASON } from './flags';
+import { COMPILATION_FAIL_REASON, COMPILER_DEFAULT_OPT, COMPILER_OPT_FLAGS } from './flags';
 
 // generators
 import { analyze, IAnalyseResult, IAnalyzeError } from './gen/analyze';
@@ -30,31 +29,26 @@ import { FastCall, ICallEntry } from './gen/FastCall';
 
 import { Stat } from './gen/Stat';
 
-import {
-	ComplexGenerator,
-	StaticHoistLex,
-	PhysicsLex,
-	TopLevelLex
-} from './gen/LexImportsGenerator';
+import { ComplexGenerator, PhysicsLex, StaticHoistLex, TopLevelLex } from './gen/LexImportsGenerator';
 
 import {
 	emitAnnotation,
 	emitAnnotationOld,
-	emitInlineAccessor as emitAccess,
 	emitCloseTryCatch,
-	emitOpenTryCatch,
-	emitInlineMultiname,
+	emitDomainMemOppcodes,
+	emitInlineAccessor as emitAccess,
 	emitInlineLocal,
+	emitInlineMultiname,
 	emitInlineStack,
-	UNDERRUN,
-	emitDomainMemOppcodes
+	emitOpenTryCatch,
+	UNDERRUN
 } from './gen/emiters';
 
 import {
+	emitIsAX,
+	emitIsAXOrPrimitive,
 	extClassContructor,
 	getExtClassField,
-	emitIsAXOrPrimitive,
-	emitIsAX,
 	IS_EXTERNAL_CLASS,
 	needFastCheck
 } from './ext/external';
@@ -65,6 +59,9 @@ import { COERCE_MODE_ENUM, Settings } from './Settings';
 import { AXFunction } from './run/AXFunction';
 import { CompilerState } from './gen/CompilerState';
 import { Instruction } from './gen/Instruction';
+import { TRAIT, TRAITNames } from './abc/lazy/TRAIT';
+import { InstanceInfo } from './abc/lazy/InstanceInfo';
+import { SlotTraitInfo } from './abc/lazy/SlotTraitInfo';
 
 const METHOD_HOOKS: StringMap<{path: string, place: 'begin' | 'return', hook: Function}> = {};
 
@@ -171,6 +168,7 @@ export function compile(methodInfo: MethodInfo, options: ICompilerOptions = {}):
 		}
 	}
 
+	const instanceInfo = <InstanceInfo> (methodInfo.instanceInfo || methodInfo.trait?.holder);
 	const abc = methodInfo.abc;
 	const body = methodInfo.getBody();
 	const maxstack = body.maxStack;
@@ -325,7 +323,6 @@ export function compile(methodInfo: MethodInfo, options: ICompilerOptions = {}):
 		const stack1 = stackF(1);
 		const stack2 = stackF(2);
 		const stack3 = stackF(3);
-		const stackN = stackF(-1);
 		const scope = z.scope > 0 ? `scope${(z.scope - 1)}` : 'context.savedScope';
 		const scopeN = 'scope' + z.scope;
 
@@ -755,6 +752,30 @@ export function compile(methodInfo: MethodInfo, options: ICompilerOptions = {}):
 							break;
 						}
 
+						// we can check trite for `this` or any types that has trite
+						// @todo move this to fast-call
+						if (Settings.CHEK_TRAIT_GET_CALL && obj === 'this' && instanceInfo) {
+							instanceInfo.traits.resolve();
+
+							const trait = instanceInfo.traits.getTrait(mn);
+							if (trait) {
+								// eslint-disable-next-line max-len
+								state.emitMain(`/* We sure that this safe get, represented in TRAIT as ${TRAITNames[trait.kind]}  */ `);
+
+								if (trait.kind === TRAIT.Method) {
+									// eslint-disable-next-line max-len
+									state.emitMain(`${targetStack} = ${emitAccess(obj, mn.getMangledName())}(${pp.join(', ')});`);
+								} else {
+									// when is method, we should wrap caller, because JS miss `this`
+									// when method is used as outside object
+									// we can do with BIND, but this is can be unstable
+									// eslint-disable-next-line max-len
+									state.emitMain(`${targetStack} = /*fast*/${obj}.axCallProperty(${getname(param(1))}, [${pp.join(', ')}], false);`);
+								}
+								break;
+							}
+						}
+
 						const fast = needFastCheck() && (obj !== 'this' || !Settings.NO_CHECK_FASTCALL_FOR_THIS);
 						if (fast) {
 							state.emitMain(`if (!${emitIsAXOrPrimitive(obj)}) {`);
@@ -1050,6 +1071,7 @@ export function compile(methodInfo: MethodInfo, options: ICompilerOptions = {}):
 					const mn = abc.getMultiname(param(0));
 
 					state.popThisAlias(stackF(0, false));
+					state.emitMain(`// ${mn}`);
 
 					const target = stackF(0);
 					{
@@ -1064,7 +1086,29 @@ export function compile(methodInfo: MethodInfo, options: ICompilerOptions = {}):
 						}
 					}
 
-					state.emitMain(`// ${mn}`);
+					// we can check trite for `this` or any types that has trite
+					// @todo Move this inside fast-call optimiser
+					if (Settings.CHEK_TRAIT_GET_CALL && stack0 === 'this' && instanceInfo) {
+						instanceInfo.traits.resolve();
+						const trait = instanceInfo.traits.getTrait(mn);
+
+						if (trait) {
+							// eslint-disable-next-line max-len
+							state.emitMain(`/* We sure that this safe get, represented in TRAIT as ${TRAITNames[trait.kind]}  */ `);
+							if (trait.kind === TRAIT.Method) {
+								state.emitMain(`${target} = this.axGetProperty(${getname(param(0))});`);
+								break;
+							} else if (
+								trait.kind === TRAIT.Slot ||
+								trait.kind === TRAIT.GetterSetter ||
+								trait.kind === TRAIT.Getter
+							) {
+								state.emitMain(`${target} = ${emitAccess(stack0, mn.getMangledName())};`);
+								break;
+							}
+						}
+					}
+
 					const fast = needFastCheck() && (stack0 !== 'this' || !Settings.NO_CHECK_FASTCALL_FOR_THIS);
 					if (fast) {
 						state.emitMain(`if (!${emitIsAX(stack0)}) {`);
@@ -1135,6 +1179,29 @@ export function compile(methodInfo: MethodInfo, options: ICompilerOptions = {}):
 				case Bytecode.SETPROPERTY: {
 					const mn = abc.getMultiname(param(0));
 					state.emitMain(`// ${mn}`);
+
+					// we can check trite for `this` or any types that has trite
+					// @todo Move this to fast-set optimisator
+					if (Settings.CHEK_TRAIT_SET && stack1 === 'this' && instanceInfo) {
+						instanceInfo.traits.resolve();
+						const trait = instanceInfo.traits.getTrait(mn);
+
+						if (trait && trait) {
+							// eslint-disable-next-line max-len
+							state.emitMain(`/* We sure that this safe set, represented in TRAIT as ${TRAITNames[trait.kind]}, with type: ${(<SlotTraitInfo> trait).typeName}  */ `);
+
+							if (
+								trait.kind === TRAIT.Slot ||
+								trait.kind === TRAIT.GetterSetter ||
+								trait.kind === TRAIT.Getter ||
+								trait.kind === TRAIT.Setter
+							) {
+								//debugger;
+								state.emitMain(`${emitAccess(stack1, mn.getMangledName())} = ${stack0};`);
+								break;
+							}
+						}
+					}
 
 					const fast = needFastCheck() && (stack1 !== 'this' || !Settings.NO_CHECK_FASTCALL_FOR_THIS);
 					if (fast) {

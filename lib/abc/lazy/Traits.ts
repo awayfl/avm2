@@ -57,9 +57,11 @@ export class Traits {
 		const mnName = mn.name;
 		const nss = mn.namespaces;
 		const traits = this.traits;
+
 		for (let i = 0; i < traits.length; i++) {
 			const trait = traits[i];
 			const traitMn = <Multiname>trait.name;
+
 			if (traitMn.name === mnName) {
 				const ns = traitMn.namespaces[0];
 				for (let j = 0; j < nss.length; j++) {

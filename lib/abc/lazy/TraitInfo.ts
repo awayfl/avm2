@@ -32,6 +32,7 @@ export class TraitInfo {
 	}
 
 	getName(): Multiname {
+		this.resolve();
 		return <Multiname> this.name;
 	}
 

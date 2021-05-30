@@ -2,6 +2,8 @@ export interface IAVM2Settings {
 	NO_CHECK_FASTCALL_FOR_THIS: boolean;
 	NO_CHECK_BOXED_THIS: boolean;
 	NO_HOIST_MULTINAME: boolean;
+	CHEK_TRAIT_GET_CALL: boolean;
+	CHEK_TRAIT_SET: boolean;
 	ENABLE_DEBUG: boolean;
 	PRINT_BYTE_INSTRUCTION: boolean;
 	EMULATE_LOOKBEHIND: boolean;
@@ -99,6 +101,16 @@ export const Settings: IAVM2Settings = {
 	 * @description Not require check boxing for this, it already always should be boxed to AVM object,
 	 */
 	NO_CHECK_BOXED_THIS: true,
+	/**
+	 * @description Check trait type of property for generation FAST operation for getProperty and call property,
+	 * avoid generate redundant if-block
+	 */
+	CHEK_TRAIT_GET_CALL: true,
+	/**
+	 * @description Check trait type of property for generation FAST operation for setProperty, avoid redundant if-block
+	 * @todo Atm we not call coerse, result can be unstable
+	 */
+	CHEK_TRAIT_SET: true,
 	/**
 	 * @description Use `WeakRef` for holding a Orphan in OrphanaManager on supported platforms
 	 */
