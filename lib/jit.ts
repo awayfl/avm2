@@ -715,6 +715,12 @@ export function compile(methodInfo: MethodInfo, options: ICompilerOptions = {}):
 					state.emitMain(`${stackF(1)} = ${stack0}.axIsType(${stack1});`);
 					break;
 				case Bytecode.ASTYPE:
+					if ((optimise & COMPILER_OPT_FLAGS.SKIP_NULL_COERCE)
+						&& (lastZ.name === Bytecode.PUSHNULL
+							|| lastZ.name === Bytecode.PUSHUNDEFINED)) {
+						state.emitMain('// SKIP_NULL_COERCE');
+						break;
+					}
 					state.popThisAlias(stackF(0, false));
 					// eslint-disable-next-line max-len
 					state.emitMain(`${stackF(0)} = ${scope}.getScopeProperty(${getname(param(0))}, true, false).axAsType(${stack0});`);
