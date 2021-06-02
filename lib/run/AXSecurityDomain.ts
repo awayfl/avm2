@@ -322,7 +322,7 @@ export class AXSecurityDomain {
 					axClass.dPrototype = Object.create((<any>superClass).prototype);
 					// mark that has external prototupe of chain
 					Object.defineProperty(axClass.dPrototype, IS_EXTERNAL_CLASS, { value: true });
-		  }
+				}
 				axClass.tPrototype = Object.create(axClass.dPrototype);
 				axClass.tPrototype.axInitializer = this.createInitializerFunction(classInfo, classScope);
 			}
@@ -340,7 +340,9 @@ export class AXSecurityDomain {
 		axClass.superClass = superClass;
 		axClass.scope = scope;
 
-		const forceNativeMethods = nativeClasses[className] ? (<typeof ASClass>nativeClasses[className]).forceNativeMethods : false;
+		const forceNativeMethods = nativeClasses[className]
+			? (<typeof ASClass>nativeClasses[className]).forceNativeMethods
+			: false;
 
 		// Object and Class have their traits initialized earlier to avoid circular dependencies.
 		if (className !== 'Object' && className !== 'Class') {
@@ -364,7 +366,9 @@ export class AXSecurityDomain {
 		return axClass;
 	}
 
-	private initializeRuntimeTraits(axClass: AXClass, superClass: AXClass, scope: Scope, forceNativeMethods: boolean = false) {
+	private initializeRuntimeTraits(
+		axClass: AXClass, superClass: AXClass, scope: Scope, forceNativeMethods: boolean = false
+	) {
 		const classInfo = axClass.classInfo;
 		const instanceInfo = classInfo.instanceInfo;
 
@@ -415,7 +419,10 @@ export class AXSecurityDomain {
 		if (!fun) {
 			release || assert(!methodInfo.isNative(), 'Must provide a native initializer for ' +
                                                   classInfo.instanceInfo.getClassName());
-			const binarySymbol = this.application.getBinarySymbol(classInfo.instanceInfo.getClassName());
+
+			const name = classInfo.instanceInfo.getClassName();
+			const binarySymbol = classInfo.abc.applicationDomain.getBinarySymbol(name);
+
 			if (binarySymbol)   {
 				binarySymbol.buffer = binarySymbol.data;
 				fun = <any> function () {
