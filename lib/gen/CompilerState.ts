@@ -22,7 +22,8 @@ export class CompilerState {
 	public opcodes: Instruction[];
 	public currentOpcode: Instruction;
 
-	public thisAlliases: Set<string> = new Set();
+	public thisAliases: Set<string> = new Set();
+	public constAliases: Record<string, { value: string, pos: number }> = {};
 	public noHoistMultiname: boolean = Settings.NO_HOIST_MULTINAME;
 
 	public get indent() {
@@ -78,6 +79,19 @@ export class CompilerState {
 	}
 
 	/**
+	 * Emit constant assigment, and store it in alias tree
+	 * @param stack
+	 * @param value
+	 */
+	public emitConst(stack: string, value: string) {
+		if (Settings.UNSAFE_INLINE_CONST) {
+			this.constAliases[stack] = { value, pos: this.mainBlock.length };
+		}
+
+		return this.mainBlock.push(this.indent + stack + ' = ' + value + ';');
+	}
+
+	/**
 	 * Push line to main code block and prepend indent automatically
 	 * @param line Line to emit to generated code
 	 * @returns line count
@@ -114,29 +128,53 @@ export class CompilerState {
 		return pos;
 	}
 
+	public killConstAliasInstruction(aliases: string[]) {
+		if (!aliases || aliases.length === 0) return;
+
+		for (const a of aliases) {
+			if (this.constAliases[a]) {
+				const instr = this.mainBlock[this.constAliases[a].pos];
+				this.mainBlock[this.constAliases[a].pos] = '//' + instr + '// redundant assigment';
+			}
+		}
+	}
+
+	public constAlias (alias: string): string {
+		if (!Settings.UNSAFE_INLINE_CONST)
+			return  alias;
+
+		if (alias in this.constAliases) {
+			return this.constAliases[alias].value;
+		}
+
+		return alias;
+	}
+
 	public isThisAlias(alias: string): boolean {
 		if (!Settings.UNSAFE_PROPOGATE_THIS)
 			return false;
 
-		return this.thisAlliases.has(alias);
+		return this.thisAliases.has(alias);
 	}
 
 	public pushThisAlias(alias: string, from?: string): boolean {
 		if (!Settings.UNSAFE_PROPOGATE_THIS)
 			return false;
 
-		if (from && !this.thisAlliases.has(from))
+		if (from && !this.thisAliases.has(from))
 			return false;
 
-		if (this.thisAlliases.has(alias))
+		if (this.thisAliases.has(alias))
 			return false;
 
-		this.thisAlliases.add(alias);
+		this.thisAliases.add(alias);
 
 		return true;
 	}
 
-	public popThisAlias(alias: string): boolean {
-		return this.thisAlliases.delete(alias);
+	public popAnyAlias(alias: string): boolean {
+		//remove and const alias, reassigment
+		delete this.constAliases[alias];
+		return this.thisAliases.delete(alias);
 	}
 }

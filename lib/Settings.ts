@@ -18,6 +18,7 @@ export interface IAVM2Settings {
 	HTTP_STRING: string;
 	EMIT_REAL_THIS: boolean;
 	UNSAFE_PROPOGATE_THIS: boolean;
+	UNSAFE_INLINE_CONST: boolean;
 	USE_WEAK_REF: boolean;
 }
 
@@ -87,6 +88,11 @@ export const Settings: IAVM2Settings = {
 	 * @description Try propagade `this` in instruction set, super unsafe. Disable it when any errors is exist
 	 */
 	UNSAFE_PROPOGATE_THIS: true,
+
+	/**
+	 * @description use real constant values for r-values instead of stack-aliases
+	 */
+	UNSAFE_INLINE_CONST: true,
 
 	/**
 	 * @description No hoist multiname (no emit name1 in generated script), this can save a lot of codelines

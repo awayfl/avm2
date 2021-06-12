@@ -95,6 +95,9 @@ function generateFunc(body: string, path: string) {
 	}
 }
 
+//@ts-ignore
+self.attach_hook = UNSAFE_attachMethodHook;
+
 function escape(name: string) {
 	return JSON.stringify(name);
 }
@@ -380,7 +383,7 @@ export function compile(methodInfo: MethodInfo, options: ICompilerOptions = {}):
 					localIndex = param(0);
 					optionalLocalVars[localIndex] && (optionalLocalVars[localIndex].read++);
 
-					state.popThisAlias(stackF(-1, false));
+					state.popAnyAlias(stackF(-1, false));
 					state.emitMain(`${stackF(-1, false)} = ${local(localIndex)};`);
 
 					// this is `this`
@@ -411,7 +414,7 @@ export function compile(methodInfo: MethodInfo, options: ICompilerOptions = {}):
 					break;
 
 				case Bytecode.GETSLOT:
-					state.popThisAlias(stack0);
+					state.popAnyAlias(stack0);
 					// slots can be get/set only on AX objects
 					state.emitMain(`${stackF(0, false)} = ${stack0}.axGetSlot(${param(0)});`);
 					break;
@@ -420,7 +423,7 @@ export function compile(methodInfo: MethodInfo, options: ICompilerOptions = {}):
 					break;
 
 				case Bytecode.GETGLOBALSCOPE:
-					state.popThisAlias(stackF(-1, false));
+					state.popAnyAlias(stackF(-1, false));
 					state.emitMain(`${stackF(-1, false)} = context.savedScope.global.object;`);
 					break;
 				case Bytecode.PUSHSCOPE:
@@ -435,48 +438,48 @@ export function compile(methodInfo: MethodInfo, options: ICompilerOptions = {}):
 					state.emitMain(`${scope} = undefined;`);
 					break;
 				case Bytecode.GETSCOPEOBJECT:
-					state.popThisAlias(stackF(-1, false));
+					state.popAnyAlias(stackF(-1, false));
 					state.emitMain(`${stackF(-1)} = scope${param(0)}.object;`);
 					break;
 
 				case Bytecode.NEXTNAME:
-					state.popThisAlias(stackF(1, false));
+					state.popAnyAlias(stackF(1, false));
 					state.emitMain(`${stackF(1)} = sec.box(${stack1}).axNextName(${stack0});`);
 					break;
 				case Bytecode.NEXTVALUE:
-					state.popThisAlias(stackF(1, false));
+					state.popAnyAlias(stackF(1, false));
 					state.emitMain(`${stackF(1)} = sec.box(${stack1}).axNextValue(${stack0});`);
 					break;
 				case Bytecode.HASNEXT:
-					state.popThisAlias(stackF(1, false));
+					state.popAnyAlias(stackF(1, false));
 					state.emitMain(`${stackF(1)} = sec.box(${stack1}).axNextNameIndex(${stack0});`);
 					break;
 				case Bytecode.HASNEXT2:
-					state.popThisAlias(stackF(-1, false));
+					state.popAnyAlias(stackF(-1, false));
 					state.emitMain(`temp = context.hasnext2(${local(param(0))}, ${local(param(1))});`);
 					state.emitMain(`${local(param(0))} = temp[0];`);
 					state.emitMain(`${local(param(1))} = temp[1];`);
 					state.emitMain(`${stackF(-1)} = ${local(param(1))} > 0;`);
 					break;
 				case Bytecode.IN:
-					state.popThisAlias(stackF(1, false));
+					state.popAnyAlias(stackF(1, false));
 					// eslint-disable-next-line max-len
 					state.emitMain(`${stackF(1)} = (${stack1} && ${stack1}.axClass === sec.AXQName) ? obj.axHasProperty(${stack1}.name) : ${stack0}.axHasPublicProperty(${stack1});`);
 					break;
 
 				case Bytecode.DUP:
-					state.popThisAlias(stackF(-1, false));
+					state.popAnyAlias(stackF(-1, false));
 					state.emitMain(`${stackF(-1)} = ${stack0};`);
 					state.pushThisAlias(stackF(-1), stack0);
 					break;
 				case Bytecode.POP:
 					// it real pop stack0 ?
-					state.popThisAlias(stackF(0, false));
+					state.popAnyAlias(stackF(0, false));
 					//js.push(`${idnt};`)
 					break;
 				case Bytecode.SWAP: {
-					state.popThisAlias(stackF(0, false));
-					state.popThisAlias(stackF(1, false));
+					state.popAnyAlias(stackF(0, false));
+					state.popAnyAlias(stackF(1, false));
 
 					state.emitMain(`temp = ${stack0};`);
 					state.emitMain(`${stackF(0)} = ${stack1};`);
@@ -485,48 +488,48 @@ export function compile(methodInfo: MethodInfo, options: ICompilerOptions = {}):
 					break;
 				}
 				case Bytecode.PUSHTRUE:
-					state.popThisAlias(stackF(-1, false));
-					state.emitMain(`${stackF(-1)} = true;`);
+					state.popAnyAlias(stackF(-1, false));
+					state.emitConst(stackF(-1),'true');
 					break;
 				case Bytecode.PUSHFALSE:
-					state.popThisAlias(stackF(-1, false));
-					state.emitMain(`${stackF(-1)} = false;`);
+					state.popAnyAlias(stackF(-1, false));
+					state.emitConst(stackF(-1),'false');
 					break;
 				case Bytecode.PUSHBYTE:
-					state.popThisAlias(stackF(-1, false));
-					state.emitMain(`${stackF(-1)} = ${param(0)};`);
+					state.popAnyAlias(stackF(-1, false));
+					state.emitConst(stackF(-1), '' + param(0));
 					break;
 				case Bytecode.PUSHSHORT:
-					state.popThisAlias(stackF(-1, false));
-					state.emitMain(`${stackF(-1)} = ${param(0)};`);
+					state.popAnyAlias(stackF(-1, false));
+					state.emitConst(stackF(-1), '' + param(0));
 					break;
 				case Bytecode.PUSHINT:
-					state.popThisAlias(stackF(-1, false));
-					state.emitMain(`${stackF(-1)} = ${abc.ints[param(0)]};`);
+					state.popAnyAlias(stackF(-1, false));
+					state.emitConst(stackF(-1), '' + abc.ints[param(0)]);
 					break;
 				case Bytecode.PUSHUINT:
-					state.popThisAlias(stackF(-1, false));
-					state.emitMain(`${stackF(-1)} = ${abc.uints[param(0)]};`);
+					state.popAnyAlias(stackF(-1, false));
+					state.emitConst(stackF(-1), '' + abc.uints[param(0)]);
 					break;
 				case Bytecode.PUSHDOUBLE:
-					state.popThisAlias(stackF(-1, false));
-					state.emitMain(`${stackF(-1)} = ${abc.doubles[param(0)]};`);
+					state.popAnyAlias(stackF(-1, false));
+					state.emitConst(stackF(-1), '' + abc.doubles[param(0)]);
 					break;
 				case Bytecode.PUSHSTRING:
-					state.popThisAlias(stackF(-1, false));
-					state.emitMain(`${stackF(-1)} = ${escape(abc.getString(param(0)))};`);
+					state.popAnyAlias(stackF(-1, false));
+					state.emitConst(stackF(-1), escape(abc.getString(param(0))));
 					break;
 				case Bytecode.PUSHNAN:
-					state.popThisAlias(stackF(-1, false));
-					state.emitMain(`${stackF(-1)} = NaN;`);
+					state.popAnyAlias(stackF(-1, false));
+					state.emitConst(stackF(-1), 'NaN');
 					break;
 				case Bytecode.PUSHNULL:
-					state.popThisAlias(stackF(-1, false));
-					state.emitMain(`${stackF(-1)} = null;`);
+					state.popAnyAlias(stackF(-1, false));
+					state.emitConst(stackF(-1), 'null');
 					break;
 				case Bytecode.PUSHUNDEFINED:
-					state.popThisAlias(stackF(-1, false));
-					state.emitMain(`${stackF(-1)} = undefined;`);
+					state.popAnyAlias(stackF(-1, false));
+					state.emitConst(stackF(-1), 'undefined');
 					break;
 				case Bytecode.IFEQ:
 					state.emitMain(`if (${stack0} == ${stack1}) { p = ${param(0)}; continue; };`);
@@ -590,10 +593,12 @@ export function compile(methodInfo: MethodInfo, options: ICompilerOptions = {}):
 					state.emitMain(`{ p = ${param(0)}; continue; };`);
 					break;
 				case Bytecode.INCREMENT:
-					state.emitMain(`${stack0}++;`);
+					state.popAnyAlias(stackF(0, false));
+					state.emitMain(`${stackF(0)}++;`);
 					break;
 				case Bytecode.DECREMENT:
-					state.emitMain(`${stack0}--;`);
+					state.popAnyAlias(stackF(0, false));
+					state.emitMain(`${stackF(0)}--;`);
 					break;
 				case Bytecode.INCLOCAL:
 					state.emitMain(`${local(param(0))}++;`);
@@ -602,116 +607,140 @@ export function compile(methodInfo: MethodInfo, options: ICompilerOptions = {}):
 					state.emitMain(`${local(param(0))}--;`);
 					break;
 				case Bytecode.INCREMENT_I:
-					state.emitMain(`${stack0} |= 0;`);
-					state.emitMain(`${stack0}++;`);
+					state.popAnyAlias(stackF(0, false));
+					state.emitMain(`${stackF(0)} |= 0;`);
+					state.emitMain(`${stackF(0)} ++;`);
 					break;
 				case Bytecode.DECREMENT_I:
-					state.emitMain(`${stack0} |= 0;`);
-					state.emitMain(`${stack0}--;`);
+					state.popAnyAlias(stackF(0, false));
+					state.emitMain(`${stackF(0)} |= 0;`);
+					state.emitMain(`${stackF(0)} --;`);
 					break;
 				case Bytecode.INCLOCAL_I:
 					state.emitMain(`${local(param(0))} |= 0;`);
-					state.emitMain(`${local(param(0))}++;`);
+					state.emitMain(`${local(param(0))} ++;`);
 					break;
 				case Bytecode.DECLOCAL_I:
 					state.emitMain(`${local(param(0))} |= 0;`);
-					state.emitMain(`${local(param(0))}--;`);
+					state.emitMain(`${local(param(0))} --;`);
 					break;
 				case Bytecode.NEGATE_I:
-					state.emitMain(`${stack0} = -(${stack0} | 0);`);
+					state.popAnyAlias(stackF(0, false));
+					state.emitMain(`${stackF(0)} = -(${stack0} | 0);`);
 					break;
 				case Bytecode.ADD_I:
-					state.emitMain(`${stack1} = (${stack1} | 0) + (${stack0} | 0);`);
+					state.popAnyAlias(stackF(1, false));
+					state.emitMain(`${stackF(1)} = (${stack1} | 0) + (${stack0} | 0);`);
 					break;
 				case Bytecode.SUBTRACT_I:
-					state.emitMain(`${stack1} = (${stack1} | 0) - (${stack0} | 0);`);
+					state.popAnyAlias(stackF(1, false));
+					state.emitMain(`${stackF(1)} = (${stack1} | 0) - (${stack0} | 0);`);
 					break;
 				case Bytecode.MULTIPLY_I:
-					state.emitMain(`${stack1} = (${stack1} | 0) * (${stack0} | 0);`);
+					state.popAnyAlias(stackF(1, false));
+					state.emitMain(`${stackF(1)} = (${stack1} | 0) * (${stack0} | 0);`);
 					break;
 				case Bytecode.ADD:
 					// LOL, this can be used when this used in string concation
-					state.popThisAlias(stackF(1, false));
+					state.popAnyAlias(stackF(1, false));
 					state.emitMain(`${stackF(1)} += ${stack0};`);
 					break;
 				case Bytecode.SUBTRACT:
-					state.emitMain(`${stack1} -= ${stack0};`);
+					state.popAnyAlias(stackF(1, false));
+					state.emitMain(`${stackF(1)} -= ${stack0};`);
 					break;
 				case Bytecode.MULTIPLY:
-					state.emitMain(`${stack1} *= ${stack0};`);
+					state.popAnyAlias(stackF(1, false));
+					state.emitMain(`${stackF(1)} *= ${stack0};`);
 					break;
 				case Bytecode.DIVIDE:
-					state.emitMain(`${stack1} /= ${stack0};`);
+					state.popAnyAlias(stackF(1, false));
+					state.emitMain(`${stackF(1)} /= ${stack0};`);
 					break;
 				case Bytecode.MODULO:
-					state.emitMain(`${stack1} %= ${stack0};`);
+					state.popAnyAlias(stackF(1, false));
+					state.emitMain(`${stackF(1)} %= ${stack0};`);
 					break;
 
 				case Bytecode.LSHIFT:
-					state.emitMain(`${stack1} <<= ${stack0};`);
+					state.popAnyAlias(stackF(1, false));
+
+					state.emitMain(`${stackF(1)} <<= ${stack0};`);
 					break;
 				case Bytecode.RSHIFT:
-					state.emitMain(`${stack1} >>= ${stack0};`);
+					state.popAnyAlias(stackF(1, false));
+					state.emitMain(`${stackF(1)} >>= ${stack0};`);
 					break;
 				case Bytecode.URSHIFT:
-					state.emitMain(`${stack1} >>>= ${stack0};`);
+					state.popAnyAlias(stackF(1, false));
+					state.emitMain(`${stackF(1)} >>>= ${stack0};`);
 					break;
 
 				case Bytecode.BITAND:
-					state.emitMain(`${stack1} &= ${stack0};`);
+					state.popAnyAlias(stackF(1, false));
+					state.emitMain(`${stackF(1)} &= ${stack0};`);
 					break;
 				case Bytecode.BITOR:
-					state.emitMain(`${stack1} |= ${stack0};`);
+					state.popAnyAlias(stackF(1, false));
+					state.emitMain(`${stackF(1)} |= ${stack0};`);
 					break;
 				case Bytecode.BITXOR:
-					state.emitMain(`${stack1} ^= ${stack0};`);
+					state.popAnyAlias(stackF(1, false));
+					state.emitMain(`${stackF(1)} ^= ${stack0};`);
 					break;
 
 				case Bytecode.EQUALS:
-					state.popThisAlias(stackF(1, false));
+					state.popAnyAlias(stackF(1, false));
 					state.emitMain(`${stackF(1)} = ${stack1} == ${stack0};`);
 					break;
 				case Bytecode.STRICTEQUALS:
-					state.popThisAlias(stackF(1, false));
+					state.popAnyAlias(stackF(1, false));
 					state.emitMain(`${stackF(1)} = ${stack1} === ${stack0};`);
 					break;
 				case Bytecode.GREATERTHAN:
-					state.emitMain(`${stack1} = ${stack1} > ${stack0};`);
+					state.popAnyAlias(stackF(1, false));
+					state.emitMain(`${stackF(1)} = ${stack1} > ${stack0};`);
 					break;
 				case Bytecode.GREATEREQUALS:
-					state.emitMain(`${stack1} = ${stack1} >= ${stack0};`);
+					state.popAnyAlias(stackF(1, false));
+					state.emitMain(`${stackF(1)} = ${stack1} >= ${stack0};`);
 					break;
 				case Bytecode.LESSTHAN:
-					state.emitMain(`${stack1} = ${stack1} < ${stack0};`);
+					state.popAnyAlias(stackF(1, false));
+					state.emitMain(`${stackF(1)} = ${stack1} < ${stack0};`);
 					break;
 				case Bytecode.LESSEQUALS:
-					state.emitMain(`${stack1} = ${stack1} <= ${stack0};`);
+					state.popAnyAlias(stackF(1, false));
+					state.emitMain(`${stackF(1)} = ${stack1} <= ${stack0};`);
 					break;
 				case Bytecode.NOT:
-					state.emitMain(`${stack0} = !${stack0};`);
+					state.popAnyAlias(stackF(0, false));
+					state.emitMain(`${stackF(0)} = !${stack0};`);
 					break;
 				case Bytecode.BITNOT:
-					state.emitMain(`${stack0} = ~${stack0};`);
+					state.popAnyAlias(stackF(0, false));
+					state.emitMain(`${stackF(0)} = ~${stack0};`);
 					break;
 				case Bytecode.NEGATE:
-					state.emitMain(`${stack0} = -${stack0};`);
+					state.popAnyAlias(stackF(0, false));
+					state.emitMain(`${stackF(0)} = -${stack0};`);
 					break;
 				case Bytecode.TYPEOF:
-					state.popThisAlias(stackF(0, false));
+					state.popAnyAlias(stackF(0, false));
 					// eslint-disable-next-line max-len
 					state.emitMain(`${stackF(0)} = typeof ${stack0} === 'undefined' ? 'undefined' : context.typeof(${stack0});`);
 					break;
 				case Bytecode.INSTANCEOF:
-					state.popThisAlias(stackF(1, false));
+					state.popAnyAlias(stackF(1, false));
 					state.emitMain(`${stackF(1)} = ${stack0}.axIsInstanceOf(${stack1});`);
 					break;
 				case Bytecode.ISTYPE:
-					state.popThisAlias(stackF(0, false));
+					state.popAnyAlias(stackF(0, false));
 					// eslint-disable-next-line max-len
 					state.emitMain(`${stackF(0)} = ${scope}.getScopeProperty(${getname(param(0))}, true, false).axIsType(${stack0});`);
 					break;
 				case Bytecode.ISTYPELATE:
-					state.popThisAlias(stackF(1, false));
+					state.popAnyAlias(stackF(1, false));
 					state.emitMain(`${stackF(1)} = ${stack0}.axIsType(${stack1});`);
 					break;
 				case Bytecode.ASTYPE:
@@ -721,37 +750,40 @@ export function compile(methodInfo: MethodInfo, options: ICompilerOptions = {}):
 						state.emitMain('// SKIP_NULL_COERCE');
 						break;
 					}
-					state.popThisAlias(stackF(0, false));
+					state.popAnyAlias(stackF(0, false));
 					// eslint-disable-next-line max-len
 					state.emitMain(`${stackF(0)} = ${scope}.getScopeProperty(${getname(param(0))}, true, false).axAsType(${stack0});`);
 					break;
 
 				case Bytecode.ASTYPELATE:
-					state.popThisAlias(stackF(1, false));
+					state.popAnyAlias(stackF(1, false));
 					// eslint-disable-next-line max-len
 					state.emitMain(`${stackF(1)} = ${emitIsAXOrPrimitive(stack1)} ? ${stack0}.axAsType(${stack1}) : ${stack1};`);
 					break;
 
 				case Bytecode.CALL: {
-					state.popThisAlias(stackF(param(0) + 1, false));
+					state.popAnyAlias(stackF(param(0) + 1, false));
 
 					const pp = [];
 					const obj = stackF(param(0) + 1);
-					for (let j: number = 1; j <= param(0); j++)
+					for (let j: number = 1; j <= param(0); j++) {
 						pp.push(stackF(param(0) - j));
+						state.killConstAliasInstruction([stackF(param(0) - j, false)]);
+					}
 
 					// eslint-disable-next-line max-len
 					state.emitMain(`${obj} = context.call(${stackF(param(0) + 1)}, ${stackF(param(0))}, [${pp.join(', ')}], ${scope});`);
 					break;
 				}
 				case Bytecode.CONSTRUCT: {
-					state.popThisAlias(stackF(param(0), false));
+					state.popAnyAlias(stackF(param(0), false));
 
 					const pp = [];
 					const obj = stackF(param(0));
 
 					for (let j = 1; j <= param(0); j++) {
 						pp.push(stackF(param(0) - j));
+						state.killConstAliasInstruction([stackF(param(0) - j, false)]);
 					}
 
 					// eslint-disable-next-line max-len
@@ -761,12 +793,14 @@ export function compile(methodInfo: MethodInfo, options: ICompilerOptions = {}):
 				case Bytecode.CALLPROPERTY: {
 					const mn = abc.getMultiname(param(1));
 					const pp = [];
-					for (let j: number = 0; j <= param(0); j++)
+					const obj = stackF(param(0));
+
+					for (let j: number = 1; j <= param(0); j++) {
 						pp.push(stackF(param(0) - j));
+						state.killConstAliasInstruction([stackF(param(0) - j, false)]);
+					}
 
-					const obj = pp.shift();
-
-					state.popThisAlias(stackF(param(0), false));
+					state.popAnyAlias(stackF(param(0), false));
 
 					const targetStack = stackF(param(0));
 
@@ -852,16 +886,18 @@ export function compile(methodInfo: MethodInfo, options: ICompilerOptions = {}):
 				}
 				case Bytecode.CALLPROPLEX: {
 					const mn = abc.getMultiname(param(1));
-					const pp = [];
 
-					state.popThisAlias(stackF(param(0), false));
+					state.popAnyAlias(stackF(param(0), false));
 
 					const targetStack = stackF(param(0));
+					const pp = [];
 
-					for (let j: number = 0; j <= param(0); j++)
+					for (let j = 1; j <= param(0); j++) {
 						pp.push(stackF(param(0) - j));
+						state.killConstAliasInstruction([stackF(param(0) - j, false)]);
+					}
 
-					state.emitMain(`temp = sec.box(${pp.shift()});`);
+					state.emitMain(`temp = sec.box(${targetStack});`);
 
 					const accessor = emitAccess('temp', '$Bg' + mn.name);
 
@@ -872,11 +908,13 @@ export function compile(methodInfo: MethodInfo, options: ICompilerOptions = {}):
 				case Bytecode.CALLPROPVOID: {
 					const mn = abc.getMultiname(param(1));
 					const pp = [];
+					const obj = stackF(param(0));
 
-					for (let j: number = 0; j <= param(0); j++)
+					for (let j = 1; j <= param(0); j++) {
 						pp.push(stackF(param(0) - j));
+						state.killConstAliasInstruction([stackF(param(0) - j, false)]);
+					}
 
-					const obj = pp.shift();
 					{
 						if (USE_OPT(fastCall) && fastCall.sureThatFast(obj)) {
 							const n = fastCall.sureThatFast(obj).isMangled
@@ -922,12 +960,14 @@ export function compile(methodInfo: MethodInfo, options: ICompilerOptions = {}):
 				case Bytecode.APPLYTYPE: {
 					const pp = [];
 
-					state.popThisAlias(stackF(param(0), false));
+					state.popAnyAlias(stackF(param(0), false));
 
 					const targetStack = stackF(param(0));
 
-					for (let j: number = 1; j <= param(0); j++)
+					for (let j = 1; j <= param(0); j++) {
 						pp.push(stackF(param(0) - j));
+						state.killConstAliasInstruction([stackF(param(0) - j, false)]);
+					}
 
 					state.emitMain(`${targetStack} = sec.applyType(${targetStack}, [${pp.join(', ')}]);`);
 					break;
@@ -935,7 +975,7 @@ export function compile(methodInfo: MethodInfo, options: ICompilerOptions = {}):
 				case Bytecode.FINDPROPSTRICT: {
 					const mn = abc.getMultiname(param(0));
 					state.emitMain(`// ${mn}`);
-					state.popThisAlias(stackF(-1, false));
+					state.popAnyAlias(stackF(-1, false));
 
 					const target = stackF(-1);
 					if (USE_OPT(lexGen) && lexGen.test(mn, false)) {
@@ -959,18 +999,18 @@ export function compile(methodInfo: MethodInfo, options: ICompilerOptions = {}):
 				}
 				case Bytecode.FINDPROPERTY:
 					state.emitMain(`// ${abc.getMultiname(param(0))}`);
-					state.popThisAlias(stackF(-1, false));
+					state.popAnyAlias(stackF(-1, false));
 					state.emitMain(`${stackF(-1)} = ${scope}.findScopeProperty(${getname(param(0))}, false, false);`);
 					break;
 				case Bytecode.NEWFUNCTION:
 					state.emitMain(`// ${abc.getMethodInfo(param(0))}`);
-					state.popThisAlias(stackF(-1, false));
+					state.popAnyAlias(stackF(-1, false));
 					// eslint-disable-next-line max-len
 					state.emitMain(`${stackF(-1)} = context.createFunction(${param(0)}, ${scope}, true, ${methodInfo.index()});`);
 					break;
 				case Bytecode.NEWCLASS:
 					state.emitMain(`// ${abc.classes[param(0)]}`);
-					state.popThisAlias(stackF(0, false));
+					state.popAnyAlias(stackF(0, false));
 					// eslint-disable-next-line max-len
 					state.emitMain(`${stackF(0)} = sec.createClass(context.abc.classes[${param(0)}], ${stack0}, ${scope});`);
 					break;
@@ -983,7 +1023,7 @@ export function compile(methodInfo: MethodInfo, options: ICompilerOptions = {}):
 					if (mn.isRuntimeName()) {
 						const runtime = mn.isRuntimeName() && mn.isRuntimeNamespace();
 
-						state.popThisAlias(runtime ? stackF(2, false) : stackF(1, false));
+						state.popAnyAlias(runtime ? stackF(2, false) : stackF(1, false));
 
 						const target = runtime ? stackF(2) : stackF(1);
 
@@ -1002,7 +1042,7 @@ export function compile(methodInfo: MethodInfo, options: ICompilerOptions = {}):
 						break;
 
 					} else {
-						state.popThisAlias(stackF(0, false));
+						state.popAnyAlias(stackF(0, false));
 						state.emitMain(`${stackF(0)} = ${stack0}.descendants(${getname(param(0))});`);
 					}
 					break;
@@ -1010,10 +1050,12 @@ export function compile(methodInfo: MethodInfo, options: ICompilerOptions = {}):
 				case Bytecode.NEWARRAY: {
 					const pp = [];
 
-					for (let j: number = 1; j <= param(0); j++)
+					for (let j = 1; j <= param(0); j++) {
 						pp.push(stackF(param(0) - j));
+						state.killConstAliasInstruction([stackF(param(0) - j, false)]);
+					}
 
-					state.popThisAlias(stackF(param(0) - 1, false));
+					state.popAnyAlias(stackF(param(0) - 1, false));
 					state.emitMain(`${stackF(param(0) - 1)} = sec.AXArray.axBox([${pp.join(', ')}]);`);
 					break;
 				}
@@ -1025,36 +1067,40 @@ export function compile(methodInfo: MethodInfo, options: ICompilerOptions = {}):
 						state.emitMain(`temp.axSetPublicProperty(${stackF(2 * param(0) - 2 * j + 1)}, ${stackF(2 * param(0) - 2 * j)});`);
 					}
 
-					state.popThisAlias(stackF(2 * param(0) - 1, false));
+					state.popAnyAlias(stackF(2 * param(0) - 1, false));
 					state.emitMain(`${stackF(2 * param(0) - 1)} = temp;`);
 					state.emitMain('temp = undefined;');
 					break;
 				}
 				case Bytecode.NEWACTIVATION:
-					state.popThisAlias(stackF(-1, false));
+					state.popAnyAlias(stackF(-1, false));
 					state.emitMain(`${stackF(-1)} = sec.createActivation(context.mi, ${scope});`);
 					break;
 				case Bytecode.NEWCATCH:
-					state.popThisAlias(stackF(-1, false));
+					state.popAnyAlias(stackF(-1, false));
 					// eslint-disable-next-line max-len
 					state.emitMain(`${stackF(-1)} = sec.createCatch(context.mi.getBody().catchBlocks[${param(0)}], ${scope});`);
 					break;
 				case Bytecode.CONSTRUCTSUPER: {
 					const pp = [];
 
-					for (let j: number = 1; j <= param(0); j++)
+					for (let j = 1; j <= param(0); j++) {
 						pp.push(stackF(param(0) - j));
+						state.killConstAliasInstruction([stackF(param(0) - j, false)]);
+					}
 
 					state.emitMain(`context.savedScope.superConstructor.call(${stackF(param(0))}, ${pp.join(', ')});`);
 				}
 					break;
 				case Bytecode.CALLSUPER: {
 					const pp = [];
-					state.popThisAlias(stackF(param(0), false));
+					state.popAnyAlias(stackF(param(0), false));
 					const targetStack = stackF(param(0));
 
-					for (let j: number = 1; j <= param(0); j++)
+					for (let j = 1; j <= param(0); j++) {
 						pp.push(stackF(param(0) - j));
+						state.killConstAliasInstruction([stackF(param(0) - j, false)]);
+					}
 
 					// eslint-disable-next-line max-len
 					state.emitMain(`${targetStack} = sec.box(${targetStack}).axCallSuper(${getname(param(1))}, context.savedScope, [${pp.join(', ')}]);`);
@@ -1063,16 +1109,18 @@ export function compile(methodInfo: MethodInfo, options: ICompilerOptions = {}):
 				case Bytecode.CALLSUPER_DYN: {
 					const pp = [];
 
-					for (let j: number = 1; j <= param(0); j++)
+					for (let j = 1; j <= param(0); j++) {
 						pp.push(stackF(param(0) - j));
+						state.killConstAliasInstruction([stackF(param(0) - j, false)]);
+					}
 
 					const mn = abc.getMultiname(param(1));
 					if (mn.isRuntimeName() && mn.isRuntimeNamespace()) {
-						state.popThisAlias(stackF(param(0) + 2, false));
+						state.popAnyAlias(stackF(param(0) + 2, false));
 						// eslint-disable-next-line max-len
 						state.emitMain(`${stackF(param(0) + 2)} = sec.box(${stackF(param(0) + 2)}).axGetSuper(context.runtimename(${getname(param(1))}, ${stackF(param(0))}, ${stackF(param(0) + 1)}), context.savedScope, [${pp.join(', ')}]);`);
 					} else {
-						state.popThisAlias(stackF(param(0) + 1, false));
+						state.popAnyAlias(stackF(param(0) + 1, false));
 						// eslint-disable-next-line max-len
 						state.emitMain(`${stackF(param(0) + 1)} = sec.box(${stackF(param(0) + 1)}).axGetSuper(context.runtimename(${getname(param(1))}, ${stackF(param(0))}), context.savedScope, [${pp.join(', ')}]);`);
 					}
@@ -1082,8 +1130,10 @@ export function compile(methodInfo: MethodInfo, options: ICompilerOptions = {}):
 				case Bytecode.CALLSUPERVOID: {
 					const pp = [];
 
-					for (let j: number = 1; j <= param(0); j++)
+					for (let j = 1; j <= param(0); j++) {
 						pp.push(stackF(param(0) - j));
+						state.killConstAliasInstruction([stackF(param(0) - j, false)]);
+					}
 
 					// eslint-disable-next-line max-len
 					state.emitMain(`sec.box(${stackF(param(0))}).axCallSuper(${getname(param(1))}, context.savedScope, [${pp.join(', ')}]);`);
@@ -1092,10 +1142,12 @@ export function compile(methodInfo: MethodInfo, options: ICompilerOptions = {}):
 				case Bytecode.CONSTRUCTPROP: {
 					const pp = [];
 					const targetStack = stackF(param(0), false);
-					state.popThisAlias(targetStack);
+					state.popAnyAlias(targetStack);
 
-					for (let j: number = 1; j <= param(0); j++)
+					for (let j = 1; j <= param(0); j++) {
 						pp.push(stackF(param(0) - j));
+						state.killConstAliasInstruction([stackF(param(0) - j, false)]);
+					}
 
 					// eslint-disable-next-line max-len
 					state.emitMain(`${stackF(param(0))} = context.constructprop(${getname(param(1))}, ${targetStack}, [${pp.join(', ')}]);`);
@@ -1106,7 +1158,7 @@ export function compile(methodInfo: MethodInfo, options: ICompilerOptions = {}):
 				case Bytecode.GETPROPERTY: {
 					const mn = abc.getMultiname(param(0));
 
-					state.popThisAlias(stackF(0, false));
+					state.popAnyAlias(stackF(0, false));
 					state.emitMain(`// ${mn}`);
 
 					const target = stackF(0);
@@ -1169,7 +1221,7 @@ export function compile(methodInfo: MethodInfo, options: ICompilerOptions = {}):
 					const mn = abc.getMultiname(param(0));
 					const runtime = mn.isRuntimeName() && mn.isRuntimeNamespace();
 
-					state.popThisAlias(runtime ? stackF(2, false) : stackF(1, false));
+					state.popAnyAlias(runtime ? stackF(2, false) : stackF(1, false));
 
 					const target = runtime ? stackF(2) : stackF(1);
 
@@ -1212,6 +1264,8 @@ export function compile(methodInfo: MethodInfo, options: ICompilerOptions = {}):
 				}
 				case Bytecode.SETPROPERTY: {
 					const mn = abc.getMultiname(param(0));
+					state.killConstAliasInstruction([stackF(0, false)]);
+
 					state.emitMain(`// ${mn}`);
 
 					// we can check trite for `this` or any types that has trite
@@ -1262,37 +1316,37 @@ export function compile(methodInfo: MethodInfo, options: ICompilerOptions = {}):
 					break;
 				}
 				case Bytecode.DELETEPROPERTY:
-					state.popThisAlias(stackF(0, false));
+					state.popAnyAlias(stackF(0, false));
 					state.emitMain(`// ${abc.getMultiname(param(0))}`);
 					state.emitMain(`${stackF(0)} = context.deleteproperty(${getname(param(0))}, ${stack0});`);
 					break;
 				case Bytecode.DELETEPROPERTY_DYN: {
 					const mn = abc.getMultiname(param(0));
 					if (mn.isRuntimeName() && mn.isRuntimeNamespace()) {
-						state.popThisAlias(stackF(2, false));
+						state.popAnyAlias(stackF(2, false));
 						// eslint-disable-next-line max-len
 						state.emitMain(`${stackF(2)} = context.deleteproperty(context.runtimename(${getname(param(0))}, ${stack0}, ${stack1}), ${stack2});`);
 					} else {
-						state.popThisAlias(stackF(1, false));
+						state.popAnyAlias(stackF(1, false));
 						// eslint-disable-next-line max-len
 						state.emitMain(`${stackF(1)} = context.deleteproperty(context.runtimename(${getname(param(0))}, ${stack0}), ${stack1});`);
 					}
 					break;
 				}
 				case Bytecode.GETSUPER:
-					state.popThisAlias(stackF(0, false));
+					state.popAnyAlias(stackF(0, false));
 					// eslint-disable-next-line max-len
 					state.emitMain(`${stackF(0)} = sec.box(${stack0}).axGetSuper(${getname(param(0))}, context.savedScope);`);
 					break;
 				case Bytecode.GETSUPER_DYN: {
 					const mn = abc.getMultiname(param(0));
 					if (mn.isRuntimeName() && mn.isRuntimeNamespace()) {
-						state.popThisAlias(stackF(2, false));
+						state.popAnyAlias(stackF(2, false));
 						// eslint-disable-next-line max-len
 						state.emitMain(`${stackF(2)} = sec.box(${stack2}).axGetSuper(context.runtimename(${getname(param(0))}, ${stack0}, ${stack1}), context.savedScope);`);
 
 					} else {
-						state.popThisAlias(stackF(1, false));
+						state.popAnyAlias(stackF(1, false));
 						// eslint-disable-next-line max-len
 						state.emitMain(`${stackF(1)} = sec.box(${stack1}).axGetSuper(context.runtimename(${getname(param(0))}, ${stack0}), context.savedScope);`);
 					}
@@ -1316,7 +1370,7 @@ export function compile(methodInfo: MethodInfo, options: ICompilerOptions = {}):
 				case Bytecode.GETLEX: {
 					const mn = abc.getMultiname(param(0));
 
-					state.popThisAlias(stackF(-1, false));
+					state.popAnyAlias(stackF(-1, false));
 					const target = stackF(-1);
 
 					if (USE_OPT(lexGen) && lexGen.test(mn, true)) {
@@ -1381,7 +1435,7 @@ export function compile(methodInfo: MethodInfo, options: ICompilerOptions = {}):
 						break;
 					}
 
-					state.popThisAlias(stackF(0, false));
+					state.popAnyAlias(stackF(0, false));
 
 					// WE MUST EMIT REAL STACK WHEN ASSIGN TO IT,
 					const target = stackF(0);
@@ -1419,44 +1473,49 @@ export function compile(methodInfo: MethodInfo, options: ICompilerOptions = {}):
 						break;
 					}
 
-					state.popThisAlias(stackF(0, false));
+					state.popAnyAlias(stackF(0, false));
 					state.emitMain(`${stackF(0)} = context.axCoerceString(${stack0});`);
 					break;
 
 				case Bytecode.ESC_XELEM:
-					state.popThisAlias(stackF(0, false));
+					state.popAnyAlias(stackF(0, false));
 					state.emitMain(`${stackF(0)} = context.escXElem(${stack0});`);
 
 					break;
 				case Bytecode.ESC_XATTR:
-					state.popThisAlias(stackF(0, false));
+					state.popAnyAlias(stackF(0, false));
 					state.emitMain(`${stackF(0)} = context.escXAttr(${stack0});`);
 					break;
 
 				case Bytecode.CONVERT_I:
-					state.emitMain(`${stack0} |= 0;`);
+					state.popAnyAlias(stackF(0, false));
+					state.emitMain(`${stackF(0)} |= 0;`);
 					break;
 				case Bytecode.CONVERT_D:
-					state.emitMain(`${stack0} = +${stack0};`);
+					state.popAnyAlias(stackF(0, false));
+					state.emitMain(`${stackF(0)} = +${stack0};`);
 					break;
 				case Bytecode.CONVERT_B:
-					state.emitMain(`${stack0} = !!${stack0};`);
+					state.popAnyAlias(stackF(0, false));
+					state.emitMain(`${stackF(0)} = !!${stack0};`);
 					break;
 				case Bytecode.CONVERT_U:
-					state.emitMain(`${stack0} >>>= 0;`);
+					state.popAnyAlias(stackF(0, false));
+					state.emitMain(`${stackF(0)} >>>= 0;`);
 					break;
 				case Bytecode.CONVERT_S:
-					state.emitMain(`if (typeof ${stack0} !== 'string') ${stack0} = ${stack0} + '';`);
+					state.popAnyAlias(stackF(0, false));
+					state.emitMain(`if (typeof ${stack0} !== 'string') ${stackF(0)} = ${stack0} + '';`);
 					break;
 				case Bytecode.CONVERT_O:
 					state.emitMain('');
 					break;
 				case Bytecode.CHECKFILTER:
-					state.popThisAlias(stackF(0, false));
+					state.popAnyAlias(stackF(0, false));
 					state.emitMain(`${stack0} = context.axCheckFilter(sec, ${stack0});`);
 					break;
 				case Bytecode.KILL:
-					state.popThisAlias(local(param(0)));
+					state.popAnyAlias(local(param(0)));
 					state.emitMain(`${local(param(0))} = undefined;`);
 					break;
 
