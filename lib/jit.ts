@@ -355,6 +355,10 @@ export function compile(methodInfo: MethodInfo, options: ICompilerOptions = {}):
 			state.emitMain(`//${BytecodeName[z.name]} ${z.params.join(' / ')} -> ${z.returnTypeId}`);
 		}
 
+		if (z.comment) {
+			state.emitMain(`//${z.comment}`);
+		}
+
 		const stack0 = stackF(0);
 		const stack1 = stackF(1);
 		const stack2 = stackF(2);
@@ -832,7 +836,7 @@ export function compile(methodInfo: MethodInfo, options: ICompilerOptions = {}):
 
 							if (trait) {
 								// eslint-disable-next-line max-len
-								state.emitMain(`/* We sure that this safe get, represented in TRAIT as ${TRAITNames[trait.kind]}  */ `);
+								state.emitMain(`/* We sure that this safe call, represented in TRAIT as ${TRAITNames[trait.kind]}  */ `);
 
 								if (trait.kind === TRAIT.Method) {
 									// eslint-disable-next-line max-len
@@ -927,6 +931,29 @@ export function compile(methodInfo: MethodInfo, options: ICompilerOptions = {}):
 							state.emitMain(`${emitAccess(obj, n)}(${pp.join(', ')});`);
 
 							fastCall.kill(`${obj}`);
+							break;
+						}
+					}
+
+					// we can check trite for `this` or any types that has trite
+					// @todo move this to fast-call
+					if (Settings.CHEK_TRAIT_GET_CALL && obj === 'this' && instanceInfo) {
+						const trait = resolveTrait(instanceInfo, mn);
+
+						if (trait) {
+							// eslint-disable-next-line max-len
+							state.emitMain(`/* We sure that this safe call, represented in TRAIT as ${TRAITNames[trait.kind]}  */ `);
+
+							if (trait.kind === TRAIT.Method) {
+								// eslint-disable-next-line max-len
+								state.emitMain(`${emitAccess(obj, mn.getMangledName())}(${pp.join(', ')});`);
+							} else {
+								// when is method, we should wrap caller, because JS miss `this`
+								// when method is used as outside object
+								// we can do with BIND, but this is can be unstable
+								// eslint-disable-next-line max-len
+								state.emitMain(`/*fast*/${obj}.axCallProperty(${getname(param(1))}, [${pp.join(', ')}], false);`);
+							}
 							break;
 						}
 					}

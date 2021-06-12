@@ -11,10 +11,11 @@ export class Instruction {
 	public catchEnd: boolean = false;
 	public returnTypeId: number = -1; // void
 	public childs: number[] = [];
+	public comment: string = null;
 
 	constructor(
 		readonly position: number,
-		readonly name: Bytecode,
+		public name: Bytecode,
 		readonly params: Array<any> = [],
 		readonly delta: number = 0,
 		readonly deltaScope: number = 0,

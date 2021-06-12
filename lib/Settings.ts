@@ -5,6 +5,7 @@ export interface IAVM2Settings {
 	CHEK_TRAIT_GET_CALL: boolean;
 	CHEK_TRAIT_SET: boolean;
 	CHEK_SUPER_TRAITS: boolean;
+	OPTIMISE_ON_IR: boolean;
 	ENABLE_DEBUG: boolean;
 	PRINT_BYTE_INSTRUCTION: boolean;
 	EMULATE_LOOKBEHIND: boolean;
@@ -93,6 +94,11 @@ export const Settings: IAVM2Settings = {
 	 * @description use real constant values for r-values instead of stack-aliases
 	 */
 	UNSAFE_INLINE_CONST: true,
+
+	/**
+	 * @description Allow optimisation on Analyzer phase
+	 */
+	OPTIMISE_ON_IR: true,
 
 	/**
 	 * @description No hoist multiname (no emit name1 in generated script), this can save a lot of codelines

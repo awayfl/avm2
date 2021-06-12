@@ -179,6 +179,7 @@ export function analyze(methodInfo: MethodInfo): IAnalyseResult | IAnalyzeError 
 		const oldi = i;
 
 		const z = code[i++];
+		const last = Settings.OPTIMISE_ON_IR ?  q[q.length - 1] : null;
 		let ins: Instruction;
 
 		switch (z) {
@@ -272,12 +273,17 @@ export function analyze(methodInfo: MethodInfo): IAnalyseResult | IAnalyzeError 
 
 				break;
 
-			case Bytecode.POP:
+			case Bytecode.POP: {
 				ins = (new Instruction(oldi, z, [], -1));
-				ins.returnTypeId = lastType =  type;
+				ins.returnTypeId = lastType = type;
 
+				//
+				if (last && last.name === Bytecode.CALLPROPERTY) {
+					last.name = Bytecode.CALLPROPVOID;
+					last.comment = 'IR: Optimised from "CALLPROPERTY", reason: POP STACK';
+				}
 				break;
-
+			}
 			case Bytecode.SWAP:
 				ins = (new Instruction(oldi, z, [], 0));
 				break;
@@ -779,7 +785,6 @@ export function analyze(methodInfo: MethodInfo): IAnalyseResult | IAnalyzeError 
 				ins.returnTypeId = lastType =  PRIMITIVE_TYPE.NUMBER;
 				break;
 			default:
-				//console.log(`UNKNOWN BYTECODE ${code[i - 1].toString(16)} ${BytecodeName[code[i - 1]]} at ${oldi} (method:`, methodInfo.index());
 				return {
 					error: {
 						message: `UNKNOWN BYTECODE ${code[i - 1].toString(16)} ${BytecodeName[code[i - 1]]} at ${oldi}`,
