@@ -326,6 +326,8 @@ export function compile(methodInfo: MethodInfo, options: ICompilerOptions = {}):
 		USE_OPT(fastCall) && fastCall.killFar(i);
 
 		if (jumps.indexOf(z.position) >= 0) {
+			// drop aliases for stack, because branching, alias outside branch can be invalid
+			state.dropAllAliases();
 			// if we are in any try-catch-blocks, we must close them
 			//if (state.openTryCatchGroups)
 			state.openTryCatchGroups.forEach(e => emitCloseTryCatch(state, e));

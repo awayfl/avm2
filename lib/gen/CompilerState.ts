@@ -172,6 +172,10 @@ export class CompilerState {
 		return true;
 	}
 
+	public dropAllAliases() {
+		this.constAliases = {};
+	}
+
 	public popAnyAlias(alias: string): boolean {
 		//remove and const alias, reassigment
 		delete this.constAliases[alias];
