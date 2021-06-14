@@ -4,6 +4,7 @@ import { MethodInfo } from '../abc/lazy/MethodInfo';
 import { Instruction } from './Instruction';
 import { COMPILATION_FAIL_REASON } from '../flags';
 import { Settings } from '../Settings';
+import { ABCFile } from '../abc/lazy/ABCFile';
 
 const BytecodeName = Bytecode;
 
@@ -106,7 +107,7 @@ export function propogateTree(q: Array<Instruction>, jumps: number[]): void {
 
 	for (const c of condNodes) {
 		if (c.name === Bytecode.LOOKUPSWITCH) {
-			const params = c.params;
+			const params = <number[]> c.params;
 			c.childs = [];
 			for (let i = 0; i < params.length - 1; i++) {
 				c.childs.push(branches[i]);
@@ -124,6 +125,72 @@ export function propogateTree(q: Array<Instruction>, jumps: number[]): void {
 
 }
 
+type IMnRecord = Array<number>;
+
+interface IPreprocessorState {
+	index: number;
+	readonly abc: ABCFile;
+	readonly code: Uint8Array;
+	readonly currentMn: IMnRecord;
+}
+
+function u30 (state: IPreprocessorState): number {
+	const code = state.code;
+	let i = state.index;
+
+	let u = code[i++];
+	if (u & 0x80) {
+		u = u & 0x7f | code[i++] << 7;
+		if (u & 0x4000) {
+			u = u & 0x3fff | code[i++] << 14;
+			if (u & 0x200000) {
+				u = u & 0x1fffff | code[i++] << 21;
+				if (u & 0x10000000) {
+					u = u & 0x0fffffff | code[i++] << 28;
+					u = u & 0xffffffff;
+				}
+			}
+		}
+	}
+
+	state.index = i;
+	return u >>> 0;
+}
+
+function  mn (state: IPreprocessorState) {
+	const index = u30(state);
+	const name = state.abc.getMultiname(index);
+	const mnResult = state.currentMn;
+
+	mnResult[0] = index;
+
+	if (name.isRuntimeName() || name.isRuntimeNamespace()) {
+		mnResult[1] = 256;
+		mnResult[2] = name.isRuntimeName() && name.isRuntimeNamespace() ? -2 : -1;
+		return mnResult;
+	}
+
+	mnResult[1] = 0;
+	mnResult[2] = 0;
+
+	return mnResult;
+}
+
+function s24 (state: IPreprocessorState): number {
+	const code = state.code;
+	let i = state.index;
+
+	let u = code[i++] | (code[i++] << 8) | (code[i++] << 16);
+	u = (u << 8) >> 8;
+
+	state.index = i;
+	return u;
+}
+
+function s8(state: IPreprocessorState): number {
+	return (state.code[state.index++] << 24) >> 24;
+}
+
 /**
  * Analyzing instruction set from method info
  * @param methodInfo
@@ -132,53 +199,22 @@ export function analyze(methodInfo: MethodInfo): IAnalyseResult | IAnalyzeError 
 	const abc = methodInfo.abc;
 	const body = methodInfo.getBody();
 	const code = body.code;
-
 	const q: Instruction[] = [];
+
+	const state = {
+		index: 0,
+		abc: abc,
+		code: code,
+		currentMn: [0,0,0]
+	};
+
 	let type: number = 0;
 	let lastType: number = 0;
 
-	for (let i: number = 0; i < code.length;) {
-		const u30 = function (): number {
-			let u = code[i++];
-			if (u & 0x80) {
-				u = u & 0x7f | code[i++] << 7;
-				if (u & 0x4000) {
-					u = u & 0x3fff | code[i++] << 14;
-					if (u & 0x200000) {
-						u = u & 0x1fffff | code[i++] << 21;
-						if (u & 0x10000000) {
-							u = u & 0x0fffffff | code[i++] << 28;
-							u = u & 0xffffffff;
-						}
-					}
-				}
-			}
-			return u >>> 0;
-		};
+	for (; state.index < code.length;) {
+		const oldi = state.index;
+		const z = code[state.index++];
 
-		const mn = function () {
-			const index = u30();
-			const name = abc.getMultiname(index);
-
-			if (name.isRuntimeName() || name.isRuntimeNamespace())
-				return [index, 256, name.isRuntimeName() && name.isRuntimeNamespace() ? -2 : -1];
-
-			return [index, 0, 0];
-		};
-
-		const s24 = function (): number {
-			const u = code[i++] | (code[i++] << 8) | (code[i++] << 16);
-			return (u << 8) >> 8;
-		};
-
-		const s8 = function (): number {
-			const u = code[i++];
-			return (u << 24) >> 24;
-		};
-
-		const oldi = i;
-
-		const z = code[i++];
 		const last = Settings.OPTIMISE_ON_IR ?  q[q.length - 1] : null;
 		let ins: Instruction;
 
@@ -187,94 +223,94 @@ export function analyze(methodInfo: MethodInfo): IAnalyseResult | IAnalyzeError 
 				ins = (new Instruction(oldi, z));
 				break;
 			case Bytecode.DXNSLATE:
-				ins = (new Instruction(oldi, z, [0], -1));
+				ins = (new Instruction(oldi, z, 0, -1));
 				break;
 			case Bytecode.DEBUGFILE:
 			case Bytecode.DEBUGLINE:
 
-				ins = (new Instruction(oldi, z, [u30()]));
+				ins = (new Instruction(oldi, z, u30(state)));
 				break;
 
 			case Bytecode.DEBUG:
-				ins = (new Instruction(oldi, z, [s8(), u30(), s8(), u30()]));
+				ins = (new Instruction(oldi, z, [s8(state), u30(state), s8(state), u30(state)]));
 				break;
 
 			case Bytecode.THROW:
-				ins = (new Instruction(oldi, z, [], -1, 0, true));
+				ins = (new Instruction(oldi, z, null, -1, 0, true));
 				break;
 
 			case Bytecode.PUSHSCOPE:
-				ins = (new Instruction(oldi, z, [], -1, 1));
+				ins = (new Instruction(oldi, z, null, -1, 1));
 				ins.returnTypeId = lastType =  ++type;
 				break;
 
 			case Bytecode.PUSHWITH:
-				ins = (new Instruction(oldi, z, [], -1, 1));
+				ins = (new Instruction(oldi, z, null, -1, 1));
 				break;
 
 			case Bytecode.POPSCOPE:
-				ins = (new Instruction(oldi, z, [], 0, -1));
+				ins = (new Instruction(oldi, z, null, 0, -1));
 				break;
 
 			case Bytecode.GETSCOPEOBJECT:
-				ins = (new Instruction(oldi, z, [s8()], 1, 0));
+				ins = (new Instruction(oldi, z, s8(state), 1, 0));
 				ins.returnTypeId = lastType =  ++type;
 				break;
 
 			case Bytecode.GETGLOBALSCOPE:
-				ins = (new Instruction(oldi, z, [], 1));
+				ins = (new Instruction(oldi, z, null, 1));
 				ins.returnTypeId = lastType =  ++type;
 
 				break;
 
 			case Bytecode.GETSLOT:
-				ins = (new Instruction(oldi, z, [u30()], 0));
+				ins = (new Instruction(oldi, z, u30(state), 0));
 				ins.returnTypeId = lastType =  ++type;
 
 				break;
 
 			case Bytecode.SETSLOT:
-				ins = (new Instruction(oldi, z, [u30()], -2));
+				ins = (new Instruction(oldi, z, u30(state), -2));
 				break;
 
 			case Bytecode.NEXTNAME:
-				ins = (new Instruction(oldi, z, [], -1));
+				ins = (new Instruction(oldi, z, null, -1));
 				ins.returnTypeId = lastType =  ++type;
 
 				break;
 
 			case Bytecode.NEXTVALUE:
-				ins = (new Instruction(oldi, z, [], -1));
+				ins = (new Instruction(oldi, z, null, -1));
 				ins.returnTypeId = lastType =  ++type;
 
 				break;
 
 			case Bytecode.HASNEXT:
-				ins = (new Instruction(oldi, z, [], -1));
+				ins = (new Instruction(oldi, z, null, -1));
 				ins.returnTypeId = lastType =  PRIMITIVE_TYPE.BOOL;
 
 				break;
 
 			case Bytecode.HASNEXT2:
-				ins = (new Instruction(oldi, z, [u30(), u30()], 1));
+				ins = (new Instruction(oldi, z, [u30(state), u30(state)], 1));
 				ins.returnTypeId = lastType =  PRIMITIVE_TYPE.BOOL;
 
 				break;
 
 			case Bytecode.IN:
-				ins = (new Instruction(oldi, z, [], -1));
+				ins = (new Instruction(oldi, z, null, -1));
 				ins.returnTypeId = lastType =  PRIMITIVE_TYPE.BOOL;
 
 				break;
 
 			case Bytecode.DUP:
-				ins = (new Instruction(oldi, z, [], 1));
+				ins = (new Instruction(oldi, z, null, 1));
 				ins.returnTypeId = lastType =  type;
 
 				break;
 
 			case Bytecode.POP: {
-				ins = (new Instruction(oldi, z, [], -1));
+				ins = (new Instruction(oldi, z, null, -1));
 				ins.returnTypeId = lastType = type;
 
 				//
@@ -285,204 +321,225 @@ export function analyze(methodInfo: MethodInfo): IAnalyseResult | IAnalyzeError 
 				break;
 			}
 			case Bytecode.SWAP:
-				ins = (new Instruction(oldi, z, [], 0));
+				ins = (new Instruction(oldi, z, null, 0));
 				break;
 
 			case Bytecode.PUSHTRUE:
-				ins = (new Instruction(oldi, z, [], 1));
+				ins = (new Instruction(oldi, z, null, 1));
 				ins.returnTypeId = lastType =  PRIMITIVE_TYPE.BOOL;
 				break;
 
 			case Bytecode.PUSHFALSE:
-				ins = (new Instruction(oldi, z, [], 1));
+				ins = (new Instruction(oldi, z, null, 1));
 				ins.returnTypeId = lastType =  PRIMITIVE_TYPE.BOOL;
 
 				break;
 
 			case Bytecode.PUSHBYTE:
-				ins = (new Instruction(oldi, z, [s8()], 1));
+				ins = (new Instruction(oldi, z, s8(state), 1));
 				ins.returnTypeId = lastType =  PRIMITIVE_TYPE.NUMBER;
 
 				break;
 
 			case Bytecode.PUSHSHORT:
-				ins = (new Instruction(oldi, z, [u30() << 16 >> 16], 1));
+				ins = (new Instruction(oldi, z, u30(state) << 16 >> 16, 1));
 				ins.returnTypeId = lastType =  PRIMITIVE_TYPE.NUMBER;
 
 				break;
 
 			case Bytecode.PUSHINT:
-				ins = (new Instruction(oldi, z, [u30()], 1));
+				ins = (new Instruction(oldi, z, u30(state), 1));
 				ins.returnTypeId = lastType =  PRIMITIVE_TYPE.NUMBER;
 
 				break;
 
 			case Bytecode.PUSHUINT:
-				ins = (new Instruction(oldi, z, [u30()], 1));
+				ins = (new Instruction(oldi, z, u30(state), 1));
 				ins.returnTypeId = lastType =  PRIMITIVE_TYPE.NUMBER;
 
 				break;
 
 			case Bytecode.PUSHDOUBLE:
-				ins = (new Instruction(oldi, z, [u30()], 1));
+				ins = (new Instruction(oldi, z, u30(state), 1));
 				ins.returnTypeId = lastType =  PRIMITIVE_TYPE.NUMBER;
 
 				break;
 
 			case Bytecode.PUSHNAN:
-				ins = (new Instruction(oldi, z, [], 1));
+				ins = (new Instruction(oldi, z, null, 1));
 				ins.returnTypeId = lastType =  PRIMITIVE_TYPE.NUMBER;
 
 				break;
 
 			case Bytecode.PUSHNULL:
-				ins = (new Instruction(oldi, z, [], 1));
+				ins = (new Instruction(oldi, z, null, 1));
 				ins.returnTypeId = lastType =  PRIMITIVE_TYPE.NULL;
 
 				break;
 
 			case Bytecode.PUSHUNDEFINED:
-				ins = (new Instruction(oldi, z, [], 1));
+				ins = (new Instruction(oldi, z, null, 1));
 				ins.returnTypeId = lastType =  PRIMITIVE_TYPE.UNDEF;
 
 				break;
 
 			case Bytecode.PUSHSTRING:
-				ins = (new Instruction(oldi, z, [u30()], 1));
+				ins = (new Instruction(oldi, z, u30(state), 1));
 				ins.returnTypeId = lastType =  PRIMITIVE_TYPE.STRING;
 
 				break;
 
 			case Bytecode.IFEQ: {
-				const j = s24();
-				ins = (new Instruction(oldi, z, [i + j], -2, 0, false, [i + j]));
+				const j = s24(state);
+				const i = state.index;
+				ins = (new Instruction(oldi, z, i + j, -2, 0, false, [i + j]));
 				break;
 			}
 			case Bytecode.IFNE: {
-				const j = s24();
-				ins = (new Instruction(oldi, z, [i + j], -2, 0, false, [i + j]));
+				const j = s24(state);
+				const i = state.index;
+
+				ins = (new Instruction(oldi, z, i + j, -2, 0, false, [i + j]));
 				break;
 			}
 			case Bytecode.IFSTRICTEQ: {
-				const j = s24();
-				ins = (new Instruction(oldi, z, [i + j], -2, 0, false, [i + j]));
+				const j = s24(state);
+				const i = state.index;
+
+				ins = (new Instruction(oldi, z, i + j, -2, 0, false, [i + j]));
 				break;
 			}
 			case Bytecode.IFSTRICTNE: {
-				const j = s24();
-				ins = (new Instruction(oldi, z, [i + j], -2, 0, false, [i + j]));
+				const j = s24(state);
+				const i = state.index;
+
+				ins = (new Instruction(oldi, z, i + j, -2, 0, false, [i + j]));
 				break;
 			}
 			case Bytecode.IFGT:
 			case Bytecode.IFNLE: {
-				const j = s24();
-				ins = (new Instruction(oldi, z, [i + j], -2, 0, false, [i + j]));
+				const j = s24(state);
+				const i = state.index;
+
+				ins = (new Instruction(oldi, z, i + j, -2, 0, false, [i + j]));
 				break;
 			}
 			case Bytecode.IFGE:
 			case Bytecode.IFNLT: {
-				const j = s24();
-				ins = (new Instruction(oldi, z, [i + j], -2, 0, false, [i + j]));
+				const j = s24(state);
+				const i = state.index;
+
+				ins = (new Instruction(oldi, z, i + j, -2, 0, false, [i + j]));
 				break;
 			}
 			case Bytecode.IFLT:
 			case Bytecode.IFNGE: {
-				const j = s24();
-				ins = (new Instruction(oldi, z, [i + j], -2, 0, false, [i + j]));
+				const j = s24(state);
+				const i = state.index;
+
+				ins = (new Instruction(oldi, z, i + j, -2, 0, false, [i + j]));
 				break;
 			}
 			case Bytecode.IFLE:
 			case Bytecode.IFNGT: {
-				const j = s24();
-				ins = (new Instruction(oldi, z, [i + j], -2, 0, false, [i + j]));
+				const j =  s24(state);
+				const i = state.index;
+
+				ins = (new Instruction(oldi, z, i + j, -2, 0, false, [i + j]));
 				break;
 			}
 			case Bytecode.IFTRUE: {
-				const j = s24();
-				ins = (new Instruction(oldi, z, [i + j], -1, 0, false, [i + j]));
+				const j =  s24(state);
+				const i = state.index;
+
+				ins = (new Instruction(oldi, z, i + j, -1, 0, false, [i + j]));
 				break;
 			}
 			case Bytecode.IFFALSE: {
-				const j = s24();
-				ins = (new Instruction(oldi, z, [i + j], -1, 0, false, [i + j]));
+				const j =  s24(state);
+				const i = state.index;
+
+				ins = (new Instruction(oldi, z, i + j, -1, 0, false, [i + j]));
 				break;
 			}
 			case Bytecode.LOOKUPSWITCH: {
-				const offset = oldi + s24();
-				const cases = u30();
+				const offset = oldi +  s24(state);
+				const cases =  u30(state);
 
 				const table = [offset];
 
 				for (let j = 0; j <= cases; j++)
-					table.push(oldi + s24());
+					table.push(oldi +  s24(state));
 
 				ins = (new Instruction(oldi, z, table, -1, 0, true, table));
 				break;
 			}
 			case Bytecode.JUMP: {
-				const j = s24();
-				ins = (new Instruction(oldi, z, [i + j], 0, 0, true, [i + j]));
+				const j =  s24(state);
+				const i = state.index;
+
+				ins = (new Instruction(oldi, z, i + j, 0, 0, true, [i + j]));
 				break;
 			}
 			case Bytecode.RETURNVALUE:
-				ins = (new Instruction(oldi, z, [], -1, 0, true));
+				ins = (new Instruction(oldi, z, null, -1, 0, true));
 				break;
 
 			case Bytecode.RETURNVOID:
-				ins = (new Instruction(oldi, z, [], 0, 0, true));
+				ins = (new Instruction(oldi, z, null, 0, 0, true));
 				break;
 
 			case Bytecode.NOT:
-				ins = (new Instruction(oldi, z, [], 0));
+				ins = (new Instruction(oldi, z, null, 0));
 				ins.returnTypeId = lastType =  PRIMITIVE_TYPE.BOOL;
 				break;
 
 			case Bytecode.BITNOT:
-				ins = (new Instruction(oldi, z, [], 0));
+				ins = (new Instruction(oldi, z, null, 0));
 				ins.returnTypeId = lastType =  PRIMITIVE_TYPE.NUMBER;
 
 				break;
 
 			case Bytecode.NEGATE:
-				ins = (new Instruction(oldi, z, [], 0));
+				ins = (new Instruction(oldi, z, null, 0));
 				ins.returnTypeId = lastType =  PRIMITIVE_TYPE.NUMBER;
 
 				break;
 
 			case Bytecode.INCREMENT:
-				ins = (new Instruction(oldi, z, [], 0));
+				ins = (new Instruction(oldi, z, null, 0));
 				ins.returnTypeId = lastType =  PRIMITIVE_TYPE.NUMBER;
 
 				break;
 
 			case Bytecode.DECREMENT:
-				ins = (new Instruction(oldi, z, [], 0));
+				ins = (new Instruction(oldi, z, null, 0));
 				ins.returnTypeId = lastType =  PRIMITIVE_TYPE.NUMBER;
 
 				break;
 
 			case Bytecode.INCLOCAL:
 			case Bytecode.DECLOCAL:
-				ins = (new Instruction(oldi, z, [u30()], 0));
+				ins = (new Instruction(oldi, z, u30(state), 0));
 				ins.returnTypeId = lastType =  PRIMITIVE_TYPE.NUMBER;
 				break;
 
 			case Bytecode.INCREMENT_I:
 			case Bytecode.DECREMENT_I:
-				ins = (new Instruction(oldi, z, [], 0));
+				ins = (new Instruction(oldi, z, null, 0));
 				ins.returnTypeId = lastType =  PRIMITIVE_TYPE.NUMBER;
 
 				break;
 
 			case Bytecode.INCLOCAL_I:
 			case Bytecode.DECLOCAL_I:
-				ins = (new Instruction(oldi, z, [u30()], 0));
+				ins = (new Instruction(oldi, z, u30(state), 0));
 				ins.returnTypeId = lastType =  PRIMITIVE_TYPE.NUMBER;
 
 				break;
 
 			case Bytecode.NEGATE_I:
-				ins = (new Instruction(oldi, z, [], 0));
+				ins = (new Instruction(oldi, z, null, 0));
 				ins.returnTypeId = lastType =  PRIMITIVE_TYPE.NUMBER;
 
 				break;
@@ -501,7 +558,7 @@ export function analyze(methodInfo: MethodInfo): IAnalyseResult | IAnalyzeError 
 			case Bytecode.BITAND:
 			case Bytecode.BITOR:
 			case Bytecode.BITXOR:
-				ins = (new Instruction(oldi, z, [], -1));
+				ins = (new Instruction(oldi, z, null, -1));
 				ins.returnTypeId = lastType =  PRIMITIVE_TYPE.NUMBER;
 
 				break;
@@ -511,184 +568,206 @@ export function analyze(methodInfo: MethodInfo): IAnalyseResult | IAnalyzeError 
 			case Bytecode.GREATEREQUALS:
 			case Bytecode.LESSTHAN:
 			case Bytecode.LESSEQUALS:
-				ins = (new Instruction(oldi, z, [], -1));
+				ins = (new Instruction(oldi, z, null, -1));
 				ins.returnTypeId = lastType =  PRIMITIVE_TYPE.BOOL;
 				break;
 
 			case Bytecode.TYPEOF:
-				ins = (new Instruction(oldi, z, [], 0));
+				ins = (new Instruction(oldi, z, null, 0));
 				ins.returnTypeId = lastType =  ++type;
 
 				break;
-			case Bytecode.INSTANCEOF:
-				ins = (new Instruction(oldi, z, [], -1));
-				ins.returnTypeId = lastType =  PRIMITIVE_TYPE.BOOL;
+			case Bytecode.INSTANCEOF: {
+				ins = (new Instruction(oldi, z, null, -1));
+				ins.returnTypeId = lastType = PRIMITIVE_TYPE.BOOL;
 
 				break;
-			case Bytecode.ISTYPE:
-				var [index, dyn, d] = mn();
-				ins = (new Instruction(oldi, z, [index], 0 + d));
-				ins.returnTypeId = lastType =  PRIMITIVE_TYPE.BOOL;
+			}
+			case Bytecode.ISTYPE: {
+				const [index, , d] = mn(state);
+				ins = (new Instruction(oldi, z, index, 0 + d));
+				ins.returnTypeId = lastType = PRIMITIVE_TYPE.BOOL;
 
 				break;
+			}
 			case Bytecode.ISTYPELATE:
-				ins = (new Instruction(oldi, z, [], -1));
+				ins = (new Instruction(oldi, z, null, -1));
 				ins.returnTypeId = lastType =  PRIMITIVE_TYPE.BOOL;
 
 				break;
 			case Bytecode.ASTYPELATE:
-				ins = (new Instruction(oldi, z, [], -1));
+				ins = (new Instruction(oldi, z, null, -1));
 
 				break;
-			case Bytecode.ASTYPE:
-				var [index, dyn, d] = mn();
-				ins = (new Instruction(oldi, z, [index], 0 + d));
+			case Bytecode.ASTYPE: {
+				const [index, , d] = mn(state);
+				ins = (new Instruction(oldi, z, index, 0 + d));
 				break;
-			case Bytecode.CALL:
-				var argnum = u30();
-				ins = (new Instruction(oldi, z, [argnum], -argnum - 1));
+			}
+			case Bytecode.CALL: {
+				const argnum = u30(state);
+				ins = (new Instruction(oldi, z, argnum, -argnum - 1));
 				break;
-			case Bytecode.CONSTRUCT:
-				var argnum = u30();
-				ins = (new Instruction(oldi, z, [argnum, index], -argnum));
-				ins.returnTypeId = lastType =  ++type;
+			}
+			case Bytecode.CONSTRUCT: {
+				const argnum = u30(state);
+				ins = (new Instruction(oldi, z, argnum, -argnum));
+				ins.returnTypeId = lastType = ++type;
 				break;
-			case Bytecode.CALLPROPERTY:
-				var [index, dyn, d] = mn();
-				var argnum = u30();
+			}
+			case Bytecode.CALLPROPERTY: {
+				const [index, dyn, d] = mn(state);
+				const argnum = u30(state);
 				ins = (new Instruction(oldi, z + dyn, [argnum, index], -argnum + d));
-				ins.returnTypeId = lastType =  ++type;
+				ins.returnTypeId = lastType = ++type;
 
 				break;
-			case Bytecode.CALLPROPLEX:
-				var [index, dyn, d] = mn();
-				var argnum = u30();
+			}
+			case Bytecode.CALLPROPLEX: {
+				const [index, dyn, d] = mn(state);
+				const argnum = u30(state);
 				ins = (new Instruction(oldi, z + dyn, [argnum, index], -argnum + d));
-				ins.returnTypeId = lastType =  ++type;
+				ins.returnTypeId = lastType = ++type;
 
 				break;
-			case Bytecode.CALLPROPVOID:
-				var [index, dyn, d] = mn();
-				var argnum = u30();
+			}
+			case Bytecode.CALLPROPVOID: {
+				const [index, dyn, d] = mn(state);
+				const argnum = u30(state);
 				ins = (new Instruction(oldi, z + dyn, [argnum, index], -(argnum + 1) + d));
 				break;
-			case Bytecode.APPLYTYPE:
-				var argnum = u30();
-				ins = (new Instruction(oldi, z, [argnum], -argnum));
-				ins.returnTypeId = lastType =  type;
+			}
+			case Bytecode.APPLYTYPE: {
+				const argnum = u30(state);
+				ins = (new Instruction(oldi, z, argnum, -argnum));
+				ins.returnTypeId = lastType = type;
 
 				break;
-			case Bytecode.FINDPROPSTRICT:
-				var [index, dyn, d] = mn();
-				ins = (new Instruction(oldi, z + dyn, [index], 1 + d));
-				ins.returnTypeId = lastType =  ++type;
+			}
+			case Bytecode.FINDPROPSTRICT: {
+				const [index, dyn, d] = mn(state);
+				ins = (new Instruction(oldi, z + dyn, index, 1 + d));
+				ins.returnTypeId = lastType = ++type;
 
 				break;
-			case Bytecode.FINDPROPERTY:
-				var [index, dyn, d] = mn();
-				ins = (new Instruction(oldi, z + dyn, [index], 1 + d));
-				ins.returnTypeId = lastType =  ++type;
+			}
+			case Bytecode.FINDPROPERTY: {
+				const [index, dyn, d] = mn(state);
+				ins = (new Instruction(oldi, z + dyn, index, 1 + d));
+				ins.returnTypeId = lastType = ++type;
 
 				break;
+			}
 			case Bytecode.NEWFUNCTION:
-				ins = (new Instruction(oldi, z, [u30()], 1));
+				ins = (new Instruction(oldi, z, u30(state), 1));
 				ins.returnTypeId = lastType =  ++type;
 
 				break;
 			case Bytecode.NEWCLASS:
-				ins = (new Instruction(oldi, z, [u30()], 0));
+				ins = (new Instruction(oldi, z, u30(state), 0));
 				ins.returnTypeId = lastType =  ++type;
 
 				break;
 			case Bytecode.GETDESCENDANTS:
-				ins = (new Instruction(oldi, z, [u30()], 0));
+				ins = (new Instruction(oldi, z, u30(state), 0));
 				ins.returnTypeId = lastType =  ++type;
 
 				break;
-			case Bytecode.NEWARRAY:
-				var argnum = u30();
-				ins = (new Instruction(oldi, z, [argnum], -argnum + 1));
-				ins.returnTypeId = lastType =  ++type;
+			case Bytecode.NEWARRAY: {
+				const argnum = u30(state);
+				ins = (new Instruction(oldi, z, argnum, -argnum + 1));
+				ins.returnTypeId = lastType = ++type;
 
 				break;
-			case Bytecode.NEWOBJECT:
-				var argnum = u30();
-				ins = (new Instruction(oldi, z, [argnum], -2 * argnum + 1));
-				ins.returnTypeId = lastType =  ++type;
+			}
+			case Bytecode.NEWOBJECT: {
+				const argnum = u30(state);
+				ins = (new Instruction(oldi, z, argnum, -2 * argnum + 1));
+				ins.returnTypeId = lastType = ++type;
 
 				break;
+			}
 			case Bytecode.NEWACTIVATION:
-				ins = (new Instruction(oldi, z, [], 1));
+				ins = (new Instruction(oldi, z, null, 1));
 				ins.returnTypeId = lastType =  ++type;
 
 				break;
 			case Bytecode.NEWCATCH:
-				ins = (new Instruction(oldi, z, [u30()], 1));
+				ins = (new Instruction(oldi, z, u30(state), 1));
 				break;
 
-			case Bytecode.CONSTRUCTSUPER:
-				var argnum = u30();
-				ins = (new Instruction(oldi, z, [argnum], -(argnum + 1)));
+			case Bytecode.CONSTRUCTSUPER: {
+				const argnum = u30(state);
+				ins = (new Instruction(oldi, z, argnum, -(argnum + 1)));
 
 				break;
-			case Bytecode.CALLSUPER:
-				var [index, dyn, d] = mn();
-				var argnum = u30();
+			}
+			case Bytecode.CALLSUPER: {
+				const [index, dyn, d] = mn(state);
+				const argnum = u30(state);
 				ins = (new Instruction(oldi, z + dyn, [argnum, index], -argnum + d));
 				break;
-			case Bytecode.CALLSUPERVOID:
-				var [index, dyn, d] = mn();
-				var argnum = u30();
+			}
+			case Bytecode.CALLSUPERVOID: {
+				const [index, dyn, d] = mn(state);
+				const argnum = u30(state);
 				ins = (new Instruction(oldi, z + dyn, [argnum, index], -(argnum + 1) + d));
 				break;
-
-			case Bytecode.CONSTRUCTPROP:
-				var [index, dyn, d] = mn();
-				var argnum = u30();
+			}
+			case Bytecode.CONSTRUCTPROP: {
+				const  [index, dyn, d] = mn(state);
+				const argnum = u30(state);
 				ins = (new Instruction(oldi, z + dyn, [argnum, index], -argnum + d));
-				ins.returnTypeId = lastType =  ++type;
+				ins.returnTypeId = lastType = ++type;
 
 				break;
-			case Bytecode.GETPROPERTY:
-				var [index, dyn, d] = mn();
-				ins = (new Instruction(oldi, Bytecode.GETPROPERTY + dyn, [index], 0 + d));
-				ins.returnTypeId = lastType =  ++type;
+			}
+			case Bytecode.GETPROPERTY: {
+				const [index, dyn, d] = mn(state);
+				ins = (new Instruction(oldi, Bytecode.GETPROPERTY + dyn, index, 0 + d));
+				ins.returnTypeId = lastType = ++type;
 
 				break;
+			}
+			// we collapse 2 operation to one, but this is can prevent optimisations
 			case Bytecode.INITPROPERTY:
-			case Bytecode.SETPROPERTY:
-				var [index, dyn, d] = mn();
-				ins = (new Instruction(oldi, Bytecode.SETPROPERTY + dyn, [index], -2 + d));
+			case Bytecode.SETPROPERTY: {
+				const [index, dyn, d] = mn(state);
+				ins = (new Instruction(oldi, Bytecode.SETPROPERTY + dyn, index, -2 + d));
 
 				break;
-			case Bytecode.DELETEPROPERTY:
-				var [index, dyn, d] = mn();
-				ins = (new Instruction(oldi, z + dyn, [index], 0 + d));
+			}
+			case Bytecode.DELETEPROPERTY: {
+				const [index, dyn, d] = mn(state);
+				ins = (new Instruction(oldi, z + dyn, index, 0 + d));
 				break;
-			case Bytecode.GETSUPER:
-				var [index, dyn, d] = mn();
-				ins = (new Instruction(oldi, z + dyn, [index], 0 + d));
-				ins.returnTypeId = lastType =  ++type;
+			}
+			case Bytecode.GETSUPER: {
+				const [index, dyn, d] = mn(state);
+				ins = (new Instruction(oldi, z + dyn, index, 0 + d));
+				ins.returnTypeId = lastType = ++type;
 
 				break;
-			case Bytecode.SETSUPER:
-				var [index, dyn, d] = mn();
-				ins = (new Instruction(oldi, z + dyn, [index], -2 + d));
+			}
+			case Bytecode.SETSUPER: {
+				const [index, dyn, d] = mn(state);
+				ins = (new Instruction(oldi, z + dyn, index, -2 + d));
 				break;
-
-			case Bytecode.COERCE:
-				var [index, dyn, d] = mn();
-				ins = (new Instruction(oldi, z + dyn, [index], 0 + d));
+			}
+			case Bytecode.COERCE: {
+				const [index, dyn, d] = mn(state);
+				ins = (new Instruction(oldi, z + dyn, index, 0 + d));
 				ins.returnTypeId = lastType;
 
 				break;
+			}
 			case Bytecode.COERCE_A:
-				ins = (new Instruction(oldi, z, [], 0));
+				ins = (new Instruction(oldi, z, null, 0));
 				ins.returnTypeId = lastType;
 
 				break;
 			case Bytecode.COERCE_S:
-				ins = (new Instruction(oldi, z, [], 0));
+				ins = (new Instruction(oldi, z, null, 0));
 				ins.returnTypeId = PRIMITIVE_TYPE.STRING;
 
 				break;
@@ -700,71 +779,72 @@ export function analyze(methodInfo: MethodInfo): IAnalyseResult | IAnalyzeError 
 			case Bytecode.CONVERT_U:
 			case Bytecode.CONVERT_S:
 			case Bytecode.CONVERT_O:
-				ins = (new Instruction(oldi, z, [], 0));
+				ins = (new Instruction(oldi, z, null, 0));
 				break;
 			case Bytecode.CHECKFILTER:
-				ins = (new Instruction(oldi, z, [], 0));
+				ins = (new Instruction(oldi, z, null, 0));
 				break;
 			case Bytecode.GETLOCAL:
-				ins = (new Instruction(oldi, Bytecode.GETLOCAL, [u30()], 1));
+				ins = (new Instruction(oldi, Bytecode.GETLOCAL, u30(state), 1));
 				ins.returnTypeId = lastType;
 
 				break;
 			case Bytecode.GETLOCAL0:
-				ins = (new Instruction(oldi, Bytecode.GETLOCAL, [0], 1));
+				ins = (new Instruction(oldi, Bytecode.GETLOCAL, 0, 1));
 				ins.returnTypeId = lastType;
 
 				break;
 			case Bytecode.GETLOCAL1:
-				ins = (new Instruction(oldi, Bytecode.GETLOCAL, [1], 1));
+				ins = (new Instruction(oldi, Bytecode.GETLOCAL, 1, 1));
 				ins.returnTypeId = lastType;
 
 				break;
 			case Bytecode.GETLOCAL2:
-				ins = (new Instruction(oldi, Bytecode.GETLOCAL, [2], 1));
+				ins = (new Instruction(oldi, Bytecode.GETLOCAL, 2, 1));
 				ins.returnTypeId = lastType;
 
 				break;
 			case Bytecode.GETLOCAL3:
-				ins = (new Instruction(oldi, Bytecode.GETLOCAL, [3], 1));
+				ins = (new Instruction(oldi, Bytecode.GETLOCAL, 3, 1));
 				ins.returnTypeId = lastType;
 
 				break;
 			case Bytecode.SETLOCAL:
-				ins = (new Instruction(oldi, Bytecode.SETLOCAL, [u30()], -1));
+				ins = (new Instruction(oldi, Bytecode.SETLOCAL, u30(state), -1));
 				ins.returnTypeId = lastType;
 
 				break;
 			case Bytecode.SETLOCAL0:
-				ins = (new Instruction(oldi, Bytecode.SETLOCAL, [0], -1));
+				ins = (new Instruction(oldi, Bytecode.SETLOCAL, 0, -1));
 				ins.returnTypeId = lastType;
 
 				break;
 			case Bytecode.SETLOCAL1:
-				ins = (new Instruction(oldi, Bytecode.SETLOCAL, [1], -1));
+				ins = (new Instruction(oldi, Bytecode.SETLOCAL, 1, -1));
 				ins.returnTypeId = lastType;
 
 				break;
 			case Bytecode.SETLOCAL2:
-				ins = (new Instruction(oldi, Bytecode.SETLOCAL, [2], -1));
+				ins = (new Instruction(oldi, Bytecode.SETLOCAL, 2, -1));
 				ins.returnTypeId = lastType;
 
 				break;
 			case Bytecode.SETLOCAL3:
-				ins = (new Instruction(oldi, Bytecode.SETLOCAL, [3], -1));
+				ins = (new Instruction(oldi, Bytecode.SETLOCAL, 3, -1));
 				ins.returnTypeId = lastType;
 
 				break;
 			case Bytecode.KILL:
-				ins = (new Instruction(oldi, z, [u30()], 0));
+				ins = (new Instruction(oldi, z, u30(state), 0));
 				break;
 
-			case Bytecode.GETLEX:
-				var [index, dyn, d] = mn();
-				ins = (new Instruction(oldi, z + dyn, [index], 1 + d));
-				ins.returnTypeId = lastType =  ++type;
+			case Bytecode.GETLEX: {
+				const [index, dyn, d] = mn(state);
+				ins = (new Instruction(oldi, z + dyn, index, 1 + d));
+				ins.returnTypeId = lastType = ++type;
 
 				break;
+			}
 
 			//http://docs.redtamarin.com/0.4.1T124/avm2/intrinsics/memory/package.html#si32()
 			case Bytecode.SI8:
@@ -772,7 +852,7 @@ export function analyze(methodInfo: MethodInfo): IAnalyseResult | IAnalyzeError 
 			case Bytecode.SI32:
 			case Bytecode.SF32:
 			case Bytecode.SF64:
-				ins = (new Instruction(oldi, z, [], -2));
+				ins = (new Instruction(oldi, z, null, -2));
 				break;
 
 			//http://docs.redtamarin.com/0.4.1T124/avm2/intrinsics/memory/package.html#li32()
@@ -781,13 +861,13 @@ export function analyze(methodInfo: MethodInfo): IAnalyseResult | IAnalyzeError 
 			case Bytecode.LI32:
 			case Bytecode.LF32:
 			case Bytecode.LF64:
-				ins = (new Instruction(oldi, z, [], 0));
+				ins = (new Instruction(oldi, z, null, 0));
 				ins.returnTypeId = lastType =  PRIMITIVE_TYPE.NUMBER;
 				break;
 			default:
 				return {
 					error: {
-						message: `UNKNOWN BYTECODE ${code[i - 1].toString(16)} ${BytecodeName[code[i - 1]]} at ${oldi}`,
+						message: `UNKNOWN BYTECODE ${code[state.index - 1].toString(16)} ${BytecodeName[code[state.index - 1]]} at ${oldi}`,
 						reason: COMPILATION_FAIL_REASON.UNKNOW_BYTECODE,
 					}
 				} as any;

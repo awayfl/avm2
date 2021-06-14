@@ -314,7 +314,10 @@ export function compile(methodInfo: MethodInfo, options: ICompilerOptions = {}):
 
 	const stackF = (n: number, alias = true) => emitInlineStack(state, n, alias);
 	const local = (n: number) => emitInlineLocal(state, n);
-	const param = (n: number) => state.currentOpcode.params[n];
+	const param = (n: number) => {
+		const p = state.currentOpcode.params;
+		return typeof p === 'number' ? p : p[n];
+	};
 
 	for (let i: number = 0; i < q.length; i++) {
 		// store oppcode in state
@@ -352,7 +355,7 @@ export function compile(methodInfo: MethodInfo, options: ICompilerOptions = {}):
 		}
 
 		if (Settings.PRINT_BYTE_INSTRUCTION) {
-			state.emitMain(`//${BytecodeName[z.name]} ${z.params.join(' / ')} -> ${z.returnTypeId}`);
+			state.emitMain(`//${BytecodeName[z.name]} ${ typeof z.params === 'number' ? z.params : z.params.join(' / ')} -> ${z.returnTypeId}`);
 		}
 
 		if (z.comment) {
@@ -589,7 +592,7 @@ export function compile(methodInfo: MethodInfo, options: ICompilerOptions = {}):
 					state.emitMain(`if (${stack0}) { p = ${param(0)}; continue; };`);
 					break;
 				case Bytecode.LOOKUPSWITCH: {
-					const jj = z.params.concat();
+					const jj = (<[]>z.params).concat();
 					const dj = jj.shift();
 					// eslint-disable-next-line max-len
 					state.emitMain(`if (${stack0} >= 0 && ${stack0} < ${jj.length}) { p = [${jj.join(', ')}][${stack0}]; continue; } else { p = ${dj}; continue; };`);

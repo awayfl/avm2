@@ -16,7 +16,7 @@ export class Instruction {
 	constructor(
 		readonly position: number,
 		public name: Bytecode,
-		readonly params: Array<any> = [],
+		readonly params: Array<number> | number = null,
 		readonly delta: number = 0,
 		readonly deltaScope: number = 0,
 		readonly terminal: boolean = false,
