@@ -4,5 +4,5 @@ export function emitInlineAccessor (obj: string, prop: string): string {
 		return `${obj}.${prop}`;
 	}
 
-	return `${obj}[${prop}]`;
+	return `${obj}["${prop}"]`;
 }
