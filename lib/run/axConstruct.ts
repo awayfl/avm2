@@ -39,8 +39,15 @@ export class OrphanManager {
 			return;
 		}
 
-		if (!orphan.isAsset || !orphan.isAsset(MovieClip) && !orphan.isAsset(Sprite))
+		if (!orphan.isAsset ||
+			!(
+				orphan.isAsset(MovieClip) ||
+				orphan.isAsset(Sprite) ||
+				orphan.isAsset(DisplayObjectContainer)
+			)
+		) {
 			return;
+		}
 
 		if (orphan.id in this.orphans)
 			return;
@@ -72,21 +79,16 @@ export class OrphanManager {
 				if (!orphan.parent) {
 					(<MovieClip>orphan).advanceFrame();
 					FrameScriptManager.execute_as3_constructors_recursiv(<MovieClip> orphan);
+				} else {
+					// delete, orphan has parent
+					this.totalOrphansCount--;
+					delete this.orphans[key];
 				}
 			} else {
 				console.debug('[OrphanManager] Orphan was deleted by GC:', key);
 				this.totalOrphansCount--;
 				delete this.orphans[key];
 			}
-		}
-		if (orphansWithParents > 10) {
-			const cleanOrphans = [];
-			for (let i = 0; i < OrphanManager.orphans.length; i++) {
-				orphan = OrphanManager.orphans[i];
-				if (!orphan.parent)
-					cleanOrphans.push(orphan);
-			}
-			OrphanManager.orphans = cleanOrphans;
 		}
 	}
 }
