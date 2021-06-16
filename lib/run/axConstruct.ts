@@ -1,4 +1,4 @@
-import { MovieClip, FrameScriptManager, DisplayObject, Sprite } from '@awayjs/scene';
+import { MovieClip, FrameScriptManager, DisplayObject, Sprite, DisplayObjectContainer } from '@awayjs/scene';
 import { AssetBase } from '@awayjs/core';
 import { AXClass, IS_AX_CLASS } from './AXClass';
 import { Multiname } from '../abc/lazy/Multiname';
@@ -78,6 +78,15 @@ export class OrphanManager {
 				this.totalOrphansCount--;
 				delete this.orphans[key];
 			}
+		}
+		if (orphansWithParents > 10) {
+			const cleanOrphans = [];
+			for (let i = 0; i < OrphanManager.orphans.length; i++) {
+				orphan = OrphanManager.orphans[i];
+				if (!orphan.parent)
+					cleanOrphans.push(orphan);
+			}
+			OrphanManager.orphans = cleanOrphans;
 		}
 	}
 }
@@ -219,8 +228,8 @@ export function axConstruct(argArray?: any[]) {
 	object.axInitializer.apply(object,argArray);
 	object.constructorHasRun = true;
 
-	// check internally to allow add as orphan
-	OrphanManager.addOrphan(object.adaptee);
+	if (object.adaptee)
+		OrphanManager.addOrphan(object.adaptee);
 
 	if (object.isAVMFont) {
 		// hack for font: make sure the fontName is set on Font
