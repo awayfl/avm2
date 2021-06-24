@@ -26,5 +26,5 @@ export function emitInlineStack(_state: CompilerState, n: number, useAlias = tru
 	if (_state.isThisAlias(alias))
 		return emitInlineLocal(_state, 0); // this ALWAYS is local 0
 
-	return _state.constAlias(alias);
+	return _state.getConstAlias(alias);
 }

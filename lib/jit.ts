@@ -392,14 +392,8 @@ export function compile(methodInfo: MethodInfo, options: ICompilerOptions = {}):
 					localIndex = param(0);
 					optionalLocalVars[localIndex] && (optionalLocalVars[localIndex].read++);
 
-					state.popAnyAlias(stackF(-1, false));
-					state.emitMain(`${stackF(-1, false)} = ${local(localIndex)};`);
-
-					// this is `this`
-					if (localIndex === 0) {
-						state.pushThisAlias(stackF(-1, false));
-					}
-
+					// going onto state, we have a lot of test that allow inlining
+					state.emitGetLocal(-1, localIndex);
 					break;
 				}
 				case Bytecode.SETLOCAL:
@@ -413,6 +407,9 @@ export function compile(methodInfo: MethodInfo, options: ICompilerOptions = {}):
 						}
 					}
 
+					state.killConstAliasInstruction([stackF(0, false)]);
+
+					state.popAnyAlias(local(localIndex));
 					state.emitMain(`${local(localIndex)} = ${stack0};`);
 					// this is unpossible, because AVM not store `this` in local another that 0
 					/*
@@ -617,21 +614,17 @@ export function compile(methodInfo: MethodInfo, options: ICompilerOptions = {}):
 					break;
 				case Bytecode.INCREMENT_I:
 					state.popAnyAlias(stackF(0, false));
-					state.emitMain(`${stackF(0)} |= 0;`);
-					state.emitMain(`${stackF(0)} ++;`);
+					state.emitMain(`${stackF(0)} = (${stackF(0)} | 0) + 1;`);
 					break;
 				case Bytecode.DECREMENT_I:
 					state.popAnyAlias(stackF(0, false));
-					state.emitMain(`${stackF(0)} |= 0;`);
-					state.emitMain(`${stackF(0)} --;`);
+					state.emitMain(`${stackF(0)} = (${stackF(0)} | 0) - 1;`);
 					break;
 				case Bytecode.INCLOCAL_I:
-					state.emitMain(`${local(param(0))} |= 0;`);
-					state.emitMain(`${local(param(0))} ++;`);
+					state.emitMain(`${local(param(0))} = (${local(param(0))} | 0) + 1;`);
 					break;
 				case Bytecode.DECLOCAL_I:
-					state.emitMain(`${local(param(0))} |= 0;`);
-					state.emitMain(`${local(param(0))} --;`);
+					state.emitMain(`${local(param(0))} = (${local(param(0))} | 0) - 1;`);
 					break;
 				case Bytecode.NEGATE_I:
 					state.popAnyAlias(stackF(0, false));
@@ -809,6 +802,7 @@ export function compile(methodInfo: MethodInfo, options: ICompilerOptions = {}):
 						state.killConstAliasInstruction([stackF(param(0) - j, false)]);
 					}
 
+					state.killConstAliasInstruction([stackF(param(0), false)]);
 					state.popAnyAlias(stackF(param(0), false));
 
 					const targetStack = stackF(param(0));
@@ -1013,11 +1007,14 @@ export function compile(methodInfo: MethodInfo, options: ICompilerOptions = {}):
 					if (USE_OPT(lexGen) && lexGen.test(mn, false)) {
 						state.emitMain('/* GenerateLexImports */');
 						// eslint-disable-next-line max-len
-						state.emitMain(`${target} = ${lexGen.getPropStrictAlias(mn,{
+						const lexAlias = lexGen.getPropStrictAlias(mn,{
 							//nameAlias: getname(param(0)),
 							mnIndex: state.getMultinameIndex(param(0))
 							/*findProp: true,*/
-						})};`);
+						});
+						//state.emitMain(`${target} = ${lexAlias};`);
+						// alias as const, this allow inline it
+						state.emitConst(target, lexAlias);
 
 						if (USE_OPT(fastCall)) {
 							const mangled = (lexGen.getGenerator(mn, false) instanceof TopLevelLex);
@@ -1174,6 +1171,12 @@ export function compile(methodInfo: MethodInfo, options: ICompilerOptions = {}):
 				case Bytecode.CONSTRUCTPROP: {
 					const pp = [];
 					const targetStack = stackF(param(0), false);
+					const of = stackF(param(0));
+
+					// order is important, we should check constant assigment to stack/local
+					// before pop alias for this stack/local,
+					// otherwise we lost a offset and can't remove redundant instruction
+					state.killConstAliasInstruction([targetStack]);
 					state.popAnyAlias(targetStack);
 
 					for (let j = 1; j <= param(0); j++) {
@@ -1182,7 +1185,7 @@ export function compile(methodInfo: MethodInfo, options: ICompilerOptions = {}):
 					}
 
 					// eslint-disable-next-line max-len
-					state.emitMain(`${stackF(param(0))} = context.constructprop(${getname(param(1))}, ${targetStack}, [${pp.join(', ')}]);`);
+					state.emitMain(`${stackF(param(0))} = context.constructprop(${getname(param(1))}, ${of}, [${pp.join(', ')}]);`);
 
 					USE_OPT(fastCall) && fastCall.kill(stackF(param(0)));
 				}
@@ -1407,13 +1410,15 @@ export function compile(methodInfo: MethodInfo, options: ICompilerOptions = {}):
 
 					if (USE_OPT(lexGen) && lexGen.test(mn, true)) {
 						state.emitMain(`// ${mn}`);
-						state.emitMain('/* GenerateLexImports */');
+						state.emitMain('/* GenerateLexImports GETLEX */');
 						// eslint-disable-next-line max-len
-						state.emitMain(`${target} = ${lexGen.getLexAlias(mn,{
-							mnIndex: state.getMultinameIndex(param(0)),
-							/*findProp: false,*/
-							scope: scope
-						})};`);
+						state.emitConst(
+							target,
+							lexGen.getLexAlias(mn,{
+								mnIndex: state.getMultinameIndex(param(0)),
+								/*findProp: false,*/
+								scope: scope
+							}));
 
 						if (fastCall) {
 							const mangled = (lexGen.getGenerator(mn, true) instanceof TopLevelLex);
@@ -1547,8 +1552,12 @@ export function compile(methodInfo: MethodInfo, options: ICompilerOptions = {}):
 					state.emitMain(`${stack0} = context.axCheckFilter(sec, ${stack0});`);
 					break;
 				case Bytecode.KILL:
-					state.popAnyAlias(local(param(0)));
-					state.emitMain(`${local(param(0))} = undefined;`);
+					// Really we not requre KILL locals
+					// anyway we not validating a locals after jumps, but this can corrupt obfuscated code
+					// and for us this prevent inlining
+					state.emitMain('// Redundant oppcode KILL, prevent optimisations');
+					//state.popAnyAlias(local(param(0)));
+					//state.emitMain(`${local(param(0))} = undefined;`);
 					break;
 
 				default:

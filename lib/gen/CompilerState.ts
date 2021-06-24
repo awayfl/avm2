@@ -5,6 +5,7 @@ import { TRAIT } from '../abc/lazy/TRAIT';
 import { Settings } from '../Settings';
 import { Multiname } from './../abc/lazy/Multiname';
 import { Instruction } from './Instruction';
+import { emitInlineLocal, emitInlineStack } from './emiters';
 
 export class CompilerState {
 	private _indent: string = '';
@@ -23,7 +24,11 @@ export class CompilerState {
 	public currentOpcode: Instruction;
 
 	public thisAliases: Set<string> = new Set();
+	// forward ref stack -> value
 	public constAliases: Record<string, { value: string, pos: number }> = {};
+	// back ref to local-> stack
+	public localAliases: Record<string, string> = {};
+
 	public noHoistMultiname: boolean = Settings.NO_HOIST_MULTINAME;
 
 	public get indent() {
@@ -91,6 +96,25 @@ export class CompilerState {
 		return this.mainBlock.push(this.indent + stack + ' = ' + value + ';');
 	}
 
+	public emitGetLocal(stackIndex: number, localIndex: number) {
+		const stack = emitInlineStack(this, stackIndex, false);
+
+		this.popAnyAlias(stack);
+		// local 0 is ALWAYS THIS
+		if (localIndex === 0) {
+			this.pushThisAlias(stack);
+		}
+
+		if (Settings.UNSAFE_INLINE_CONST) {
+			const local = 'local' + localIndex;
+
+			this.constAliases[stack] = { value: local, pos: this.mainBlock.length };
+			this.localAliases[local] = stack;
+		}
+
+		return this.mainBlock.push(this.indent + stack + ' = ' + emitInlineLocal(this, localIndex) + ';');
+	}
+
 	/**
 	 * Push line to main code block and prepend indent automatically
 	 * @param line Line to emit to generated code
@@ -139,7 +163,7 @@ export class CompilerState {
 		}
 	}
 
-	public constAlias (alias: string): string {
+	public getConstAlias (alias: string): string {
 		if (!Settings.UNSAFE_INLINE_CONST)
 			return  alias;
 
@@ -174,11 +198,20 @@ export class CompilerState {
 
 	public dropAllAliases() {
 		this.constAliases = {};
+		this.localAliases = {};
 	}
 
-	public popAnyAlias(alias: string): boolean {
+	public popAnyAlias(stackOrLocal: string): boolean {
+		// remove back referenced alias for local
+		if (stackOrLocal in this.localAliases) {
+			const l = stackOrLocal;
+			stackOrLocal = this.localAliases[l];
+
+			delete this.localAliases[l];
+		}
+
 		//remove and const alias, reassigment
-		delete this.constAliases[alias];
-		return this.thisAliases.delete(alias);
+		delete this.constAliases[stackOrLocal];
+		return this.thisAliases.delete(stackOrLocal);
 	}
 }

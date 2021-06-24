@@ -307,6 +307,23 @@ export function analyze(methodInfo: MethodInfo): IAnalyseResult | IAnalyzeError 
 				ins = (new Instruction(oldi, z, null, 1));
 				ins.returnTypeId = lastType =  type;
 
+				if (last) {
+					switch (last.name) {
+						case Bytecode.PUSHTRUE:
+						case Bytecode.PUSHFALSE:
+						case Bytecode.PUSHNAN:
+						case Bytecode.PUSHINT:
+						case Bytecode.PUSHDOUBLE:
+						case Bytecode.PUSHBYTE:
+						case Bytecode.PUSHFLOAT:
+						case Bytecode.PUSHSTRING:
+						case Bytecode.PUSHNULL: {
+							ins.name = last.name;
+							ins.params = last.params;
+							ins.comment = 'Redundant DUP, replace to assigment';
+						}
+					}
+				}
 				break;
 
 			case Bytecode.POP: {
@@ -771,10 +788,31 @@ export function analyze(methodInfo: MethodInfo): IAnalyseResult | IAnalyzeError 
 				ins.returnTypeId = PRIMITIVE_TYPE.STRING;
 
 				break;
+
+			case Bytecode.CONVERT_D: {
+				ins = (new Instruction(oldi, z, null, 0));
+
+				if (last) {
+					switch (last.name) {
+						case Bytecode.PUSHINT:
+						case Bytecode.PUSHFLOAT:
+						case Bytecode.PUSHDOUBLE:
+						case Bytecode.ADD_I:
+						case Bytecode.INCREMENT:
+						case Bytecode.DECREMENT:
+						case Bytecode.DECREMENT_I:
+						case Bytecode.INCREMENT_I: {
+							ins.name = Bytecode.LABEL;
+							ins.comment = 'Redundant CONVERT_D oppcode skipped';
+							break;
+						}
+					}
+				}
+				break;
+			}
 			case Bytecode.ESC_XATTR:
 			case Bytecode.ESC_XELEM:
 			case Bytecode.CONVERT_I:
-			case Bytecode.CONVERT_D:
 			case Bytecode.CONVERT_B:
 			case Bytecode.CONVERT_U:
 			case Bytecode.CONVERT_S:
