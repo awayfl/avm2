@@ -1311,7 +1311,7 @@ export function compile(methodInfo: MethodInfo, options: ICompilerOptions = {}):
 				}
 				case Bytecode.SETPROPERTY: {
 					const mn = abc.getMultiname(param(0));
-					state.killConstAliasInstruction([stackF(0, false)]);
+					state.killConstAliasInstruction([stackF(0, false), stackF(1, false)]);
 
 					state.emitMain(`// ${mn}`);
 

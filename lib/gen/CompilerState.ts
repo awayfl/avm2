@@ -158,7 +158,7 @@ export class CompilerState {
 		for (const a of aliases) {
 			if (this.constAliases[a]) {
 				const instr = this.mainBlock[this.constAliases[a].pos];
-				this.mainBlock[this.constAliases[a].pos] = '//' + instr + '// redundant assigment';
+				this.mainBlock[this.constAliases[a].pos] = '//' + instr + '// JIT: redundant assigment, value unused';
 			}
 		}
 	}

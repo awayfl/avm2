@@ -323,7 +323,7 @@ export function analyze(methodInfo: MethodInfo): IAnalyseResult | IAnalyzeError 
 						case Bytecode.PUSHNULL: {
 							ins.name = last.name;
 							ins.params = last.params;
-							ins.comment = 'Redundant DUP, replace to assigment';
+							ins.comment = 'IR: DUP changed to PUSH*, reason: prevent optimisation';
 						}
 					}
 				}
@@ -815,7 +815,7 @@ export function analyze(methodInfo: MethodInfo): IAnalyseResult | IAnalyzeError 
 						case Bytecode.DECREMENT_I:
 						case Bytecode.INCREMENT_I: {
 							ins.name = Bytecode.LABEL;
-							ins.comment = 'Redundant CONVERT_D oppcode skipped';
+							ins.comment = 'IR: CONVERT_D removed, reason: arguments strictly number';
 							break;
 						}
 					}
@@ -837,7 +837,7 @@ export function analyze(methodInfo: MethodInfo): IAnalyseResult | IAnalyzeError 
 						case Bytecode.NOT:
 						{
 							ins.name = Bytecode.LABEL;
-							ins.comment = 'Redundant CONVERT_D oppcode skipped';
+							ins.comment = 'IR: CONVERT_B removed, reason: arguments strictly boolean';
 							break;
 						}
 					}
@@ -908,6 +908,8 @@ export function analyze(methodInfo: MethodInfo): IAnalyseResult | IAnalyzeError 
 				break;
 			case Bytecode.KILL:
 				ins = (new Instruction(oldi, z, u30(state), 0));
+				ins.name = Bytecode.LABEL;
+				ins.comment = 'IR: KILL removed, reason: prevent optimisation';
 				break;
 
 			case Bytecode.GETLEX: {
@@ -963,10 +965,10 @@ export function analyze(methodInfo: MethodInfo): IAnalyseResult | IAnalyzeError 
 
 		for (const i of scopeIndexes) {
 			// we remove 3 commands, because push scope shift stack before
-			const coment = new Instruction(0, Bytecode.LABEL);
-			coment.comment = 'Remove unused scope';
+			const comment = new Instruction(0, Bytecode.LABEL);
+			comment.comment = 'IR: PUSHSCOPE removed, reason: unused';
 
-			q.splice(i - 1, 2, coment);
+			q.splice(i - 1, 2, comment);
 		}
 	}
 
