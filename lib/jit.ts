@@ -631,35 +631,43 @@ export function compile(methodInfo: MethodInfo, options: ICompilerOptions = {}):
 					state.emitMain(`${stackF(0)} = -(${stack0} | 0);`);
 					break;
 				case Bytecode.ADD_I:
+					state.killConstAliasInstruction([stackF(0, false)]);
 					state.popAnyAlias(stackF(1, false));
 					state.emitMain(`${stackF(1)} = (${stack1} | 0) + (${stack0} | 0);`);
 					break;
 				case Bytecode.SUBTRACT_I:
+					state.killConstAliasInstruction([stackF(0, false)]);
 					state.popAnyAlias(stackF(1, false));
 					state.emitMain(`${stackF(1)} = (${stack1} | 0) - (${stack0} | 0);`);
 					break;
 				case Bytecode.MULTIPLY_I:
+					state.killConstAliasInstruction([stackF(0, false)]);
 					state.popAnyAlias(stackF(1, false));
 					state.emitMain(`${stackF(1)} = (${stack1} | 0) * (${stack0} | 0);`);
 					break;
 				case Bytecode.ADD:
+					state.killConstAliasInstruction([stackF(0, false)]);
 					// LOL, this can be used when this used in string concation
 					state.popAnyAlias(stackF(1, false));
 					state.emitMain(`${stackF(1)} += ${stack0};`);
 					break;
 				case Bytecode.SUBTRACT:
+					state.killConstAliasInstruction([stackF(0, false)]);
 					state.popAnyAlias(stackF(1, false));
 					state.emitMain(`${stackF(1)} -= ${stack0};`);
 					break;
 				case Bytecode.MULTIPLY:
+					state.killConstAliasInstruction([stackF(0, false)]);
 					state.popAnyAlias(stackF(1, false));
 					state.emitMain(`${stackF(1)} *= ${stack0};`);
 					break;
 				case Bytecode.DIVIDE:
+					state.killConstAliasInstruction([stackF(0, false)]);
 					state.popAnyAlias(stackF(1, false));
 					state.emitMain(`${stackF(1)} /= ${stack0};`);
 					break;
 				case Bytecode.MODULO:
+					state.killConstAliasInstruction([stackF(0, false)]);
 					state.popAnyAlias(stackF(1, false));
 					state.emitMain(`${stackF(1)} %= ${stack0};`);
 					break;
@@ -917,6 +925,8 @@ export function compile(methodInfo: MethodInfo, options: ICompilerOptions = {}):
 						pp.push(stackF(param(0) - j));
 						state.killConstAliasInstruction([stackF(param(0) - j, false)]);
 					}
+
+					state.killConstAliasInstruction([stackF(param(0), false)]);
 
 					{
 						if (USE_OPT(fastCall) && fastCall.sureThatFast(obj)) {
@@ -1192,19 +1202,21 @@ export function compile(methodInfo: MethodInfo, options: ICompilerOptions = {}):
 					break;
 				case Bytecode.GETPROPERTY: {
 					const mn = abc.getMultiname(param(0));
+					const of = stackF(0);
+					const target = stackF(0, false);
 
+					state.killConstAliasInstruction([target]);
 					state.popAnyAlias(stackF(0, false));
 					state.emitMain(`// ${mn}`);
 
-					const target = stackF(0);
 					{
 						let d: ICallEntry;
-						if (USE_OPT(fastCall) && (d = fastCall.sureThatFast(target, mn.name))) {
+						if (USE_OPT(fastCall) && (d = fastCall.sureThatFast(of, mn.name))) {
 							const n = d.isMangled ? Multiname.getPublicMangledName(mn.name) : mn.name;
-							fastCall.kill(target);
+							fastCall.kill(of);
 
 							state.emitMain('/* We sure that this safe get */ ');
-							state.emitMain(`${target} = ${emitAccess(target, n)};`);
+							state.emitMain(`${target} = ${emitAccess(of, n)};`);
 							break;
 						}
 					}

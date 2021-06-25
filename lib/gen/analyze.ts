@@ -810,10 +810,32 @@ export function analyze(methodInfo: MethodInfo): IAnalyseResult | IAnalyzeError 
 				}
 				break;
 			}
+
+			case Bytecode.CONVERT_B: {
+				ins = (new Instruction(oldi, z, null, 0));
+
+				if (last) {
+					switch (last.name) {
+						case Bytecode.EQUALS:
+						case Bytecode.STRICTEQUALS:
+						case Bytecode.GREATERTHAN:
+						case Bytecode.GREATEREQUALS:
+						case Bytecode.LESSTHAN:
+						case Bytecode.LESSEQUALS:
+						case Bytecode.NOT:
+						{
+							ins.name = Bytecode.LABEL;
+							ins.comment = 'Redundant CONVERT_D oppcode skipped';
+							break;
+						}
+					}
+				}
+				break;
+			}
+
 			case Bytecode.ESC_XATTR:
 			case Bytecode.ESC_XELEM:
 			case Bytecode.CONVERT_I:
-			case Bytecode.CONVERT_B:
 			case Bytecode.CONVERT_U:
 			case Bytecode.CONVERT_S:
 			case Bytecode.CONVERT_O:
