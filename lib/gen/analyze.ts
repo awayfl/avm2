@@ -210,6 +210,7 @@ export function analyze(methodInfo: MethodInfo): IAnalyseResult | IAnalyzeError 
 
 	let type: number = 0;
 	let lastType: number = 0;
+	let requireScope = false;
 
 	for (; state.index < code.length;) {
 		const oldi = state.index;
@@ -255,11 +256,13 @@ export function analyze(methodInfo: MethodInfo): IAnalyseResult | IAnalyzeError 
 			case Bytecode.GETSCOPEOBJECT:
 				ins = (new Instruction(oldi, z, s8(state), 1, 0));
 				ins.returnTypeId = lastType =  ++type;
+				requireScope = true;
 				break;
 
 			case Bytecode.GETGLOBALSCOPE:
 				ins = (new Instruction(oldi, z, null, 1));
 				ins.returnTypeId = lastType =  ++type;
+				requireScope = true;
 
 				break;
 
@@ -604,13 +607,13 @@ export function analyze(methodInfo: MethodInfo): IAnalyseResult | IAnalyzeError 
 				const [index, , d] = mn(state);
 				ins = (new Instruction(oldi, z, index, 0 + d));
 				ins.returnTypeId = lastType = PRIMITIVE_TYPE.BOOL;
-
+				requireScope = true;
 				break;
 			}
 			case Bytecode.ISTYPELATE:
 				ins = (new Instruction(oldi, z, null, -1));
 				ins.returnTypeId = lastType =  PRIMITIVE_TYPE.BOOL;
-
+				requireScope = true;
 				break;
 			case Bytecode.ASTYPELATE:
 				ins = (new Instruction(oldi, z, null, -1));
@@ -619,11 +622,14 @@ export function analyze(methodInfo: MethodInfo): IAnalyseResult | IAnalyzeError 
 			case Bytecode.ASTYPE: {
 				const [index, , d] = mn(state);
 				ins = (new Instruction(oldi, z, index, 0 + d));
+				requireScope = true;
+
 				break;
 			}
 			case Bytecode.CALL: {
 				const argnum = u30(state);
 				ins = (new Instruction(oldi, z, argnum, -argnum - 1));
+				requireScope = true;
 				break;
 			}
 			case Bytecode.CONSTRUCT: {
@@ -637,7 +643,7 @@ export function analyze(methodInfo: MethodInfo): IAnalyseResult | IAnalyzeError 
 				const argnum = u30(state);
 				ins = (new Instruction(oldi, z + dyn, [argnum, index], -argnum + d));
 				ins.returnTypeId = lastType = ++type;
-
+				requireScope = requireScope || dyn !== 0;
 				break;
 			}
 			case Bytecode.CALLPROPLEX: {
@@ -645,6 +651,7 @@ export function analyze(methodInfo: MethodInfo): IAnalyseResult | IAnalyzeError 
 				const argnum = u30(state);
 				ins = (new Instruction(oldi, z + dyn, [argnum, index], -argnum + d));
 				ins.returnTypeId = lastType = ++type;
+				requireScope = requireScope || dyn !== 0;
 
 				break;
 			}
@@ -665,6 +672,7 @@ export function analyze(methodInfo: MethodInfo): IAnalyseResult | IAnalyzeError 
 				const [index, dyn, d] = mn(state);
 				ins = (new Instruction(oldi, z + dyn, index, 1 + d));
 				ins.returnTypeId = lastType = ++type;
+				requireScope = true;
 
 				break;
 			}
@@ -672,18 +680,19 @@ export function analyze(methodInfo: MethodInfo): IAnalyseResult | IAnalyzeError 
 				const [index, dyn, d] = mn(state);
 				ins = (new Instruction(oldi, z + dyn, index, 1 + d));
 				ins.returnTypeId = lastType = ++type;
+				requireScope = true;
 
 				break;
 			}
 			case Bytecode.NEWFUNCTION:
 				ins = (new Instruction(oldi, z, u30(state), 1));
 				ins.returnTypeId = lastType =  ++type;
-
+				requireScope = true;
 				break;
 			case Bytecode.NEWCLASS:
 				ins = (new Instruction(oldi, z, u30(state), 0));
 				ins.returnTypeId = lastType =  ++type;
-
+				requireScope = true;
 				break;
 			case Bytecode.GETDESCENDANTS:
 				ins = (new Instruction(oldi, z, u30(state), 0));
@@ -707,12 +716,14 @@ export function analyze(methodInfo: MethodInfo): IAnalyseResult | IAnalyzeError 
 			case Bytecode.NEWACTIVATION:
 				ins = (new Instruction(oldi, z, null, 1));
 				ins.returnTypeId = lastType =  ++type;
+				requireScope = true;
 
 				break;
 			case Bytecode.NEWCATCH:
 				ins = (new Instruction(oldi, z, u30(state), 1));
-				break;
+				requireScope = true;
 
+				break;
 			case Bytecode.CONSTRUCTSUPER: {
 				const argnum = u30(state);
 				ins = (new Instruction(oldi, z, argnum, -(argnum + 1)));
@@ -775,6 +786,7 @@ export function analyze(methodInfo: MethodInfo): IAnalyseResult | IAnalyzeError 
 				const [index, dyn, d] = mn(state);
 				ins = (new Instruction(oldi, z + dyn, index, 0 + d));
 				ins.returnTypeId = lastType;
+				requireScope = true;
 
 				break;
 			}
@@ -902,7 +914,7 @@ export function analyze(methodInfo: MethodInfo): IAnalyseResult | IAnalyzeError 
 				const [index, dyn, d] = mn(state);
 				ins = (new Instruction(oldi, z + dyn, index, 1 + d));
 				ins.returnTypeId = lastType = ++type;
-
+				requireScope = true;
 				break;
 			}
 
@@ -937,7 +949,26 @@ export function analyze(methodInfo: MethodInfo): IAnalyseResult | IAnalyzeError 
 	}
 
 	let minStack = propagateStack(0, 0, q);
-	propagateScope(0, 0, q);
+
+	if (requireScope) {
+		propagateScope(0, 0, q);
+	} else {
+
+		const scopeIndexes = [];
+		for (let i = 0; i < q.length; i++) {
+			if (q[i].name === Bytecode.PUSHSCOPE) {
+				scopeIndexes.push(i);
+			}
+		}
+
+		for (const i of scopeIndexes) {
+			// we remove 3 commands, because push scope shift stack before
+			const coment = new Instruction(0, Bytecode.LABEL);
+			coment.comment = 'Remove unused scope';
+
+			q.splice(i - 1, 2, coment);
+		}
+	}
 
 	const jumps: number[] = [0];
 
