@@ -20,6 +20,7 @@ export interface IAVM2Settings {
 	EMIT_REAL_THIS: boolean;
 	UNSAFE_PROPOGATE_THIS: boolean;
 	UNSAFE_INLINE_CONST: boolean;
+	FOLLOW_AS3_BUG: boolean;
 	USE_WEAK_REF: boolean;
 }
 
@@ -128,6 +129,11 @@ export const Settings: IAVM2Settings = {
 	 * @description Check super class traits when field was extended, this can be unstable and has performance hit
 	 */
 	CHEK_SUPER_TRAITS: true,
+	/**
+	 * @description when there are a string with ending character as 0, coerce in FP return valid number instead NaN
+	 * @see https://bugzilla.mozilla.org/show_bug.cgi?id=564839
+	 */
+	FOLLOW_AS3_BUG: false,
 	/**
 	 * @description Use `WeakRef` for holding a Orphan in OrphanaManager on supported platforms
 	 */

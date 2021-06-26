@@ -7,6 +7,12 @@ import { Multiname } from './../abc/lazy/Multiname';
 import { Instruction } from './Instruction';
 import { emitInlineLocal, emitInlineStack } from './emiters';
 
+interface IConstData {
+	value: any;
+	pos: number;
+	isConst?: boolean;
+}
+
 export class CompilerState {
 	private _indent: string = '';
 	private _indentLen: number = 0;
@@ -24,8 +30,7 @@ export class CompilerState {
 	public currentOpcode: Instruction;
 
 	public thisAliases: Set<string> = new Set();
-	// forward ref stack -> value
-	public constAliases: Record<string, { value: string, pos: number }> = {};
+	public constAliases: Record<string, IConstData> = {};
 	// back ref to local-> stack
 	public localAliases: Record<string, string> = {};
 
@@ -58,6 +63,15 @@ export class CompilerState {
 		this.abc = methodInfo.abc;
 	}
 
+	public evalStackIndex(stackOffset: number): number {
+		const stack = this.currentOpcode.stack;
+		const mapped = (stack - 1 - stackOffset);
+
+		if (mapped < 0) return -1;
+
+		return  mapped;
+	}
+
 	public moveIndent (offset: number) {
 		this._indentLen += offset * 4;
 		if (this._indentLen < 0)
@@ -87,11 +101,19 @@ export class CompilerState {
 	 * Emit constant assigment, and store it in alias tree
 	 * @param stack
 	 * @param value
+	 * @param isConst - value real primitive const value, not a const alias
 	 */
-	public emitConst(stack: string, value: string) {
+	public emitConst(stack: string, value: any, isConst = true) {
 		if (Settings.UNSAFE_INLINE_CONST) {
-			this.constAliases[stack] = { value, pos: this.mainBlock.length };
+			this.constAliases[stack] = {
+				value,
+				isConst: isConst,
+				pos: this.mainBlock.length
+			};
 		}
+
+		if (typeof value === 'string')
+			value = JSON.stringify(value);
 
 		return this.mainBlock.push(this.indent + stack + ' = ' + value + ';');
 	}
@@ -163,15 +185,32 @@ export class CompilerState {
 		}
 	}
 
+	public getConstAliasMeta (stackOffset: number): IConstData {
+		if (!Settings.UNSAFE_INLINE_CONST)
+			return  null;
+
+		return this.constAliases['stack' + this.evalStackIndex(stackOffset)];
+	}
+
 	public getConstAlias (alias: string): string {
 		if (!Settings.UNSAFE_INLINE_CONST)
 			return  alias;
 
-		if (alias in this.constAliases) {
-			return this.constAliases[alias].value;
+		const val = this.constAliases[alias];
+
+		if (!val)
+			return alias;
+
+		// we should don't map value for this, because maybe a fast mapping
+		if (!val.isConst) {
+			return val.value;
 		}
 
-		return alias;
+		if (typeof  val.value === 'string') {
+			return JSON.stringify(val.value);
+		}
+
+		return '' + val.value;
 	}
 
 	public isThisAlias(alias: string): boolean {

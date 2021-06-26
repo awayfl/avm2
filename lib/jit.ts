@@ -41,6 +41,7 @@ import {
 	emitInlineMultiname,
 	emitInlineStack,
 	emitOpenTryCatch,
+	emitCoerce,
 	UNDERRUN
 } from './gen/emiters';
 
@@ -495,47 +496,47 @@ export function compile(methodInfo: MethodInfo, options: ICompilerOptions = {}):
 				}
 				case Bytecode.PUSHTRUE:
 					state.popAnyAlias(stackF(-1, false));
-					state.emitConst(stackF(-1),'true');
+					state.emitConst(stackF(-1),true);
 					break;
 				case Bytecode.PUSHFALSE:
 					state.popAnyAlias(stackF(-1, false));
-					state.emitConst(stackF(-1),'false');
+					state.emitConst(stackF(-1),false);
 					break;
 				case Bytecode.PUSHBYTE:
 					state.popAnyAlias(stackF(-1, false));
-					state.emitConst(stackF(-1), '' + param(0));
+					state.emitConst(stackF(-1), param(0));
 					break;
 				case Bytecode.PUSHSHORT:
 					state.popAnyAlias(stackF(-1, false));
-					state.emitConst(stackF(-1), '' + param(0));
+					state.emitConst(stackF(-1), param(0));
 					break;
 				case Bytecode.PUSHINT:
 					state.popAnyAlias(stackF(-1, false));
-					state.emitConst(stackF(-1), '' + abc.ints[param(0)]);
+					state.emitConst(stackF(-1), abc.ints[param(0)]);
 					break;
 				case Bytecode.PUSHUINT:
 					state.popAnyAlias(stackF(-1, false));
-					state.emitConst(stackF(-1), '' + abc.uints[param(0)]);
+					state.emitConst(stackF(-1), abc.uints[param(0)]);
 					break;
 				case Bytecode.PUSHDOUBLE:
 					state.popAnyAlias(stackF(-1, false));
-					state.emitConst(stackF(-1), '' + abc.doubles[param(0)]);
+					state.emitConst(stackF(-1), abc.doubles[param(0)]);
 					break;
 				case Bytecode.PUSHSTRING:
 					state.popAnyAlias(stackF(-1, false));
-					state.emitConst(stackF(-1), escape(abc.getString(param(0))));
+					state.emitConst(stackF(-1), abc.getString(param(0)));
 					break;
 				case Bytecode.PUSHNAN:
 					state.popAnyAlias(stackF(-1, false));
-					state.emitConst(stackF(-1), 'NaN');
+					state.emitConst(stackF(-1), NaN);
 					break;
 				case Bytecode.PUSHNULL:
 					state.popAnyAlias(stackF(-1, false));
-					state.emitConst(stackF(-1), 'null');
+					state.emitConst(stackF(-1), null);
 					break;
 				case Bytecode.PUSHUNDEFINED:
 					state.popAnyAlias(stackF(-1, false));
-					state.emitConst(stackF(-1), 'undefined');
+					state.emitConst(stackF(-1), undefined);
 					break;
 				case Bytecode.IFEQ:
 					state.emitMain(`if (${stack0} == ${stack1}) { p = ${param(0)}; continue; };`);
@@ -1024,7 +1025,7 @@ export function compile(methodInfo: MethodInfo, options: ICompilerOptions = {}):
 						});
 						//state.emitMain(`${target} = ${lexAlias};`);
 						// alias as const, this allow inline it
-						state.emitConst(target, lexAlias);
+						state.emitConst(target, lexAlias, false);
 
 						if (USE_OPT(fastCall)) {
 							const mangled = (lexGen.getGenerator(mn, false) instanceof TopLevelLex);
@@ -1331,7 +1332,8 @@ export function compile(methodInfo: MethodInfo, options: ICompilerOptions = {}):
 								trait.kind === TRAIT.Setter
 							) {
 								//debugger;
-								state.emitMain(`${emitAccess(stack1, mn.getMangledName())} = ${stack0};`);
+								// eslint-disable-next-line max-len
+								state.emitMain(`${emitAccess(stack1, mn.getMangledName())} = ${emitCoerce(state, 0, (<any> trait).typeName)};`);
 								break;
 							}
 						}
@@ -1430,7 +1432,7 @@ export function compile(methodInfo: MethodInfo, options: ICompilerOptions = {}):
 								mnIndex: state.getMultinameIndex(param(0)),
 								/*findProp: false,*/
 								scope: scope
-							}));
+							}), false);
 
 						if (fastCall) {
 							const mangled = (lexGen.getGenerator(mn, true) instanceof TopLevelLex);

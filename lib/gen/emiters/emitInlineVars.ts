@@ -9,15 +9,13 @@ export function emitInlineLocal(_state: CompilerState, n: number): string {
 
 export const UNDERRUN = '[stack underrun]';
 export function emitInlineStack(_state: CompilerState, n: number, useAlias = true): string {
-	const current = _state.currentOpcode;
-	const stack = current.stack;
-	const underrun = ((stack - 1 - n) < 0);
+	const mapped = _state.evalStackIndex(n);
 
-	if (underrun) {
-		return `/*${UNDERRUN} ${stack - 1 - n}*/ null`;
+	if (mapped < 0) {
+		return `/*${UNDERRUN} ${mapped}*/ null`;
 	}
 
-	const alias = 'stack' + (stack - 1 - n);
+	const alias = 'stack' + (mapped);
 
 	if (!useAlias) {
 		return alias;

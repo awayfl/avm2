@@ -1,5 +1,6 @@
-
 /**
  * Make Shumway bug-for-bug compatible with Tamarin.
  */
-export var as3Compatibility = true;
+import { Settings } from '../Settings';
+
+export var as3Compatibility = Settings.FOLLOW_AS3_BUG;
