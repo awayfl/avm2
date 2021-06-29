@@ -1847,7 +1847,8 @@ export class Context {
 
 	getdefinitionbyname(scope: Scope, _: any, pp: any[]): AXClass {
 		const info = (<ScriptInfo>(<any>scope.global.object).scriptInfo);
-		return info.abc.env.app.getClass(Multiname.FromSimpleName(pp[0]));
+		// pp can be XMList, that required to conversion
+		return info.abc.env.app.getClass(Multiname.FromSimpleName(pp[0].toString()));
 	}
 
 	getpropertydyn(mn: Multiname | number, obj: ASObject): ASObject {
