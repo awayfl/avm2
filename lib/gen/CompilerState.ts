@@ -112,7 +112,7 @@ export class CompilerState {
 			};
 		}
 
-		if (typeof value === 'string')
+		if (isConst && typeof value === 'string')
 			value = JSON.stringify(value);
 
 		return this.mainBlock.push(this.indent + stack + ' = ' + value + ';');
