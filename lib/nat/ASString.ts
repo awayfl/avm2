@@ -112,25 +112,29 @@ export class ASString extends ASObject {
 	}
 
 	replace(pattern: string | ASRegExp, repl: string | ASFunction) {
-
-		const regExp = this.__getRegExp(pattern);
-
 		if (this.sec.AXFunction.axIsType(repl)) {
 			repl = (<any>repl).value;
 		}
 
 		try {
-			return regExp.internalStringReplace(this.value, repl);
+			if (!this.sec.AXRegExp.axIsType(pattern)) {
+				pattern = axCoerceString(pattern);
+				return this.value.replace(pattern, <any> repl);
+			}
+
+			return this.__getRegExp(pattern).internalStringReplace(this.value, repl);
 		} catch (e) {
 			return this.value;
 		}
 	}
 
 	search(pattern: string | ASRegExp): number {
-		const regExp = this.__getRegExp(pattern);
-
 		try {
-			return regExp.internalStringSearch(this.value);
+			if (!this.sec.AXRegExp.axIsType(pattern)) {
+				return this.value.search(axCoerceString(pattern));
+			}
+
+			return this.__getRegExp(pattern).internalStringSearch(this.value);
 		} catch (e) {
 			return -1;
 		}
