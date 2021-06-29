@@ -830,7 +830,7 @@ export function compile(methodInfo: MethodInfo, options: ICompilerOptions = {}):
 								state.emitMain(`${targetStack} = ${emitAccess(obj, n)}(${pp.join(', ')});`);
 							} else {
 								// eslint-disable-next-line max-len
-								state.emitMain(`${targetStack} = /*fast*/${obj}.axCallProperty(${getname(param(1))}, [${pp.join(', ')}], false);`);
+								state.emitMain(`${targetStack} = /*fast*/sec.box(${obj}).axCallProperty(${getname(param(1))}, [${pp.join(', ')}], false);`);
 							}
 							break;
 						}
