@@ -12,7 +12,7 @@ export function axCoerce(x: any) {
 	}
 
 	// propagate fast mode for arrays with fast entries
-	if ((x.length && x[0] && x[0].__fast__ || !x.length) && Array.isArray(x)) {
+	if (Array.isArray(x) && (x[0] && x[0].__fast__)) {
 		return x;
 	}
 
