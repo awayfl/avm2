@@ -142,6 +142,12 @@ export class ByteArray extends ASObject implements IDataInput, IDataOutput {
 		this._bitLength = 0;
 	}
 
+	public setArrayBuffer(buffer: ArrayBuffer) {
+		this._buffer = buffer;
+		this._length = this._buffer.byteLength;
+		this._resetViews();
+	}
+
 	/* The initial size of the backing, in bytes. Doubled every OOM. */
 	private static INITIAL_SIZE = 128;
 

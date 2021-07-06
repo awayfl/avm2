@@ -82,6 +82,9 @@ export function emitAnnotation (state: CompilerState): IFunctionAnnotation  {
 			case 'int':
 				argCoerce = `${name} = ${name} | 0;`;
 				break;
+			case 'uint':
+				argCoerce = `${name} = ${name} >>> 0;`;
+				break;
 			default:
 				break;
 		}
