@@ -4,7 +4,6 @@ import { defineNonEnumerableProperty } from '@awayfl/swf-loader';
 import { AXCallable } from '../run/AXCallable';
 import { Errors } from '../errors';
 import { sliceArguments } from '../run/writers';
-import { ASArray } from './ASArray';
 
 export class ASMethodClosure extends ASFunction {
 	static classInitializer() {
@@ -15,7 +14,17 @@ export class ASMethodClosure extends ASFunction {
 	}
 
 	static Create(receiver: AXObject, method: AXCallable) {
-		const closure: ASMethodClosure = Object.create(this.sec.AXMethodClosure.tPrototype);
+		// hack, create a real closure and change prototype onto AXMethodClosure
+		// now we can invoke closure as regular function
+		// fix for click heroes
+
+		const closure = function () {
+			// eslint-disable-next-line prefer-rest-params
+			return (<any> closure.value).apply(closure.receiver, arguments);
+		};
+
+		Object.setPrototypeOf(closure,this.sec.AXMethodClosure.tPrototype);
+
 		closure.receiver = <any>receiver;
 		closure.value = method;
 		closure.methodInfo = method.methodInfo;
