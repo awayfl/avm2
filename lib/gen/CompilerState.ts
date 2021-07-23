@@ -214,14 +214,14 @@ export class CompilerState {
 	}
 
 	public isThisAlias(alias: string): boolean {
-		if (!Settings.UNSAFE_PROPOGATE_THIS)
+		if (!Settings.UNSAFE_PROPAGATE_THIS)
 			return false;
 
 		return this.thisAliases.has(alias);
 	}
 
 	public pushThisAlias(alias: string, from?: string): boolean {
-		if (!Settings.UNSAFE_PROPOGATE_THIS)
+		if (!Settings.UNSAFE_PROPAGATE_THIS)
 			return false;
 
 		if (from && !this.thisAliases.has(from))

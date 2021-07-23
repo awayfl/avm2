@@ -275,7 +275,7 @@ export function compile(methodInfo: MethodInfo, options: ICompilerOptions = {}):
 
 	const useLoopGuard =
 	(
-		Settings.ENABLE_LOOP_QUARD
+		Settings.ENABLE_LOOP_GUARD
 		&& genBrancher
 		// every cathch has 2 jumps, ignore it
 		&& (jumps.length - catches * 2) >= Settings.LOOP_GUARD_MIN_BRANCHES

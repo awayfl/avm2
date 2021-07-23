@@ -9,7 +9,7 @@ export interface IAVM2Settings {
 	ENABLE_DEBUG: boolean;
 	PRINT_BYTE_INSTRUCTION: boolean;
 	EMULATE_LOOKBEHIND: boolean;
-	ENABLE_LOOP_QUARD: boolean;
+	ENABLE_LOOP_GUARD: boolean;
 	LOOP_GUARD_MAX_LOOPS: number;
 	LOOP_GUARD_MIN_BRANCHES: number;
 	COERCE_MODE: COERCE_MODE_ENUM;
@@ -18,7 +18,7 @@ export interface IAVM2Settings {
 	NO_PROPAGATE_SCOPES_FOR_TRY: boolean;
 	HTTP_STRING: string;
 	EMIT_REAL_THIS: boolean;
-	UNSAFE_PROPOGATE_THIS: boolean;
+	UNSAFE_PROPAGATE_THIS: boolean;
 	UNSAFE_INLINE_CONST: boolean;
 	FOLLOW_AS3_BUG: boolean;
 	USE_WEAK_REF: boolean;
@@ -49,7 +49,7 @@ export const Settings: IAVM2Settings = {
 	/**
 	 * @description Guard to avoid infinity loops, throw exception
 	 */
-	ENABLE_LOOP_QUARD: false,
+	ENABLE_LOOP_GUARD: false,
 	/**
 	 * @description  How many branching jumps required for enable guarding except Exceptions
 	 */
@@ -89,7 +89,7 @@ export const Settings: IAVM2Settings = {
 	/**
 	 * @description Try propagade `this` in instruction set, super unsafe. Disable it when any errors is exist
 	 */
-	UNSAFE_PROPOGATE_THIS: true,
+	UNSAFE_PROPAGATE_THIS: true,
 
 	/**
 	 * @description use real constant values for r-values instead of stack-aliases
