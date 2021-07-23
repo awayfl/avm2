@@ -93,7 +93,7 @@ export class OrphanManager {
 	}
 }
 
-const initTraitsForObject = function(object: ASObject, traits: RuntimeTraits) {
+function initTraitsForObject (object: ASObject, traits: RuntimeTraits) {
 	if (!traits)
 		return;
 	if (traits.slots) {
@@ -103,10 +103,12 @@ const initTraitsForObject = function(object: ASObject, traits: RuntimeTraits) {
 			}
 		}
 	}
+
 	if (traits.superTraits)
 		initTraitsForObject(object, traits.superTraits);
+
 	return object;
-};
+}
 
 /**
  * Generic axConstruct method that lives on the AXClass prototype. This just
@@ -237,5 +239,25 @@ export function axConstruct(argArray?: any[]) {
 		// hack for font: make sure the fontName is set on Font
 		object.fontName = instName;
 	}
+	return object;
+}
+
+/**
+ * Fast version of axConstruct, must be called when we strictly
+ * know that elements not Interactive object and not have linked symbol,
+ * this can save a lot of time for check
+ */
+export function axConstructFast(ctor: AXClass, args: any[]) {
+	const object = Object.create(ctor.tPrototype);
+
+	ctor.tPrototype.traits && initTraitsForObject(object, ctor.tPrototype.traits);
+
+	// mark object that it is AX object, not a regular class
+	object[IS_AX_CLASS] = true;
+
+	Reflect.apply(object.axInitializer, object, args);
+
+	object.constructorHasRun = true;
+
 	return object;
 }

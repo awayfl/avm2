@@ -48,7 +48,7 @@ import {
 import {
 	emitIsAX,
 	emitIsAXOrPrimitive,
-	extClassContructor,
+	extClassConstructor,
 	getExtClassField,
 	IS_EXTERNAL_CLASS,
 	needFastCheck
@@ -66,6 +66,7 @@ import { SlotTraitInfo } from './abc/lazy/SlotTraitInfo';
 import { AXApplicationDomain } from './run/AXApplicationDomain';
 import { TraitInfo } from './abc/lazy/TraitInfo';
 import { RuntimeTraitInfo } from './abc/lazy/RuntimeTraitInfo';
+import { axConstructFast } from './run/axConstruct';
 
 const METHOD_HOOKS: StringMap<{path: string, place: 'begin' | 'return', hook: Function}> = {};
 
@@ -98,10 +99,6 @@ function generateFunc(body: string, path: string) {
 
 //@ts-ignore
 self.attach_hook = UNSAFE_attachMethodHook;
-
-function escape(name: string) {
-	return JSON.stringify(name);
-}
 
 function resolveTrait(info: InstanceInfo, name: Multiname): TraitInfo | RuntimeTraitInfo {
 	info.traits.resolve();
@@ -1909,10 +1906,34 @@ export class Context {
 		return b.axDeleteProperty(name);
 	}
 
+	/**
+	 * Fast constructor for compile-time knowned external classes, like box2D or nape
+	 */
+	constructExt(ctor: AXClass, args: any[], mn?: Multiname): AXObject {
+		mn = mn || ctor.classInfo.instanceInfo.getName();
+
+		return extClassConstructor(mn, args);
+	}
+
+	/**
+	 * Fast constructor for strictly known non-interactive classes, that not required checks
+	 */
+	constructFast(ctor: AXClass, args: any[], mn?: Multiname): AXObject {
+
+		if (mn) {
+			return axConstructFast(ctor[ctor.axResolveMultiname(mn)], args);
+		}
+
+		return axConstructFast(ctor, args);
+	}
+
+	/**
+	 * Basic constructor for axObjects, slower that any others
+	 */
 	construct(obj: AXClass, pp: any[]): AXObject {
 		const mn = obj.classInfo.instanceInfo.getName();
 
-		const r = extClassContructor(mn.name, pp);
+		const r = extClassConstructor(mn, pp);
 
 		if (r != null)
 			return r;
@@ -1925,7 +1946,7 @@ export class Context {
 	}
 
 	constructprop(mn: Multiname, obj: AXClass, pp: any[]) {
-		const r = extClassContructor(mn, pp);
+		const r = extClassConstructor(mn, pp);
 
 		if (r != null)
 			return r;

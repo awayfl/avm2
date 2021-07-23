@@ -47,7 +47,7 @@ export function getExtClassField(name: string, namespace: string = undefined): C
  * @param mn
  * @param args
  */
-export function extClassContructor(mn: Multiname, args: any[]) {
+export function extClassConstructor(mn: Multiname, args: any[]) {
 	if (!extClasses._lib)
 		return null;
 
