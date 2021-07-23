@@ -786,8 +786,16 @@ export function analyze(methodInfo: MethodInfo): IAnalyseResult | IAnalyzeError 
 				const [index, dyn, d] = mn(state);
 				ins = (new Instruction(oldi, z + dyn, index, 0 + d));
 				ins.returnTypeId = lastType;
-				requireScope = true;
 
+				// construct prop was called with same MN that used for coerce, redundant
+				if (last && last.name === Bytecode.CONSTRUCTPROP && last.params[1] === index) {
+					ins.returnTypeId = PRIMITIVE_TYPE.VOID;
+					ins.name = Bytecode.LABEL;
+					ins.comment = 'IR: Drop coerce, reason: redundant';
+					break;
+				}
+
+				requireScope = true;
 				break;
 			}
 			case Bytecode.COERCE_A:
