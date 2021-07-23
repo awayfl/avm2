@@ -106,8 +106,13 @@ function resolveTrait(info: InstanceInfo, name: Multiname): TraitInfo | RuntimeT
 	let trait = info.traits.getTrait(name);
 	let superInstance = info;
 
-	while (Settings.CHEK_SUPER_TRAITS && !trait && superInstance && superInstance.getSuperName()) {
+	while (Settings.CHEK_SUPER_TRAITS && !trait && superInstance && superInstance instanceof InstanceInfo) {
 		const superName = superInstance.getSuperName();
+
+		if (!superName) {
+			return null;
+		}
+
 		const addDom = <AXApplicationDomain> (<any> superName.value).applicationDomain;
 		const superClass = addDom.getClass(superName);
 
@@ -115,10 +120,14 @@ function resolveTrait(info: InstanceInfo, name: Multiname): TraitInfo | RuntimeT
 
 		if (superInstance.runtimeTraits) {
 			trait = <any> superInstance.runtimeTraits.getTrait(name.namespaces, name.name);
-		} else {
-			superInstance.traits.resolve();
-			trait = superInstance.traits.getTrait(name);
+
+			if (trait) {
+				return  trait;
+			}
 		}
+
+		superInstance.traits.resolve();
+		trait = superInstance.traits.getTrait(name);
 
 		if (trait) {
 			return  trait;
@@ -1031,9 +1040,28 @@ export function compile(methodInfo: MethodInfo, options: ICompilerOptions = {}):
 						break;
 					}
 
+					// generate fast lookup for get/call
+					// scope === 1 is extended scope
+					if (Settings.CHEK_TRAIT_GET_CALL
+						&& Settings.CHEK_TRAIT_FIND_PROP
+						&& z.scope === 1
+						&& instanceInfo
+					) {
+						const trait = resolveTrait(instanceInfo, mn);
+
+						if (trait) {
+							// eslint-disable-next-line max-len
+							state.emitMain(`/* We sure that this scope owner, represented in TRAIT as ${TRAITNames[trait.kind]}  */ `);
+							state.emitGetLocal(-1, 0);
+							break;
+						}
+
+					}
+
 					state.emitMain(`${stackF(-1)} = ${scope}.findScopeProperty(${getname(param(0))}, true, false);`);
 					break;
 				}
+
 				case Bytecode.FINDPROPERTY:
 					state.emitMain(`// ${abc.getMultiname(param(0))}`);
 					state.popAnyAlias(stackF(-1, false));
@@ -1435,14 +1463,42 @@ export function compile(methodInfo: MethodInfo, options: ICompilerOptions = {}):
 							const mangled = (lexGen.getGenerator(mn, true) instanceof TopLevelLex);
 							fastCall.mark(target, i, mangled, mn, true);
 						}
-					} else {
-						state.emitMain(`// ${mn}`);
-						state.emitMain(`temp = ${scope}.findScopeProperty(${getname(param(0))}, true, false);`);
-						state.emitMain(`${target} = ${emitAccess('temp', '$Bg' + mn.name)};`);
-						state.emitMain(`if (${target} === undefined || typeof ${target} === 'function') {`);
-						state.emitMain(`    ${target} = temp.axGetProperty(${getname(param(0))});`);
-						state.emitMain('}');
+						break;
 					}
+
+					// generate fast lookup for get/call
+					// scope === 1 is extended scope
+					if (Settings.CHEK_TRAIT_GET_CALL
+						&& Settings.CHEK_TRAIT_FIND_PROP
+						&& z.scope === 1
+						&& instanceInfo
+					) {
+						const trait = resolveTrait(instanceInfo, mn);
+						if (trait) {
+							// eslint-disable-next-line max-len
+							state.emitMain(`/* GETLEX We sure that this safe get, represented in TRAIT as ${TRAITNames[trait.kind]}  */ `);
+							if (trait.kind === TRAIT.Method) {
+								state.emitMain(`${target} = ${emitInlineLocal(state, 0)}.axGetProperty(${getname(param(0))});`);
+								break;
+							} else if (
+								trait.kind === TRAIT.Slot ||
+								trait.kind === TRAIT.GetterSetter ||
+								trait.kind === TRAIT.Getter
+							) {
+								state.emitMain(
+									`${target} = ${emitAccess(emitInlineLocal(state, 0), mn.getMangledName())};`
+								);
+								break;
+							}
+						}
+					}
+
+					state.emitMain(`// ${mn}`);
+					state.emitMain(`temp = ${scope}.findScopeProperty(${getname(param(0))}, true, false);`);
+					state.emitMain(`${target} = ${emitAccess('temp', '$Bg' + mn.name)};`);
+					state.emitMain(`if (${target} === undefined || typeof ${target} === 'function') {`);
+					state.emitMain(`    ${target} = temp.axGetProperty(${getname(param(0))});`);
+					state.emitMain('}');
 
 					break;
 				}

@@ -1,26 +1,38 @@
 export interface IAVM2Settings {
+	// optimiser
 	NO_CHECK_FASTCALL_FOR_THIS: boolean;
 	NO_CHECK_BOXED_THIS: boolean;
 	NO_HOIST_MULTINAME: boolean;
 	CHEK_TRAIT_GET_CALL: boolean;
+	CHEK_TRAIT_FIND_PROP: boolean;
 	CHEK_TRAIT_SET: boolean;
 	CHEK_SUPER_TRAITS: boolean;
 	OPTIMISE_ON_IR: boolean;
-	ENABLE_DEBUG: boolean;
-	PRINT_BYTE_INSTRUCTION: boolean;
-	EMULATE_LOOKBEHIND: boolean;
-	ENABLE_LOOP_GUARD: boolean;
-	LOOP_GUARD_MAX_LOOPS: number;
-	LOOP_GUARD_MIN_BRANCHES: number;
-	COERCE_MODE: COERCE_MODE_ENUM;
-	CHECK_OBFUSCATED_NAME: boolean;
-	NO_FALL_TO_INT: boolean;
-	NO_PROPAGATE_SCOPES_FOR_TRY: boolean;
-	HTTP_STRING: string;
 	EMIT_REAL_THIS: boolean;
 	UNSAFE_PROPAGATE_THIS: boolean;
 	UNSAFE_INLINE_CONST: boolean;
+	NO_FALL_TO_INT: boolean;
+	NO_PROPAGATE_SCOPES_FOR_TRY: boolean;
+	COERCE_MODE: COERCE_MODE_ENUM;
+
+	// debug info
+	ENABLE_DEBUG: boolean;
+	PRINT_BYTE_INSTRUCTION: boolean;
+
+	// RegExp
+	EMULATE_LOOKBEHIND: boolean;
+
+	// code safe
+	ENABLE_LOOP_GUARD: boolean;
+	LOOP_GUARD_MAX_LOOPS: number;
+	LOOP_GUARD_MIN_BRANCHES: number;
+
+	// generator
+	CHECK_OBFUSCATED_NAME: boolean;
+	HTTP_STRING: string;
 	FOLLOW_AS3_BUG: boolean;
+
+	// Orphan Manger
 	USE_WEAK_REF: boolean;
 }
 
@@ -120,6 +132,11 @@ export const Settings: IAVM2Settings = {
 	 * avoid generate redundant if-block
 	 */
 	CHEK_TRAIT_GET_CALL: true,
+	/**
+	 * @description Falling to getProperty when FINDPROPSTRICT use scope of this (scope0),
+	 * this can apply CHEK_TRAIT_GET_CALL for generated code
+	 */
+	CHEK_TRAIT_FIND_PROP: true,
 	/**
 	 * @description Check trait type of property for generation FAST operation for setProperty, avoid redundant if-block
 	 * @todo Atm we not call coerse, result can be unstable
