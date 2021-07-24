@@ -11,6 +11,7 @@ import { AXGlobal } from './AXGlobal';
 import { release } from '@awayfl/swf-loader';
 import { AXClass } from './AXClass';
 import { AXObject } from './AXObject';
+import { ClassInfo } from '../abc/lazy/ClassInfo';
 
 /**
  * All code lives within an application domain.
@@ -65,12 +66,31 @@ export class AXApplicationDomain {
 		this.executeScript(lastScript);
 	}
 
-	public findClassInfo(name: string): any {
+	public findClassInfoDeep (name: string | Multiname): ClassInfo | null {
+
+		let info = this.findClassInfo(name);
+
+		if (info)
+			return info;
+
+		if (this.parent) {
+			info = this.parent.findClassInfo(name);
+
+			if (info)
+				return info;
+		}
+
+		return null;
+	}
+
+	public findClassInfo(name: string | Multiname): ClassInfo | null {
+		const argName = typeof name === 'string' ? name : name.name;
+
 		for (let i = 0; i < this._abcs.length; i++) {
 			const abc = this._abcs[i];
 			for (let j = 0; j < abc.instances.length; j++) {
 				const c = abc.classes[j];
-				if (c.instanceInfo.getName().name === name) {
+				if (c.instanceInfo.getName().name === argName) {
 					return c;
 				}
 			}

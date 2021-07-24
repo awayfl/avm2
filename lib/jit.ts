@@ -66,7 +66,9 @@ import { SlotTraitInfo } from './abc/lazy/SlotTraitInfo';
 import { AXApplicationDomain } from './run/AXApplicationDomain';
 import { TraitInfo } from './abc/lazy/TraitInfo';
 import { RuntimeTraitInfo } from './abc/lazy/RuntimeTraitInfo';
-import { axConstructFast } from './run/axConstruct';
+import { axConstructFast, isFastConstructSupport } from './run/axConstruct';
+import { ClassInfo } from './abc/lazy/ClassInfo';
+import { ClassTraitInfo } from './abc/lazy/ClassTraitInfo';
 
 const METHOD_HOOKS: StringMap<{path: string, place: 'begin' | 'return', hook: Function}> = {};
 
@@ -99,6 +101,14 @@ function generateFunc(body: string, path: string) {
 
 //@ts-ignore
 self.attach_hook = UNSAFE_attachMethodHook;
+
+function findClassOfABC(mn: Multiname): ClassInfo {
+	if (!mn) {
+		return null;
+	}
+
+	return mn.abc.applicationDomain.findClassInfoDeep(mn);
+}
 
 function resolveTrait(info: InstanceInfo, name: Multiname): TraitInfo | RuntimeTraitInfo {
 	info.traits.resolve();
@@ -1220,8 +1230,21 @@ export function compile(methodInfo: MethodInfo, options: ICompilerOptions = {}):
 						state.killConstAliasInstruction([stackF(param(0) - j, false)]);
 					}
 
-					// eslint-disable-next-line max-len
-					state.emitMain(`${stackF(param(0))} = context.constructprop(${getname(param(1))}, ${of}, [${pp.join(', ')}]);`);
+					let supportFast = false;
+					const trace = [];
+
+					if (Settings.CHECK_FAST_CONSTRUCTOR) {
+						supportFast = isFastConstructSupport(abc.getMultiname(param(1)), trace);
+					}
+
+					if (supportFast) {
+						state.emitMain('//JIT: Support fast construct:' + trace.join('/'));
+						// eslint-disable-next-line max-len
+						state.emitMain(`${stackF(param(0))} = context.constructFast(${of}, [${pp.join(', ')}], ${getname(param(1))});`);
+					} else {
+						// eslint-disable-next-line max-len
+						state.emitMain(`${stackF(param(0))} = context.constructprop(${getname(param(1))}, ${of}, [${pp.join(', ')}]);`);
+					}
 
 					USE_OPT(fastCall) && fastCall.kill(stackF(param(0)));
 				}

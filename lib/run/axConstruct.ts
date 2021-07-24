@@ -242,6 +242,50 @@ export function axConstruct(argArray?: any[]) {
 	return object;
 }
 
+const NEED_SLOW_CONSTRUCTOR: Record<string, boolean> = {
+	'MovieClip': true,
+	'DisplayObject': true,
+	'Sprite': true,
+	'Sound': true,
+	'SimpleButton': true
+};
+
+export function isFastConstructSupport(mn: Multiname, trace: string[]): boolean {
+	let classInfo = mn.abc.applicationDomain.findClassInfoDeep(mn);
+
+	// we not find class definition.. sorry
+	if (!classInfo) {
+		return false;
+	}
+
+	trace && trace.push(mn.name);
+
+	while (classInfo && mn) {
+		// This is special classes that require use slow constructor
+		if (NEED_SLOW_CONSTRUCTOR[mn.name]) {
+			return false;
+		}
+
+		mn = classInfo.instanceInfo.getSuperName();
+
+		if (!mn) {
+			return true;
+		}
+
+		trace && trace.push(mn.name);
+		classInfo = mn.abc.applicationDomain.findClassInfoDeep(mn);
+
+		// top level class 'Object', all classes extends it and it not have super
+		if (mn.name === 'Object' && mn.namespace.uri === '' && !classInfo.instanceInfo.superName) {
+			return true;
+		}
+
+	}
+
+	// if we can't traverse - use slow
+	return false;
+}
+
 /**
  * Fast version of axConstruct, must be called when we strictly
  * know that elements not Interactive object and not have linked symbol,

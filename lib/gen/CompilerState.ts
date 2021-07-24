@@ -34,6 +34,8 @@ export class CompilerState {
 	// back ref to local-> stack
 	public localAliases: Record<string, string> = {};
 
+	public localTypes: Record<number, Array<Multiname>> = {};
+
 	public noHoistMultiname: boolean = Settings.NO_HOIST_MULTINAME;
 
 	public get indent() {
@@ -61,6 +63,21 @@ export class CompilerState {
 	constructor (methodInfo: MethodInfo) {
 		this.methodInfo = methodInfo;
 		this.abc = methodInfo.abc;
+
+		this.init();
+	}
+
+	private init() {
+
+		if (this.methodInfo.parentInfo) {
+			this.localTypes[0] = [this.methodInfo.parentInfo.getTypeName()];
+		}
+
+		let i = 1;
+		for (const param of this.methodInfo.parameters) {
+			this.localTypes[i] = param.getType() ?  [param.getType()] : [];
+			i++;
+		}
 	}
 
 	public evalStackIndex(stackOffset: number): number {
@@ -132,6 +149,10 @@ export class CompilerState {
 
 			this.constAliases[stack] = { value: local, pos: this.mainBlock.length };
 			this.localAliases[local] = stack;
+		}
+
+		if (this.localTypes[localIndex] && this.localTypes[localIndex][0]) {
+			this.emitMain('// JIT: potential type:' + this.localTypes[localIndex][0].toString());
 		}
 
 		return this.mainBlock.push(this.indent + stack + ' = ' + emitInlineLocal(this, localIndex) + ';');

@@ -7,6 +7,7 @@ export interface IAVM2Settings {
 	CHEK_TRAIT_FIND_PROP: boolean;
 	CHEK_TRAIT_SET: boolean;
 	CHEK_SUPER_TRAITS: boolean;
+	CHECK_FAST_CONSTRUCTOR: boolean;
 	OPTIMISE_ON_IR: boolean;
 	EMIT_REAL_THIS: boolean;
 	UNSAFE_PROPAGATE_THIS: boolean;
@@ -146,6 +147,10 @@ export const Settings: IAVM2Settings = {
 	 * @description Check super class traits when field was extended, this can be unstable and has performance hit
 	 */
 	CHEK_SUPER_TRAITS: true,
+	/**
+	 * @description use axConstructFast when this possible, compile time check have overhead
+	 */
+	CHECK_FAST_CONSTRUCTOR: true,
 	/**
 	 * @description when there are a string with ending character as 0, coerce in FP return valid number instead NaN
 	 * @see https://bugzilla.mozilla.org/show_bug.cgi?id=564839

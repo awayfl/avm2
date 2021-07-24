@@ -299,7 +299,7 @@ export class TopLevelLex extends LexImportsGenerator {
 		if (
 			NOT_ALLOWED.indexOf(name) > -1 ||
 			NOT_ALLOWED.indexOf(uri) > -1) {
-			return null;
+			return false;
 		}
 
 		if (
@@ -328,7 +328,7 @@ export class TopLevelLex extends LexImportsGenerator {
 	}
 
 	protected _genAlias(mn: Multiname, options: IImportGenOptions): string {
-		const uri = mn.namespace.uri.split(/\./g);
+		const uri = mn.namespace.uri.split(/[.:]/g);
 		if (typeof options.mnIndex !== 'number' || options.mnIndex < 0) {
 			throw 'Name alias required for generatin Toplevel exports!';
 		}
