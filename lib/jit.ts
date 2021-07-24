@@ -2001,6 +2001,14 @@ export class Context {
 	 * Fast constructor for strictly known non-interactive classes, that not required checks
 	 */
 	constructFast(ctor: AXClass, args: any[], mn?: Multiname): AXObject {
+		// todo Check this statically, we can check external class name in compile time
+		if (needFastCheck()) {
+			const extConsructor = this.constructExt(ctor, args, mn);
+
+			if (extConsructor) {
+				return extConsructor;
+			}
+		}
 
 		if (mn) {
 			return axConstructFast(ctor[ctor.axResolveMultiname(mn)], args);
