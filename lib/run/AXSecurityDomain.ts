@@ -94,6 +94,8 @@ export class AXSecurityDomain {
 	public AXMethodClosure: AXMethodClosureClass;
 	public AXError: AXClass;
 	public AXNumber: AXClass;
+	public AXInt: AXClass;
+	public AXUint: AXClass;
 	public AXString: AXClass;
 	public AXBoolean: AXClass;
 	public AXRegExp: AXClass;

@@ -27,7 +27,7 @@ export class ASInt extends ASNumber {
 				this.sec.throwError('RangeError', Errors.InvalidRadixError, radix);
 			}
 		}
-		if (this.axClass !== this.sec.AXNumber) {
+		if (this.axClass !== this.sec.AXInt && this.axClass !== this.sec.AXNumber) {
 			this.sec.throwError('TypeError', Errors.InvokeOnIncompatibleObjectError,
 				'Number.prototype.toString');
 		}
@@ -36,7 +36,7 @@ export class ASInt extends ASNumber {
 	}
 
 	valueOf() {
-		if (this.axClass !== this.sec.AXNumber) {
+		if (this.axClass !== this.sec.AXInt && this.axClass !== this.sec.AXNumber) {
 			this.sec.throwError('TypeError', Errors.InvokeOnIncompatibleObjectError,
 				'Number.prototype.valueOf');
 		}
