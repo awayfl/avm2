@@ -179,7 +179,10 @@ export function compile(methodInfo: MethodInfo, options: ICompilerOptions = {}):
 	]);
 
 	const tinyCtr = new TinyConstructor();
-	const fastCall = new FastCall(lexGen, executionScope);
+	// todo
+	// 	fastCall not supported now, we change compile flow and it generate wrong results
+	// 	remove or refact it
+	const fastCall = null;//new FastCall(lexGen, executionScope);
 
 	Stat.begin('');
 
