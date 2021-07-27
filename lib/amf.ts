@@ -24,6 +24,8 @@ import { ASArray } from './nat/ASArray';
 import { ByteArray } from './natives/byteArray';
 import { assert } from '@awayjs/graphics';
 import { release } from '@awayfl/swf-loader';
+import { ByteArray as AwayByteArray } from '@awayjs/core';
+
 import { StringUtilities, isNumeric } from '@awayfl/swf-loader';
 import { ITraits } from './run/ITraits';
 import { AXClass } from './run/AXClass';
@@ -339,6 +341,13 @@ function writeUTF8(ba: ByteArray, s: string, references: AMF3ReferenceTables) {
 
 	const bytes = StringUtilities.utf8decode(s);
 	writeU29(ba, 1 | (bytes.length << 1));
+
+	// we can write faster
+	if (ba instanceof AwayByteArray) {
+		ba.writeArrayBuffer(bytes.buffer);
+		return;
+	}
+
 	for (let i = 0; i < bytes.length; i++) {
 		ba.writeByte(bytes[i]);
 	}
