@@ -339,8 +339,10 @@ export class Multiname {
 		}
 
 		if (nameIndex <= 0) {
-			//case for `com.package.name className`
-			nameIndex = realName.lastIndexOf(' ');
+			// todo Fix multiname resolver for simple name
+			// case for `com.package.name className`
+			// bugged on BBR, game has sounds named as 'bison 8-bit', 'bison victory'
+			//nameIndex = realName.lastIndexOf(' ');
 		}
 
 		let uri = '';
