@@ -344,7 +344,11 @@ function writeUTF8(ba: ByteArray, s: string, references: AMF3ReferenceTables) {
 
 	// we can write faster
 	if (ba instanceof AwayByteArray) {
-		ba.writeArrayBuffer(bytes.buffer);
+		// view can look on biggest array, we should check this
+		ba.writeArrayBuffer(
+			bytes.byteLength !== bytes.buffer.byteLength
+				? new Uint8Array(bytes).buffer
+				: bytes.buffer);
 		return;
 	}
 
