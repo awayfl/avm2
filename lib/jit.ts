@@ -25,7 +25,7 @@ import { COMPILATION_FAIL_REASON, COMPILER_DEFAULT_OPT, COMPILER_OPT_FLAGS } fro
 // generators
 import { analyze, IAnalyseResult, IAnalyzeError } from './gen/analyze';
 import { TinyConstructor } from './gen/TinyConstructor';
-import { FastCall, ICallEntry } from './gen/FastCall';
+import { ICallEntry } from './gen/FastCall';
 
 import { Stat } from './gen/Stat';
 
@@ -101,14 +101,6 @@ function generateFunc(body: string, path: string) {
 
 //@ts-ignore
 self.attach_hook = UNSAFE_attachMethodHook;
-
-function findClassOfABC(mn: Multiname): ClassInfo {
-	if (!mn) {
-		return null;
-	}
-
-	return mn.abc.applicationDomain.findClassInfoDeep(mn);
-}
 
 function resolveTrait(info: InstanceInfo, name: Multiname): TraitInfo | RuntimeTraitInfo {
 	info.traits.resolve();
@@ -1924,10 +1916,10 @@ export class Context {
 		return value.axApply(obj, pp);
 	}
 
-	getdefinitionbyname(scope: Scope, _: any, pp: any[]): AXClass {
+	getdefinitionbyname(scope: Scope, _: any, args: any[]): AXClass {
 		const info = (<ScriptInfo>(<any>scope.global.object).scriptInfo);
 		// pp can be XMList, that required to conversion
-		return info.abc.env.app.getClass(Multiname.FromSimpleName(pp[0].toString()));
+		return info.abc.applicationDomain.getClass(Multiname.FromSimpleName(args[0].toString()));
 	}
 
 	getpropertydyn(mn: Multiname | number, obj: ASObject): ASObject {
