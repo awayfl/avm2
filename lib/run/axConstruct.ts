@@ -247,7 +247,8 @@ const NEED_SLOW_CONSTRUCTOR: Record<string, boolean> = {
 	'DisplayObject': true,
 	'Sprite': true,
 	'Sound': true,
-	'SimpleButton': true
+	'SimpleButton': true,
+	'BitmapData': true
 };
 
 export function isFastConstructSupport(mn: Multiname, trace: string[]): boolean {
