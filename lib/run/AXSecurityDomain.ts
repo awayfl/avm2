@@ -706,7 +706,7 @@ export class AXSecurityDomain {
 		this.prepareNativeClass('AXNamespace', 'Namespace', false);
 
 		const AXArray = this.prepareNativeClass('AXArray', 'Array', false);
-		D(AXArray, 'axBox', axBoxPrimitive);
+		//D(AXArray, 'axBox', axBoxPrimitive);
 		AXArray.tPrototype.$BgtoString = AXFunction.axBox(function () {
 			return this.value.toString();
 		});

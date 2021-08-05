@@ -17,8 +17,37 @@ import { axDefaultCompareFunction } from '../run/axDefaultCompareFunction';
 import { axCompare } from '../run/axCompare';
 import { axCompareFields } from '../run/axCompareFields';
 import { Errors } from '../errors';
+import { axBoxPrimitive } from '../run/axBoxPrimitive';
 
 export class ASArray extends ASObject {
+	/**
+	 * Proxy ASArray for allow use brackets notation [index], used in Box2D and other external modules
+	 * @param original
+	 */
+	static wrapProxy(original: ASArray): ASArray {
+		return new Proxy(original, {
+			set(target: ASArray, p: PropertyKey, value: any, receiver: any): boolean {
+				if (typeof p === 'string' && !Number.isNaN(+p)) {
+					target.value[+p] = value;
+					return true;
+				}
+
+				target[p] = value;
+				return true;
+			},
+			get(target: ASArray, p: PropertyKey, receiver: any): any {
+				if (typeof p === 'string' && !Number.isNaN(+p)) {
+					return target.value[+p];
+				}
+				return target[p];
+			}
+		});
+	}
+
+	static axBox (asValue: any[]): ASArray {
+		return ASArray.wrapProxy(axBoxPrimitive.call(this, asValue));
+	}
+
 	static classInitializer() {
 		const proto: any = this.dPrototype;
 		const asProto: any = ASArray.prototype;
@@ -59,6 +88,8 @@ export class ASArray extends ASObject {
 	constructor() {
 		super();
 		this.value = createArrayValueFromArgs(this.sec, <any>arguments);
+
+		return ASArray.wrapProxy(this);
 	}
 
 	native_hasOwnProperty(nm: string): boolean {
