@@ -40,7 +40,12 @@ export class ASString extends ASObject {
 		addPrototypeFunctionAlias(<any> this, '$BgfromCharCode', ASString.fromCharCode);
 	}
 
-	value: string;
+	private value: string;
+
+	constructor(value: string) {
+		super();
+		this.value = value;
+	}
 
 	static fromCharCode(...charcodes: any []) {
 		return String.fromCharCode.apply(null, charcodes);
