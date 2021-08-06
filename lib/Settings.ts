@@ -15,6 +15,7 @@ export interface IAVM2Settings {
 	NO_FALL_TO_INT: boolean;
 	NO_PROPAGATE_SCOPES_FOR_TRY: boolean;
 	COERCE_MODE: COERCE_MODE_ENUM;
+	COERCE_RETURN_MODE: COERCE_RETURN_MODE_ENUM;
 
 	// debug info
 	ENABLE_DEBUG: boolean;
@@ -41,6 +42,15 @@ export const enum COERCE_MODE_ENUM {
 	DEFAULT = 'default', // strict coerce, will crash if type not found
 	SOFT = 'soft', // warning when coerce type not found, and return same object
 	SOFT_SILENT = 'soft_silent' // return same object without warnings
+}
+
+export const enum COERCE_RETURN_MODE_ENUM {
+	// no coerce return at all, for some games produce bugs when methods should return int, but return float
+	NONE = 'none',
+	// coerce only primitives (int, uint, String, Boolean)
+	PRIMITIVE = 'primitive',
+	// coerce primitives by restricted instructions and call context.coerceReturn for object
+	ALL = 'all',
 }
 
 export const Settings: IAVM2Settings = {
@@ -73,6 +83,10 @@ export const Settings: IAVM2Settings = {
 	 * @description Restirct coerce bechaviour
 	 */
 	COERCE_MODE: COERCE_MODE_ENUM.SOFT,
+	/**
+	 * @description Generate coerce instruction for returned values
+	 */
+	COERCE_RETURN_MODE: COERCE_RETURN_MODE_ENUM.PRIMITIVE,
 
 	/**
 	 * @description Validate names in compile process and fall to interpret when it invalid for compilation

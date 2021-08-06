@@ -35,13 +35,13 @@ import {
 	emitAnnotation,
 	emitAnnotationOld,
 	emitCloseTryCatch,
+	emitCoerce,
 	emitDomainMemOppcodes,
 	emitInlineAccessor as emitAccess,
 	emitInlineLocal,
 	emitInlineMultiname,
 	emitInlineStack,
 	emitOpenTryCatch,
-	emitCoerce,
 	UNDERRUN
 } from './gen/emiters';
 
@@ -56,7 +56,7 @@ import {
 import { AXCallable } from './run/AXCallable';
 import { ASClass } from './nat/ASClass';
 import { AXObject } from './run/AXObject';
-import { COERCE_MODE_ENUM, Settings } from './Settings';
+import { COERCE_MODE_ENUM, COERCE_RETURN_MODE_ENUM, Settings } from './Settings';
 import { AXFunction } from './run/AXFunction';
 import { CompilerState } from './gen/CompilerState';
 import { Instruction } from './gen/Instruction';
@@ -67,8 +67,6 @@ import { AXApplicationDomain } from './run/AXApplicationDomain';
 import { TraitInfo } from './abc/lazy/TraitInfo';
 import { RuntimeTraitInfo } from './abc/lazy/RuntimeTraitInfo';
 import { axConstructFast, isFastConstructSupport } from './run/axConstruct';
-import { ClassInfo } from './abc/lazy/ClassInfo';
-import { ClassTraitInfo } from './abc/lazy/ClassTraitInfo';
 
 const METHOD_HOOKS: StringMap<{path: string, place: 'begin' | 'return', hook: Function}> = {};
 
@@ -1520,21 +1518,46 @@ export function compile(methodInfo: MethodInfo, options: ICompilerOptions = {}):
 
 					break;
 				}
-				case Bytecode.RETURNVALUE:
+				case Bytecode.RETURNVALUE: {
 					if (METHOD_HOOKS && METHOD_HOOKS[meta.classPath + '__return']) {
 						state.emitMain('/* ATTACH METHOD HOOK */');
 						// eslint-disable-next-line max-len
 						state.emitMain(`context.executeHook(${emitInlineLocal(state, 0)}, '${meta.classPath + '__return'}')`);
 					}
 
-					// Restict type conversion for boolean.
-					if (methodInfo.getTypeName()?.name === 'Boolean') {
-						state.emitMain(`return !!${stack0};`);
+					const typeName: string = methodInfo.getTypeName()?.name;
+
+					if (!typeName ||
+						Settings.COERCE_RETURN_MODE === COERCE_RETURN_MODE_ENUM.NONE
+					) {
+						state.emitMain(`return ${stack0};`);
 						break;
 					}
 
-					state.emitMain(`return ${stack0};`);
+					switch (typeName) {
+						case 'Boolean':
+							state.emitMain(`return !!${stack0};`);
+							break;
+						case 'int':
+							state.emitMain(`return ${stack0}|0;`);
+							break;
+						case 'uint':
+							state.emitMain(`return ${stack0}>>>0;`);
+							break;
+						case 'String':
+							state.emitMain(`return ${stack0}==null?null:${stack0}+'';`);
+							break;
+						default: {
+							if (Settings.COERCE_RETURN_MODE === COERCE_RETURN_MODE_ENUM.PRIMITIVE) {
+								state.emitMain(`return ${stack0};`);
+							} else {
+								state.emitMain(`return context.coerceReturn(${stack0});`);
+							}
+						}
+					}
+
 					break;
+				}
 				case Bytecode.RETURNVOID:
 					if (METHOD_HOOKS && METHOD_HOOKS[meta.classPath + '__return']) {
 						state.emitMain('/* ATTACH METHOD HOOK */');
@@ -1826,6 +1849,15 @@ export class Context {
 		}
 
 		return this.domain.internal_memoryView;
+	}
+
+	/**
+	 * Coerce returned value to type
+	 * @param value
+	 */
+	coerceReturn(value: any): any {
+		const type = this.mi.getType();
+		return type ? type.axCoerce(value) : value;
 	}
 
 	createFunction (methodId: number, scope: Scope, hasDynamicScope: boolean, parentMethodId: number): AXFunction {
