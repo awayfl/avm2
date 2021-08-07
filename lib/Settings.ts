@@ -17,6 +17,8 @@ export interface IAVM2Settings {
 	COERCE_MODE: COERCE_MODE_ENUM;
 	COERCE_RETURN_MODE: COERCE_RETURN_MODE_ENUM;
 
+	MAX_INLINE_RETURN: number;
+
 	// debug info
 	ENABLE_DEBUG: boolean;
 	PRINT_BYTE_INSTRUCTION: boolean;
@@ -87,6 +89,12 @@ export const Settings: IAVM2Settings = {
 	 * @description Generate coerce instruction for returned values
 	 */
 	COERCE_RETURN_MODE: COERCE_RETURN_MODE_ENUM.PRIMITIVE,
+
+	/**
+	 * Inline return inside jump statement, reduce jumping count.
+	 * Maximal instruction (include return) that can be inlined. 0 - nothing
+	 */
+	MAX_INLINE_RETURN: 5,
 
 	/**
 	 * @description Validate names in compile process and fall to interpret when it invalid for compilation

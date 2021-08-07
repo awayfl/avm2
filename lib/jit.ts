@@ -98,6 +98,53 @@ function generateFunc(body: string, path: string) {
 	}
 }
 
+function findJumpTarget(
+	instrs: Instruction[],
+	jumps: number[],
+	initial: number,
+	target: number
+): { startIndex: number, endIndex: number } {
+	let startIndex = -1;
+	let endIndex = -1;
+
+	for (let i = initial; i < instrs.length; i++) {
+		const inst = instrs[i];
+
+		if (inst.position === target) {
+			startIndex = i;
+		}
+
+		if (startIndex > i && jumps.indexOf(inst.position) >= 0) {
+			endIndex = i;
+			break;
+		}
+	}
+
+	if (startIndex >= 0 && endIndex  === -1)
+		endIndex = instrs.length;
+
+	return  {
+		startIndex, endIndex
+	};
+}
+
+function isFastReturnVoid(
+	instrs: Instruction[],
+	jumps: number[],
+	initial: number,
+	target: number
+): boolean {
+	if (Settings.MAX_INLINE_RETURN <= 0) {
+		return false;
+	}
+
+	const {
+		startIndex
+	} = findJumpTarget(instrs, jumps, initial, target);
+
+	return startIndex >= 0 && instrs[startIndex].name === Bytecode.RETURNVOID;
+}
+
 //@ts-ignore
 self.attach_hook = UNSAFE_attachMethodHook;
 
@@ -548,57 +595,158 @@ export function compile(methodInfo: MethodInfo, options: ICompilerOptions = {}):
 					state.popAnyAlias(stackF(-1, false));
 					state.emitConst(stackF(-1), undefined);
 					break;
-				case Bytecode.IFEQ:
+				case Bytecode.IFEQ: {
+
+					if (isFastReturnVoid(q, jumps, i, param(0))) {
+						state.emitMain('//JIT: Emit inline return');
+						state.emitMain(`if (${stack0} == ${stack1}) { return; }`);
+						break;
+					}
+
 					state.emitMain(`if (${stack0} == ${stack1}) { p = ${param(0)}; continue; };`);
 					break;
-				case Bytecode.IFNE:
+				}
+				case Bytecode.IFNE: {
+
+					if (isFastReturnVoid(q, jumps, i, param(0))) {
+						state.emitMain('//JIT: Emit inline return');
+						state.emitMain(`if (${stack0} != ${stack1}) { return; }`);
+						break;
+					}
+
 					state.emitMain(`if (${stack0} != ${stack1}) { p = ${param(0)}; continue; };`);
 					break;
-				case Bytecode.IFSTRICTEQ:
+				}
+				case Bytecode.IFSTRICTEQ: {
+
+					if (isFastReturnVoid(q, jumps, i, param(0))) {
+						state.emitMain('//JIT: Emit inline return');
+						state.emitMain(`if (${stack0} === ${stack1}) { return; }`);
+						break;
+					}
+
 					state.emitMain(`if (${stack0} === ${stack1}) { p = ${param(0)}; continue; };`);
 					break;
-				case Bytecode.IFSTRICTNE:
+				}
+				case Bytecode.IFSTRICTNE: {
+
+					if (isFastReturnVoid(q, jumps, i, param(0))) {
+						state.emitMain('//JIT: Emit inline return');
+						state.emitMain(`if (${stack0} !== ${stack1}) { return; }`);
+						break;
+					}
+
 					state.emitMain(`if (${stack0} !== ${stack1}) { p = ${param(0)}; continue; };`);
 					break;
+				}
+				case Bytecode.IFNLE: {
 
-				case Bytecode.IFNLE:
-					/**
-					 * IFNLE and IFT is simmilar on valid values,
-					 * but when stack0 or stack1 is NaN - IFNE should jump, IFGT - NOT!
-					 */
+					if (isFastReturnVoid(q, jumps, i, param(0))) {
+						state.emitMain('//JIT: Emit inline return');
+						state.emitMain(`if (!(${stack0} >= ${stack1})) { return; }`);
+						break;
+					}
+
 					state.emitMain(`if (!(${stack0} >= ${stack1})) { p = ${param(0)}; continue; };`);
 					break;
-				case Bytecode.IFGT:
+				}
+				case Bytecode.IFGT: {
+					if (isFastReturnVoid(q, jumps, i, param(0))) {
+						state.emitMain('//JIT: Emit inline return');
+						state.emitMain(`if (${stack0} < ${stack1}) { return; }`);
+						break;
+					}
+
 					state.emitMain(`if (${stack0} < ${stack1}) { p = ${param(0)}; continue; };`);
 					break;
+				}
+				case Bytecode.IFNLT: {
 
-				case Bytecode.IFNLT:
+					if (isFastReturnVoid(q, jumps, i, param(0))) {
+						state.emitMain('//JIT: Emit inline return');
+						state.emitMain(`if (!(${stack0} > ${stack1})) { return; }`);
+						break;
+					}
+
 					state.emitMain(`if (!(${stack0} > ${stack1})) { p = ${param(0)}; continue; };`);
 					break;
-				case Bytecode.IFGE:
+				}
+				case Bytecode.IFGE: {
+
+					if (isFastReturnVoid(q, jumps, i, param(0))) {
+						state.emitMain('//JIT: Emit inline return');
+						state.emitMain(`if (${stack0} <= ${stack1}) { return; }`);
+						break;
+					}
+
 					state.emitMain(`if (${stack0} <= ${stack1}) { p = ${param(0)}; continue; };`);
 					break;
+				}
+				case Bytecode.IFNGE: {
+					if (isFastReturnVoid(q, jumps, i, param(0))) {
+						state.emitMain('//JIT: Emit inline return');
+						state.emitMain(`if (!(${stack0} <= ${stack1})) { return; }`);
+						break;
+					}
 
-				case Bytecode.IFNGE:
 					state.emitMain(`if (!(${stack0} <= ${stack1})) { p = ${param(0)}; continue; };`);
 					break;
-				case Bytecode.IFLT:
+				}
+				case Bytecode.IFLT: {
+
+					if (isFastReturnVoid(q, jumps, i, param(0))) {
+						state.emitMain('//JIT: Emit inline return');
+						state.emitMain(`if (${stack0} > ${stack1}) { return; }`);
+						break;
+					}
+
 					state.emitMain(`if (${stack0} > ${stack1}) { p = ${param(0)}; continue; };`);
 					break;
+				}
+				case Bytecode.IFNGT: {
 
-				case Bytecode.IFNGT:
+					if (isFastReturnVoid(q, jumps, i, param(0))) {
+						state.emitMain('//JIT: Emit inline return');
+						state.emitMain(`if (!(${stack0} < ${stack1})) { return; }`);
+						break;
+					}
+
 					state.emitMain(`if (!(${stack0} < ${stack1})) { p = ${param(0)}; continue; };`);
 					break;
-				case Bytecode.IFLE:
+				}
+				case Bytecode.IFLE: {
+
+					if (isFastReturnVoid(q, jumps, i, param(0))) {
+						state.emitMain('//JIT: Emit inline return');
+						state.emitMain(`if (${stack0} >= ${stack1}) { return; }`);
+						break;
+					}
+
 					state.emitMain(`if (${stack0} >= ${stack1}) { p = ${param(0)}; continue; };`);
 					break;
+				}
+				case Bytecode.IFFALSE: {
 
-				case Bytecode.IFFALSE:
+					if (isFastReturnVoid(q, jumps, i, param(0))) {
+						state.emitMain('//JIT: Emit inline return');
+						state.emitMain(`if (!${stack0}) { return; }`);
+						break;
+					}
+
 					state.emitMain(`if (!${stack0}) { p = ${param(0)}; continue; };`);
 					break;
-				case Bytecode.IFTRUE:
+				}
+				case Bytecode.IFTRUE: {
+
+					if (isFastReturnVoid(q, jumps, i, param(0))) {
+						state.emitMain('//JIT: Emit inline return');
+						state.emitMain(`if (${stack0}) { return; }`);
+						break;
+					}
+
 					state.emitMain(`if (${stack0}) { p = ${param(0)}; continue; };`);
 					break;
+				}
 				case Bytecode.LOOKUPSWITCH: {
 					const jj = (<[]>z.params).concat();
 					const dj = jj.shift();
@@ -606,9 +754,17 @@ export function compile(methodInfo: MethodInfo, options: ICompilerOptions = {}):
 					state.emitMain(`if (${stack0} >= 0 && ${stack0} < ${jj.length}) { p = [${jj.join(', ')}][${stack0}]; continue; } else { p = ${dj}; continue; };`);
 					break;
 				}
-				case Bytecode.JUMP:
+				case Bytecode.JUMP: {
+
+					if (isFastReturnVoid(q, jumps, i, param(0))) {
+						state.emitMain('//JIT: Emit inline return');
+						state.emitMain('return;');
+						break;
+					}
+
 					state.emitMain(`{ p = ${param(0)}; continue; };`);
 					break;
+				}
 				case Bytecode.INCREMENT:
 					state.popAnyAlias(stackF(0, false));
 					state.emitMain(`${stackF(0)}++;`);
@@ -1563,12 +1719,12 @@ export function compile(methodInfo: MethodInfo, options: ICompilerOptions = {}):
 					if ((optimise & COMPILER_OPT_FLAGS.SKIP_NULL_COERCE)
 						&& (lastZ.name === Bytecode.PUSHNULL
 							|| lastZ.name === Bytecode.PUSHUNDEFINED)) {
-						state.emitMain('// SKIP_NULL_COERCE');
+						state.emitMain('//JIT: SKIP_NULL_COERCE');
 						break;
 					}
 
 					if (lastZ.name === Bytecode.ASTYPELATE) {
-						state.emitMain('// SKIP DOUBLED COERCE AFTER ASTYPELATE');
+						state.emitMain('//JIT: SKIP DOUBLED COERCE AFTER ASTYPELATE');
 						break;
 					}
 
@@ -1577,11 +1733,6 @@ export function compile(methodInfo: MethodInfo, options: ICompilerOptions = {}):
 					// WE MUST EMIT REAL STACK WHEN ASSIGN TO IT,
 					const target = stackF(0);
 					const mn = abc.getMultiname(param(0));
-
-					if (isPrimitiveType(mn)) {
-						state.emitMain(`${target} = ${emitPrimitiveCoerce(state, 0, mn, false)};`);
-						break;
-					}
 
 					// skip coerce for native JS objects
 					state.emitBeginMain(`if (${emitIsAX(target)}) {`);
