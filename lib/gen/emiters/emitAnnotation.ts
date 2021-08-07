@@ -1,6 +1,8 @@
 import { CONSTANT } from '../../abc/lazy/CONSTANT';
-import { CompilerState } from './../CompilerState';
+import { CompilerState } from '../CompilerState';
 import { emitInlineLocal } from './emitInlineVars';
+import { Multiname } from '../../abc/lazy/Multiname';
+import { emitPrimitiveCoerce } from './emitPrimitiveCoerce';
 export interface IFunctionAnnotation {
 	annotation: string,
 	paramsShift: number
@@ -14,12 +16,12 @@ export function emitAnnotation (state: CompilerState): IFunctionAnnotation  {
 
 	let paramsShift = 0;
 
-	const args: {name: string, value?: any, type?: string}[] = [];
+	const args: {name: string, value?: any, type?: Multiname}[] = [];
 	const js0 = [];
 
 	for (let i = 0; i < params.length; i++) {
 		const p = params[i];
-		const arg = { name: emitInlineLocal(state, i + 1), value: null, type: '' };
+		const arg = { name: emitInlineLocal(state, i + 1), value: null, type: null };
 
 		if (p.hasOptionalValue()) {
 			switch (p.optionalValueKind) {
@@ -31,9 +33,7 @@ export function emitAnnotation (state: CompilerState): IFunctionAnnotation  {
 			}
 		}
 
-		const t = p.getType();
-		t && (arg.type = t.name);
-
+		arg.type = p.getType();
 		args[i] = arg;
 	}
 
@@ -44,8 +44,8 @@ export function emitAnnotation (state: CompilerState): IFunctionAnnotation  {
 	const argsFilled = args
 		.map((e) => {
 			return e.value
-				? `${e.name} /* ${e.type || '*'} */ = ${e.value}`
-				: `${e.name} /* ${e.type || '*'} */`;
+				? `${e.name} /* ${e.type ? e.type.name : '*'} */ = ${e.value}`
+				: `${e.name} /* ${e.type ? e.type.name : '*'} */`;
 		})
 		.join(', ');
 
@@ -68,30 +68,11 @@ export function emitAnnotation (state: CompilerState): IFunctionAnnotation  {
 	}
 
 	for (const a of args) {
-		const name = a.name;
-		let argCoerce = '';
-
-		switch (a.type) {
-			case 'String':
-				// eslint-disable-next-line max-len
-				argCoerce = `${name} = (${name} != null && typeof ${name} !== 'string') ? ${name}.toString() : ${name};`;
-				break;
-			case 'Number':
-				argCoerce = `${name} = +${name};`;
-				break;
-			case 'int':
-				argCoerce = `${name} = ${name} | 0;`;
-				break;
-			case 'uint':
-				argCoerce = `${name} = ${name} >>> 0;`;
-				break;
-			default:
-				break;
-		}
+		const argCoerce = emitPrimitiveCoerce(state, a.name, a.type, false);
 
 		if (argCoerce) {
-			js0.push(`${state.indent}/* Force ${a.type} coerce */`);
-			js0.push(`${state.indent}${argCoerce}`);
+			js0.push(`${state.indent}/* Force ${a.type.name} coerce */`);
+			js0.push(`${state.indent}${a.name} = ${argCoerce};`);
 		}
 	}
 

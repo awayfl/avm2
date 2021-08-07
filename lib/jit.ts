@@ -35,13 +35,14 @@ import {
 	emitAnnotation,
 	emitAnnotationOld,
 	emitCloseTryCatch,
-	emitCoerce,
 	emitDomainMemOppcodes,
 	emitInlineAccessor as emitAccess,
 	emitInlineLocal,
 	emitInlineMultiname,
 	emitInlineStack,
 	emitOpenTryCatch,
+	emitPrimitiveCoerce,
+	isPrimitiveType,
 	UNDERRUN
 } from './gen/emiters';
 
@@ -1374,7 +1375,7 @@ export function compile(methodInfo: MethodInfo, options: ICompilerOptions = {}):
 							) {
 								//debugger;
 								// eslint-disable-next-line max-len
-								state.emitMain(`${emitAccess(stack1, mn.getMangledName())} = ${emitCoerce(state, 0, (<any> trait).typeName)};`);
+								state.emitMain(`${emitAccess(stack1, mn.getMangledName())} = ${emitPrimitiveCoerce(state, 0, (<any> trait).typeName, true)};`);
 								break;
 							}
 						}
@@ -1525,7 +1526,7 @@ export function compile(methodInfo: MethodInfo, options: ICompilerOptions = {}):
 						state.emitMain(`context.executeHook(${emitInlineLocal(state, 0)}, '${meta.classPath + '__return'}')`);
 					}
 
-					const typeName: string = methodInfo.getTypeName()?.name;
+					const typeName = methodInfo.getTypeName();
 
 					if (!typeName ||
 						Settings.COERCE_RETURN_MODE === COERCE_RETURN_MODE_ENUM.NONE
@@ -1534,30 +1535,21 @@ export function compile(methodInfo: MethodInfo, options: ICompilerOptions = {}):
 						break;
 					}
 
-					switch (typeName) {
-						case 'Boolean':
-							state.emitMain(`return !!${stack0};`);
-							break;
-						case 'int':
-							state.emitMain(`return ${stack0}|0;`);
-							break;
-						case 'uint':
-							state.emitMain(`return ${stack0}>>>0;`);
-							break;
-						case 'String':
-							state.emitMain(`return ${stack0}==null?null:${stack0}+'';`);
-							break;
-						default: {
-							if (Settings.COERCE_RETURN_MODE === COERCE_RETURN_MODE_ENUM.PRIMITIVE) {
-								state.emitMain(`return ${stack0};`);
-							} else {
-								state.emitMain(`return context.coerceReturn(${stack0});`);
-							}
-						}
+					if (isPrimitiveType(typeName)) {
+						state.emitMain(`return ${emitPrimitiveCoerce(state, 0, typeName, true)};`);
+						break;
 					}
+
+					if (Settings.COERCE_RETURN_MODE === COERCE_RETURN_MODE_ENUM.ALL) {
+						state.emitMain(`return context.coerceReturn(${stack0});`);
+						break;
+					}
+
+					state.emitMain(`return ${stack0};`);
 
 					break;
 				}
+
 				case Bytecode.RETURNVOID:
 					if (METHOD_HOOKS && METHOD_HOOKS[meta.classPath + '__return']) {
 						state.emitMain('/* ATTACH METHOD HOOK */');
@@ -1585,16 +1577,22 @@ export function compile(methodInfo: MethodInfo, options: ICompilerOptions = {}):
 					// WE MUST EMIT REAL STACK WHEN ASSIGN TO IT,
 					const target = stackF(0);
 					const mn = abc.getMultiname(param(0));
+
+					if (isPrimitiveType(mn)) {
+						state.emitMain(`${target} = ${emitPrimitiveCoerce(state, 0, mn, false)};`);
+						break;
+					}
+
 					// skip coerce for native JS objects
-					state.emitMain(`if (${emitIsAX(target)}) {`);
+					state.emitBeginMain(`if (${emitIsAX(target)}) {`);
 
 					if (Settings.COERCE_MODE == COERCE_MODE_ENUM.DEFAULT) {
 						// eslint-disable-next-line max-len
-						js.push(`${state.moveIndent(1)} ${target} = ${scope}.getScopeProperty(${getname(param(0))}, true, false).axCoerce(${stack0});`);
+						state.emitMain(`${target} = ${scope}.getScopeProperty(${getname(param(0))}, true, false).axCoerce(${stack0});`);
 
 					} else {
 						// eslint-disable-next-line max-len
-						js.push(`${state.moveIndent(1)} var _e = ${scope}.getScopeProperty(${getname(param(0))}, true, false);`);
+						state.emitMain(`var _e = ${scope}.getScopeProperty(${getname(param(0))}, true, false);`);
 
 						if (Settings.COERCE_MODE === COERCE_MODE_ENUM.SOFT) {
 							// eslint-disable-next-line max-len
@@ -1603,7 +1601,7 @@ export function compile(methodInfo: MethodInfo, options: ICompilerOptions = {}):
 
 						state.emitMain(`${target} = _e ? _e.axCoerce(${stack0}) : ${stack0};`);
 					}
-					js.push(`${state.moveIndent(-1)} }`);
+					state.emitEndMain();
 					break;
 				}
 				case Bytecode.COERCE_A:

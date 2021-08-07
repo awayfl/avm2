@@ -15,19 +15,19 @@ const typeToCoerceMapping: Record<string, (x: string) => string > = {
 			return `sec.AXNumber.axCoerce(${x})`;
 		}
 
-		return `(+ ${x})`;
+		return `(+${x})`;
 	},
 	['int']: (x) => {
 		if (Settings.FOLLOW_AS3_BUG) {
 			return `sec.AXNumber.axCoerce(${x}) | 0`;
 		}
 
-		return `(${x} | 0)`;
+		return `(${x}|0)`;
 	},
 
-	['uint']: (x) => `(${x} >>> 0)`,
-	['Boolean']: (x) => `(!! ${x})`,
-	['String']: (x: string) => `(${x} == null ? null : '' +  ${x})`,
+	['uint']: (x) => `(${x}>>>0)`,
+	['Boolean']: (x) => `(!!${x})`,
+	['String']: (x: string) => `(${x}==null?null:''+ ${x})`,
 };
 
 const staticCoerceMapping: Record<string, (v: any) => any> = {
@@ -38,13 +38,40 @@ const staticCoerceMapping: Record<string, (v: any) => any> = {
 	['String']: axCoerceString,
 };
 
-export function emitCoerce (state: CompilerState, stackIndex: number, type: Multiname) {
-	const inline = emitInlineStack(state, stackIndex);
-	if (!type || !type.name || !(type.name in typeToCoerceMapping)) {
-		return inline;
+export function isPrimitiveType(type: Multiname): boolean {
+	return type && type.name && (type.name in staticCoerceMapping);
+}
+
+/**
+ * Emit coercion mapping for primitive values: arguments, returns, fast coercion
+ * @param state
+ * @param stackIndexOrName index - when it it stack, name - when is local or not stack value
+ * @param type
+ * @param inline Inline coerce return name without coersion instead of null
+ */
+export function emitPrimitiveCoerce (
+	state: CompilerState,
+	stackIndexOrName: number | string,
+	type: Multiname,
+	inline = false
+): string | null {
+
+	if (!isPrimitiveType(type)) {
+		// no coerce if not required
+		if (!inline) {
+			return null;
+		}
+
+		return typeof  stackIndexOrName === 'string'
+			? stackIndexOrName
+			: emitInlineStack(state, stackIndexOrName);
 	}
 
-	const constAlias = state.getConstAliasMeta(stackIndex);
+	if (typeof stackIndexOrName === 'string') {
+		return typeToCoerceMapping[type.name](stackIndexOrName);
+	}
+
+	const constAlias = state.getConstAliasMeta(stackIndexOrName);
 
 	// coerce inline for const, const will be transformed to specific type in compiler state
 	if (constAlias && constAlias.isConst) {
@@ -55,5 +82,5 @@ export function emitCoerce (state: CompilerState, stackIndex: number, type: Mult
 		return '' + res;
 	}
 
-	return typeToCoerceMapping[type.name](emitInlineStack(state, stackIndex));
+	return typeToCoerceMapping[type.name](emitInlineStack(state, stackIndexOrName));
 }
