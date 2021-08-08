@@ -10,18 +10,22 @@ import { axCoerceString } from '../../run/axCoerceString';
 import { isNumeric } from '@awayfl/swf-loader';
 import { ScriptInfo } from './ScriptInfo';
 import { AXObject } from '../../run/AXObject';
+import { Settings } from '../../Settings';
+
 export class Multiname {
+	private static _isWeak = self.WeakRef && Settings.USE_WEAK_REF;
 	private static _nextID = 1;
 	public id: number = Multiname._nextID++;
 	private _mangledName: string = null;
 
-	public script: ScriptInfo = null
-	public numeric: boolean = false
-	public numericValue: any = 0
-	public resolved: object = {}
-	public scope: AXObject = null
-	public value: AXObject = null
-	private _key: string = null
+	public script: ScriptInfo = null;
+	public numeric: boolean = false;
+	public numericValue: any = 0;
+	public resolved: object = {};
+
+	private _scope: AXObject | WeakRef<AXObject> = null;
+	private _value: AXObject | WeakRef<AXObject> = null;
+	private _key: string = null;
 
 	constructor(
 		public abc: ABCFile,
@@ -74,9 +78,39 @@ export class Multiname {
 		this.numeric = false;
 		this.name = undefined;
 		this.namespaces = [];
-		this.scope = null;
 		this.numericValue = NaN;
 		this.resolved = {};
+
+		this._scope = null;
+	}
+
+	public get scope(): AXObject {
+		return (!this._scope || !Multiname._isWeak)
+			? <AXObject> this._scope
+			: (<WeakRef<AXObject>> this._scope).deref();
+	}
+
+	public set scope(v: AXObject) {
+		if (Multiname._isWeak && v) {
+			this._scope = new self.WeakRef<AXObject>(v);
+			return;
+		}
+		this._scope = v;
+	}
+
+	public get value(): AXObject {
+		return (!this._value || !Multiname._isWeak)
+			? <AXObject> this._value
+			: (<WeakRef<AXObject>> this._value).deref();
+	}
+
+	public set value(v: AXObject) {
+		if (Multiname._isWeak && v) {
+			this._value = new self.WeakRef<AXObject>(v);
+			return;
+		}
+
+		this._value = v;
 	}
 
 	public key(): string {
