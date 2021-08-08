@@ -68,6 +68,7 @@ import { AXApplicationDomain } from './run/AXApplicationDomain';
 import { TraitInfo } from './abc/lazy/TraitInfo';
 import { RuntimeTraitInfo } from './abc/lazy/RuntimeTraitInfo';
 import { axConstructFast, isFastConstructSupport } from './run/axConstruct';
+import { ASRegExp } from './nat/ASRegExp';
 
 const METHOD_HOOKS: StringMap<{path: string, place: 'begin' | 'return', hook: Function}> = {};
 
@@ -372,8 +373,8 @@ export function compile(methodInfo: MethodInfo, options: ICompilerOptions = {}):
 
 	const stackF = (n: number, alias = true) => emitInlineStack(state, n, alias);
 	const local = (n: number) => emitInlineLocal(state, n);
-	const param = (n: number) => {
-		const p = state.currentOpcode.params;
+	const param = (n: number, oppcode?: Instruction) => {
+		const p = oppcode || state.currentOpcode.params;
 		return typeof p === 'number' ? p : p[n];
 	};
 
@@ -552,48 +553,37 @@ export function compile(methodInfo: MethodInfo, options: ICompilerOptions = {}):
 					break;
 				}
 				case Bytecode.PUSHTRUE:
-					state.popAnyAlias(stackF(-1, false));
-					state.emitConst(stackF(-1),true);
+					state.emitConst(-1,true);
 					break;
 				case Bytecode.PUSHFALSE:
-					state.popAnyAlias(stackF(-1, false));
-					state.emitConst(stackF(-1),false);
+					state.emitConst(-1,false);
 					break;
 				case Bytecode.PUSHBYTE:
-					state.popAnyAlias(stackF(-1, false));
-					state.emitConst(stackF(-1), param(0));
+					state.emitConst(-1, param(0));
 					break;
 				case Bytecode.PUSHSHORT:
-					state.popAnyAlias(stackF(-1, false));
-					state.emitConst(stackF(-1), param(0));
+					state.emitConst(-1, param(0));
 					break;
 				case Bytecode.PUSHINT:
-					state.popAnyAlias(stackF(-1, false));
-					state.emitConst(stackF(-1), abc.ints[param(0)]);
+					state.emitConst(-1, abc.ints[param(0)]);
 					break;
 				case Bytecode.PUSHUINT:
-					state.popAnyAlias(stackF(-1, false));
-					state.emitConst(stackF(-1), abc.uints[param(0)]);
+					state.emitConst(-1, abc.uints[param(0)]);
 					break;
 				case Bytecode.PUSHDOUBLE:
-					state.popAnyAlias(stackF(-1, false));
-					state.emitConst(stackF(-1), abc.doubles[param(0)]);
+					state.emitConst(-1, abc.doubles[param(0)]);
 					break;
 				case Bytecode.PUSHSTRING:
-					state.popAnyAlias(stackF(-1, false));
-					state.emitConst(stackF(-1), abc.getString(param(0)));
+					state.emitConst(-1, abc.getString(param(0)));
 					break;
 				case Bytecode.PUSHNAN:
-					state.popAnyAlias(stackF(-1, false));
-					state.emitConst(stackF(-1), NaN);
+					state.emitConst(-1, NaN);
 					break;
 				case Bytecode.PUSHNULL:
-					state.popAnyAlias(stackF(-1, false));
-					state.emitConst(stackF(-1), null);
+					state.emitConst(-1, null);
 					break;
 				case Bytecode.PUSHUNDEFINED:
-					state.popAnyAlias(stackF(-1, false));
-					state.emitConst(stackF(-1), undefined);
+					state.emitConst(-1, undefined);
 					break;
 				case Bytecode.IFEQ: {
 
@@ -963,6 +953,15 @@ export function compile(methodInfo: MethodInfo, options: ICompilerOptions = {}):
 						state.killConstAliasInstruction([stackF(param(0) - j, false)]);
 					}
 
+					if (lastZ.name === Bytecode.GETLEX) {
+						const mn = abc.getMultiname(param(0, lastZ));
+
+						if (mn.name === 'RegExp') {
+							state.emitMain(`${obj} = context.getRegExp([${pp.join(', ')}]);`);
+							break;
+						}
+					}
+
 					// eslint-disable-next-line max-len
 					state.emitMain(`${obj} = context.construct(${obj}, [${pp.join(', ')}]);`);
 					break;
@@ -1191,7 +1190,7 @@ export function compile(methodInfo: MethodInfo, options: ICompilerOptions = {}):
 						});
 						//state.emitMain(`${target} = ${lexAlias};`);
 						// alias as const, this allow inline it
-						state.emitConst(target, lexAlias, false);
+						state.emitConst(-1, lexAlias, false);
 
 						if (USE_OPT(fastCall)) {
 							const mangled = (lexGen.getGenerator(mn, false) instanceof TopLevelLex);
@@ -1625,7 +1624,7 @@ export function compile(methodInfo: MethodInfo, options: ICompilerOptions = {}):
 						state.emitMain('/* GenerateLexImports GETLEX */');
 						// eslint-disable-next-line max-len
 						state.emitConst(
-							target,
+							-1,
 							lexGen.getLexAlias(mn,{
 								mnIndex: state.getMultinameIndex(param(0)),
 								/*findProp: false,*/
@@ -1960,6 +1959,8 @@ export function compile(methodInfo: MethodInfo, options: ICompilerOptions = {}):
 }
 
 export class Context {
+	public static REG_EXP_CACHE: Record<string, ASRegExp> = {};
+
 	/*jit internal*/ readonly mi: MethodInfo;
 	private readonly savedScope: Scope;
 	private readonly rn: Multiname;
@@ -1998,6 +1999,13 @@ export class Context {
 		}
 
 		return this.domain.internal_memoryView;
+	}
+
+	public getRegExp(args: [string, string?]) {
+		const key = args.join('|');
+
+		return Context.REG_EXP_CACHE[key] ||
+			(Context.REG_EXP_CACHE[key] = <any> this.sec.AXRegExp.axConstruct(args));
 	}
 
 	/**

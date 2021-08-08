@@ -3,15 +3,43 @@ import { ExceptionInfo } from '../abc/lazy/ExceptionInfo';
 import { MethodInfo } from '../abc/lazy/MethodInfo';
 import { TRAIT } from '../abc/lazy/TRAIT';
 import { Settings } from '../Settings';
-import { Multiname } from './../abc/lazy/Multiname';
+import { Multiname } from '../abc/lazy/Multiname';
 import { Instruction } from './Instruction';
 import { emitInlineLocal, emitInlineStack } from './emiters';
 
-interface IConstData {
-	value: any;
-	pos: number;
-	isConst?: boolean;
+const enum VAR_KIND {
+	CONST = 'const',
+	VAR = 'var',
+	LOOKUP = 'lookup',
+	ALIAS = 'alias',
 }
+
+interface IVar {
+	pos: number;
+}
+
+interface IConstData extends IVar {
+	kind: VAR_KIND.CONST;
+	value: any;
+}
+
+interface ILookupData extends IVar {
+	kind: VAR_KIND.LOOKUP;
+	scope: number;
+	type: Multiname | null;
+}
+
+interface IAliasData extends IVar {
+	kind: VAR_KIND.ALIAS;
+	value: any;
+}
+
+interface IVarData extends IVar {
+	kind: VAR_KIND.VAR;
+	type: Multiname | null;
+}
+
+type TVariableArgument = IConstData | IVarData | IAliasData | ILookupData;
 
 export class CompilerState {
 	private _indent: string = '';
@@ -30,16 +58,28 @@ export class CompilerState {
 	public currentOpcode: Instruction;
 
 	public thisAliases: Set<string> = new Set();
-	public constAliases: Record<string, IConstData> = {};
+	public constAliases: Record<string, IConstData | IAliasData> = {};
 	// back ref to local-> stack
 	public localAliases: Record<string, string> = {};
 
 	public localTypes: Record<number, Array<Multiname>> = {};
 
+	public stackAliases: Record<number, TVariableArgument> = {};
+
 	public noHoistMultiname: boolean = Settings.NO_HOIST_MULTINAME;
 
 	public get indent() {
 		return this._indent;
+	}
+
+	public setStackAlias (stackIndex: number, alias: TVariableArgument): TVariableArgument {
+		const realIndex = this.evalStackIndex(stackIndex);
+		this.stackAliases [realIndex] = alias;
+		return alias;
+	}
+
+	public getStackAlias (stackIndex: number): TVariableArgument | null {
+		return this.stackAliases [this.evalStackIndex(stackIndex)];
 	}
 
 	public get isPossibleGlobalThis() {
@@ -116,23 +156,30 @@ export class CompilerState {
 
 	/**
 	 * Emit constant assigment, and store it in alias tree
-	 * @param stack
+	 * @param stackIndex
 	 * @param value
 	 * @param isConst - value real primitive const value, not a const alias
 	 */
-	public emitConst(stack: string, value: any, isConst = true) {
+	public emitConst(stackIndex: number, value: any, isConst = true) {
+		const real = this.evalStackIndex(stackIndex);
+		const name = emitInlineStack(this, stackIndex, false);
+
+		this.popAnyAlias(name);
+
 		if (Settings.UNSAFE_INLINE_CONST) {
-			this.constAliases[stack] = {
+			this.constAliases[name] = {
 				value,
-				isConst: isConst,
+				kind: isConst ?  VAR_KIND.CONST : VAR_KIND.ALIAS,
 				pos: this.mainBlock.length
 			};
+
+			this.stackAliases[real] = this.constAliases[name];
 		}
 
 		if (isConst && typeof value === 'string')
 			value = JSON.stringify(value);
 
-		return this.mainBlock.push(this.indent + stack + ' = ' + value + ';');
+		return this.mainBlock.push(this.indent + name + ' = ' + value + ';');
 	}
 
 	public emitGetLocal(stackIndex: number, localIndex: number) {
@@ -147,7 +194,7 @@ export class CompilerState {
 		if (Settings.UNSAFE_INLINE_CONST) {
 			const local = 'local' + localIndex;
 
-			this.constAliases[stack] = { value: local, pos: this.mainBlock.length };
+			this.constAliases[stack] = { value: local, pos: this.mainBlock.length, kind: VAR_KIND.ALIAS };
 			this.localAliases[local] = stack;
 		}
 
@@ -206,7 +253,7 @@ export class CompilerState {
 		}
 	}
 
-	public getConstAliasMeta (stackOffset: number): IConstData {
+	public getConstAliasMeta (stackOffset: number): IConstData | IAliasData {
 		if (!Settings.UNSAFE_INLINE_CONST)
 			return  null;
 
@@ -223,7 +270,7 @@ export class CompilerState {
 			return alias;
 
 		// we should don't map value for this, because maybe a fast mapping
-		if (!val.isConst) {
+		if (val.kind !== VAR_KIND.CONST) {
 			return val.value;
 		}
 

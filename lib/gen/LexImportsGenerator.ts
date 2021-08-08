@@ -271,7 +271,8 @@ const ALLOWED_TOP_LEVEL_NAMES: String[] = [
 	'flash.utils',
 	'Math',
 	'trace',
-	'parseInt'
+	'parseInt',
+	'RegExp'
 ];
 
 const NOT_ALLOWED: String[] = [
