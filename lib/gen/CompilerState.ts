@@ -7,7 +7,7 @@ import { Multiname } from '../abc/lazy/Multiname';
 import { Instruction } from './Instruction';
 import { emitInlineLocal, emitInlineStack } from './emiters';
 
-const enum VAR_KIND {
+export const enum VAR_KIND {
 	CONST = 'const',
 	VAR = 'var',
 	LOOKUP = 'lookup',
@@ -15,7 +15,7 @@ const enum VAR_KIND {
 }
 
 interface IVar {
-	pos: number;
+	pos?: number;
 }
 
 interface IConstData extends IVar {
@@ -32,6 +32,7 @@ interface ILookupData extends IVar {
 interface IAliasData extends IVar {
 	kind: VAR_KIND.ALIAS;
 	value: any;
+	type?: Multiname
 }
 
 interface IVarData extends IVar {
@@ -72,7 +73,7 @@ export class CompilerState {
 		return this._indent;
 	}
 
-	public setStackAlias (stackIndex: number, alias: TVariableArgument): TVariableArgument {
+	public setStackAlias (stackIndex: number, alias: TVariableArgument | null = null): TVariableArgument {
 		const realIndex = this.evalStackIndex(stackIndex);
 		this.stackAliases [realIndex] = alias;
 		return alias;

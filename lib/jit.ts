@@ -59,7 +59,7 @@ import { ASClass } from './nat/ASClass';
 import { AXObject } from './run/AXObject';
 import { COERCE_MODE_ENUM, COERCE_RETURN_MODE_ENUM, Settings } from './Settings';
 import { AXFunction } from './run/AXFunction';
-import { CompilerState } from './gen/CompilerState';
+import { CompilerState, VAR_KIND } from './gen/CompilerState';
 import { Instruction } from './gen/Instruction';
 import { TRAIT, TRAITNames } from './abc/lazy/TRAIT';
 import { InstanceInfo } from './abc/lazy/InstanceInfo';
@@ -953,10 +953,12 @@ export function compile(methodInfo: MethodInfo, options: ICompilerOptions = {}):
 						state.killConstAliasInstruction([stackF(param(0) - j, false)]);
 					}
 
-					if (lastZ.name === Bytecode.GETLEX) {
-						const mn = abc.getMultiname(param(0, lastZ));
+					const alias = state.getStackAlias(param(0));
 
-						if (mn.name === 'RegExp') {
+					if (alias && (alias.kind === VAR_KIND.LOOKUP || alias.kind === VAR_KIND.ALIAS)) {
+						state.emitMain('//JIT: Possible source:' + alias.type);
+
+						if (alias.type.name === 'RegExp') {
 							state.emitMain(`${obj} = context.getRegExp([${pp.join(', ')}]);`);
 							break;
 						}
@@ -1374,6 +1376,12 @@ export function compile(methodInfo: MethodInfo, options: ICompilerOptions = {}):
 					state.killConstAliasInstruction([targetStack]);
 					state.popAnyAlias(targetStack);
 
+					state.setStackAlias(param(0), {
+						kind: VAR_KIND.LOOKUP,
+						type: abc.getMultiname(param(1)),
+						scope: -1000,
+					});
+
 					for (let j = 1; j <= param(0); j++) {
 						pp.push(stackF(param(0) - j));
 						state.killConstAliasInstruction([stackF(param(0) - j, false)]);
@@ -1419,13 +1427,18 @@ export function compile(methodInfo: MethodInfo, options: ICompilerOptions = {}):
 						}
 					}
 
+					const info = state.getStackAlias(0);
+					if (info) {
+						state.emitMain('//Possible type:' + (<any>info).type);
+					}
+
 					// we can check trite for `this` or any types that has trite
 					// @todo Move this inside fast-call optimiser
 					if (Settings.CHEK_TRAIT_GET_CALL && stack0 === 'this' && instanceInfo) {
 						const trait = resolveTrait(instanceInfo, mn);
 						if (trait) {
 							// eslint-disable-next-line max-len
-							state.emitMain(`/* We sure that this safe get, represented in TRAIT as ${TRAITNames[trait.kind]}  */ `);
+							state.emitMain(`/* We sure that this safe get, represented in TRAIT as ${TRAITNames[trait.kind]}, type: ${(<SlotTraitInfo> trait).typeName}  */ `);
 							if (trait.kind === TRAIT.Method) {
 								state.emitMain(`${target} = this.axGetProperty(${getname(param(0))});`);
 								break;
@@ -1435,10 +1448,17 @@ export function compile(methodInfo: MethodInfo, options: ICompilerOptions = {}):
 								trait.kind === TRAIT.Getter
 							) {
 								state.emitMain(`${target} = ${emitAccess(stack0, mn.getMangledName())};`);
+
+								state.setStackAlias(0, {
+									kind: VAR_KIND.VAR,
+									type: <Multiname> (<SlotTraitInfo> trait).typeName,
+								});
 								break;
 							}
 						}
 					}
+
+					state.setStackAlias(0);
 
 					const fast = needFastCheck() && (stack0 !== 'this' || !Settings.NO_CHECK_FASTCALL_FOR_THIS);
 					if (fast) {
@@ -1631,12 +1651,21 @@ export function compile(methodInfo: MethodInfo, options: ICompilerOptions = {}):
 								scope: scope
 							}), false);
 
+						const aliasDec = (<any>state.getStackAlias(-1));
+						aliasDec && (aliasDec.type = mn);
+
 						if (fastCall) {
 							const mangled = (lexGen.getGenerator(mn, true) instanceof TopLevelLex);
 							fastCall.mark(target, i, mangled, mn, true);
 						}
 						break;
 					}
+
+					state.setStackAlias(-1, {
+						kind: VAR_KIND.LOOKUP,
+						type: mn,
+						scope: z.scope
+					});
 
 					// generate fast lookup for get/call
 					// scope === 1 is extended scope
