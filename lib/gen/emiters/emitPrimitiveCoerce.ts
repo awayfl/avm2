@@ -1,6 +1,6 @@
 import { Multiname } from '../../abc/lazy/Multiname';
 import { Settings } from '../../Settings';
-import { CompilerState } from '../CompilerState';
+import { CompilerState, VAR_KIND } from '../CompilerState';
 import { emitInlineStack } from './emitInlineVars';
 import { axCoerceNumber } from '../../run/axCoerceNumber';
 import { axCoerceInt } from '../../run/axCoerceInt';
@@ -74,11 +74,12 @@ export function emitPrimitiveCoerce (
 	const constAlias = state.getConstAliasMeta(stackIndexOrName);
 
 	// coerce inline for const, const will be transformed to specific type in compiler state
-	if (constAlias && constAlias.isConst) {
+	if (constAlias && constAlias.kind === VAR_KIND.CONST) {
 		const res = staticCoerceMapping[type.name](constAlias.value);
 
 		if (typeof res === 'string')
 			return JSON.stringify(res);
+
 		return '' + res;
 	}
 
