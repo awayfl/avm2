@@ -136,22 +136,6 @@ export function axConstruct(argArray?: any[]) {
 		classToCheck = classToCheck.superClass;
 	}
 
-	if (timeline) {
-		// type MUST BE AS MC, if it was a sprite - mc not will be generated
-		const isMovieClip = (<any> this.sec).flash.display.MovieClip.axIsType(object);
-		const adaptee = new MovieClip(timeline, !isMovieClip);
-
-		object.adaptee = adaptee;
-
-		adaptee.reset();
-		FrameScriptManager.execute_as3_constructors_recursiv(adaptee);
-	}
-
-	//	ActiveLoaderContext.loaderContext is a hack !
-	//	in future the appDom should be provided by the symbol
-	//	UNSAFE! Need check more clea because assets can has nested class definition,
-	//  like as `BitmapAsset : FlexBitmap: Bitmap`
-
 	const name = (<Multiname>_this.superClass?.classInfo?.instanceInfo?.name)?.name;
 	let appDom: IAwayApplicationDomain;
 
@@ -164,6 +148,21 @@ export function axConstruct(argArray?: any[]) {
 	const mn =  (<Multiname>_this.classInfo.instanceInfo.name);
 	const instName = mn.name;
 	const fullName = mn.uri ? mn.uri + '.' + instName : instName;
+
+	if (timeline) {
+		// type MUST BE AS MC, if it was a sprite - mc not will be generated
+		const isMovieClip = (<any> this.sec).flash.display.MovieClip.axIsType(object);
+
+		if (!isMovieClip) {
+			//console.log('Class is not MC:', fullName);
+		}
+		const adaptee = new MovieClip(timeline, !isMovieClip);
+
+		object.adaptee = adaptee;
+
+		adaptee.reset();
+		FrameScriptManager.execute_as3_constructors_recursiv(adaptee);
+	}
 
 	if (!timeline && appDom && appDom.hasSymbolForClass(fullName)) {
 		const asset: AssetBase = appDom.getSymbolAdaptee(fullName);
