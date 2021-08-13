@@ -2293,7 +2293,7 @@ export class Context {
 				console.warn(`[AVM2 SetProperty DYN] Key is ${name}, are you sure that this is valid?`);
 				name = '' + name;
 				// Unwrap content script-created AXQName instances.
-			} else if (typeof name === 'object' && name.axClass === name.sec.AXQName) {
+			} else if (typeof name === 'object' && name.axClass === this.sec.AXQName) {
 				name = name.name;
 				release || assert(name instanceof Multiname);
 
