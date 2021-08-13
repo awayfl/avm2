@@ -28,7 +28,7 @@ export class ASUint extends ASNumber {
 			}
 		}
 
-		if (this.axClass !== this.sec.AXInt && this.axClass !== this.sec.AXNumber) {
+		if (this.axClass !== this.sec.AXUint && this.axClass !== this.sec.AXNumber) {
 			this.sec.throwError('TypeError', Errors.InvokeOnIncompatibleObjectError,
 				'Number.prototype.toString');
 		}
@@ -37,7 +37,7 @@ export class ASUint extends ASNumber {
 	}
 
 	valueOf() {
-		if (this.axClass !== this.sec.AXInt && this.axClass !== this.sec.AXNumber) {
+		if (this.axClass !== this.sec.AXUint && this.axClass !== this.sec.AXNumber) {
 			this.sec.throwError('TypeError', Errors.InvokeOnIncompatibleObjectError,
 				'Number.prototype.valueOf');
 		}
