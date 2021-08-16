@@ -955,7 +955,7 @@ export function compile(methodInfo: MethodInfo, options: ICompilerOptions = {}):
 
 					const alias = state.getStackAlias(param(0));
 
-					if (alias && (alias.kind === VAR_KIND.LOOKUP || alias.kind === VAR_KIND.ALIAS)) {
+					if (alias && (alias.kind === VAR_KIND.LOOKUP || alias.kind === VAR_KIND.ALIAS) && alias.type) {
 						state.emitMain('//JIT: Possible source:' + alias.type);
 
 						if (alias.type.name === 'RegExp') {
