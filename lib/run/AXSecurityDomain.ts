@@ -21,7 +21,7 @@ import { RuntimeTraits } from '../abc/lazy/RuntimeTraits';
 import { MethodInfo } from '../abc/lazy/MethodInfo';
 import { ExceptionInfo } from '../abc/lazy/ExceptionInfo';
 import { ScriptInfo } from '../abc/lazy/ScriptInfo';
-import { runtimeWriter, sliceArguments } from './writers';
+import { runtimeWriter } from './writers';
 import { formatErrorMessage, Errors } from '../errors';
 import { transformJSValueToAS } from '../nat/transformJSValueToAS';
 import { tryLinkNativeClass } from '../nat/tryLinkNativeClass';
@@ -45,7 +45,7 @@ import { AXCatch } from './AXCatch';
 import { AXGlobal } from './AXGlobal';
 import { axCoerce } from './axCoerce';
 import { axIsInstanceOfObject } from './axIsInstanceOfObject';
-import { axConstruct } from './axConstruct';
+import { axConstruct, axConstructFast } from './axConstruct';
 import { axDefaultApply } from './axDefaultApply';
 import { axDefaultInitializer } from './axDefaultInitializer';
 import { axGetArgumentsCallee } from './axGetArgumentsCallee';
@@ -71,8 +71,7 @@ import { axConstructObject } from './axConstructObject';
 import { axCoerceObject } from './axCoerceObject';
 
 import { initializeAXBasePrototype, AXBasePrototype } from './initializeAXBasePrototype';
-import { ByteArray, ByteArrayDataProvider } from '../natives/byteArray';
-import { Namespace } from '../abc/lazy/Namespace';
+import { ByteArrayDataProvider } from '../natives/byteArray';
 import { IS_EXTERNAL_CLASS } from '../ext/external';
 import { nativeClasses } from '../nat/builtinNativeClasses';
 import { ASClass } from '../nat/ASClass';
@@ -168,17 +167,30 @@ export class AXSecurityDomain {
 		return null;
 	}
 
-	throwError(className: string, error: any, replacement1?: any,
-		replacement2?: any, replacement3?: any, replacement4?: any) {
-		throw this.createError.apply(this, arguments);
+	throwError(
+		className: string,
+		error: any,
+		replacement1?: any,
+		replacement2?: any,
+		replacement3?: any,
+		replacement4?: any
+	) {
+		throw this.createError(className, error, replacement1, replacement2, replacement3, replacement4);
 	}
 
-	createError(className: string, error: any, replacement1?: any,
-		replacement2?: any, replacement3?: any, replacement4?: any) {
-		const message = formatErrorMessage.apply(null, sliceArguments(arguments, 1));
+	createError(
+		className: string,
+		error: any,
+		replacement1?: any,
+		replacement2?: any,
+		replacement3?: any,
+		replacement4?: any
+	) {
+		const message = formatErrorMessage.call(null, error, replacement1, replacement2, replacement3, replacement4);
 		const mn = Multiname.FromFQNString(className, NamespaceType.Public);
 		const axClass: AXClass = <AXClass> this.system.getProperty(mn, true, true);
-		return axClass.axConstruct([message, error.code]);
+
+		return axConstructFast(axClass, [message, error.code]);
 	}
 
 	applyType(axClass: AXClass, types: AXClass []): AXClass {
@@ -557,10 +569,10 @@ export class AXSecurityDomain {
 		AXClass.classInfo = this.system.findClassInfo('Class');
 		AXClass.defaultValue = null;
 
-		var AXObject = this.prepareNativeClass('AXObject', 'Object', false);
+		let AXObject = this.prepareNativeClass('AXObject', 'Object', false);
 		AXObject.classInfo = this.system.findClassInfo('Object');
 
-		var AXObject = this.AXObject;
+		AXObject = this.AXObject;
 
 		// AXFunction needs to exist for runtime trait resolution.
 		const AXFunction = this.prepareNativeClass('AXFunction', 'Function', false);
@@ -725,19 +737,20 @@ export class AXSecurityDomain {
 		const AXPrimitiveBox = this.prepareNativeClass('AXPrimitiveBox', 'PrimitiveBox', false);
 		D(AXPrimitiveBox.dPrototype, '$BgtoString',
 			AXFunction.axBox(function () { return this.value.toString(); }));
-		const AXBoolean = this.preparePrimitiveClass('AXBoolean', 'Boolean', axCoerceBoolean, false,
+
+		this.preparePrimitiveClass('AXBoolean', 'Boolean', axCoerceBoolean, false,
 			axCoerceBoolean, axIsTypeBoolean, axIsTypeBoolean);
 
-		const AXString = this.preparePrimitiveClass('AXString', 'String', axConvertString, '',
+		this.preparePrimitiveClass('AXString', 'String', axConvertString, '',
 			axCoerceString, axIsTypeString, axIsTypeString);
 
-		const AXNumber = this.preparePrimitiveClass('AXNumber', 'Number', axCoerceNumber, 0,
+		this.preparePrimitiveClass('AXNumber', 'Number', axCoerceNumber, 0,
 			axCoerceNumber, axIsTypeNumber, axIsTypeNumber);
 
-		const AXInt = this.preparePrimitiveClass('AXInt', 'int', axCoerceInt, 0, axCoerceInt,
+		this.preparePrimitiveClass('AXInt', 'int', axCoerceInt, 0, axCoerceInt,
 			axIsTypeInt, axFalse);
 
-		const AXUint = this.preparePrimitiveClass('AXUint', 'uint', axCoerceUint, 0, axCoerceUint,
+		this.preparePrimitiveClass('AXUint', 'uint', axCoerceUint, 0, axCoerceUint,
 			axIsTypeUint, axFalse);
 
 		// Install class loaders on the security domain.

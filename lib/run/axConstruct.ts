@@ -151,7 +151,7 @@ export function axConstruct(argArray?: any[]) {
 
 	if (timeline) {
 		// type MUST BE AS MC, if it was a sprite - mc not will be generated
-		const isMovieClip = (<any> this.sec).flash.display.MovieClip.axIsType(object);
+		const isMovieClip = (<any> this.sec).flash.display.MovieClip.axIsType(object) || (<any> this.sec).flash.display.SimpleButton.axIsType(object);
 
 		if (!isMovieClip) {
 			//console.log('Class is not MC:', fullName);
