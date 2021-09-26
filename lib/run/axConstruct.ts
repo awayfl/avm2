@@ -234,8 +234,16 @@ export function isFastConstructSupport(mn: Multiname, trace: string[]): boolean 
 			return true;
 		}
 
+		if (NEED_SLOW_CONSTRUCTOR[mn.name]) {
+			return false;
+		}
+
 		trace && trace.push(mn.name);
 		classInfo = mn.abc.applicationDomain.findClassInfoDeep(mn);
+
+		if (!classInfo) {
+			return true;
+		}
 
 		// top level class 'Object', all classes extends it and it not have super
 		if (mn.name === 'Object' && mn.namespace.uri === '' && !classInfo.instanceInfo.superName) {
