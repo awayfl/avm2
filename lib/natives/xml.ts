@@ -3085,15 +3085,21 @@ export class ASXML extends ASObject implements XMLType {
 			this._attributes.forEach(function (v, i) {
 				if (isAny || v._name.matches(name)) {
 					xl._children[length++] = v;
-					assert(xl._children[0]);
+					assert(xl._children[0] != null);
 				}
 			});
 		} else {
 			// Get children
 			this._children.forEach(function (v, i) {
+				//@todo This is unstable, not all children has names
+				if (!isAny && !v._name) {
+					return;
+					//debugger;
+				}
+
 				if (isAny || v._name.matches(name)) {
 					xl._children[length++] = v;
-					assert(xl._children[0]);
+					assert(xl._children[0] != null);
 				}
 			});
 		}
