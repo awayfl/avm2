@@ -18,6 +18,9 @@ import { axCompare } from '../run/axCompare';
 import { axCompareFields } from '../run/axCompareFields';
 import { Errors } from '../errors';
 import { axBoxPrimitive } from '../run/axBoxPrimitive';
+import { AXFunction } from '../run/AXFunction';
+import { ASMethodClosure } from './ASMethodClosure';
+import { ASFunction } from './ASFunction';
 
 export class ASArray extends ASObject {
 	/**
@@ -365,34 +368,50 @@ export class ASArray extends ASObject {
 		return out;
 	}
 
-	sort(): any {
-		const o = this.value;
-		if (arguments.length === 0) {
-			o.sort();
+	public sort(func: ASFunction | number, options?: number): this {
+		const value = this.value;
+
+		if (func == void 0) {
+			value.sort();
 			return this;
 		}
+
 		let compareFunction;
-		let options = 0;
-		if (this.sec.AXFunction.axIsInstanceOf(arguments[0])) {
-			compareFunction = arguments[0].value;
-		} else if (isNumber(arguments[0])) {
-			options = arguments[0];
+		let context;
+
+		if (this.sec.AXFunction.axIsInstanceOf(func)) {
+			compareFunction = (<ASFunction>func).value;
+			context = (<ASFunction>func).receiver;
+		} else if (isNumber(func)) {
+			options = func as number;
 		}
-		if (isNumber(arguments[1])) {
-			options = arguments[1];
+
+		if (options != void 0 && !isNumber(options)) {
+			options = void 0;
 		}
+
 		if (!options) {
 			// Just passing compareFunction is ok because `undefined` is treated as not passed in JS.
-			o.sort(compareFunction);
+			if (context) {
+				// we must pass context for sort function because it can be bounded onto closure
+				value.sort(compareFunction.bind(context));
+				return this;
+			}
+
+			value.sort(compareFunction);
 			return this;
 		}
+
 		if (!compareFunction) {
 			compareFunction = axDefaultCompareFunction;
 		}
+
 		const sortOrder = options & SORT.DESCENDING ? -1 : 1;
-		o.sort(function (a, b) {
+
+		value.sort(function (a, b) {
 			return axCompare(a, b, options, sortOrder, compareFunction);
 		});
+
 		return this;
 	}
 

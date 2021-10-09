@@ -24,8 +24,8 @@ export class ASFunction extends ASObject {
 
 	private _prototype: AXObject;
 	private _prototypeInitialzed: boolean = false;
-	protected value: AXCallable;
-	protected receiver: {scope: Scope};
+	/*internal*/ value: AXCallable;
+	/*internal*/ receiver: {scope: Scope};
 	protected methodInfo: MethodInfo;
 
 	public setReceiver(receiver: any) {
