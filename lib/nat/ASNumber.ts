@@ -34,6 +34,12 @@ export class ASNumber extends ASObject {
 
 	value: number;
 
+	constructor(value: number) {
+		super();
+
+		this.value += value;
+	}
+
 	toString(radix: number) {
 		if (arguments.length === 0) {
 			radix = 10;
