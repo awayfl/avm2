@@ -37,7 +37,7 @@ export class ASNumber extends ASObject {
 	constructor(value: number) {
 		super();
 
-		this.value += value;
+		this.value = Number(value);
 	}
 
 	toString(radix: number) {
