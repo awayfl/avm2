@@ -1,3 +1,5 @@
+import { ConfigManager }  from '@awayjs/core';
+
 export interface IAVM2Settings {
 	// optimiser
 	NO_CHECK_FASTCALL_FOR_THIS: boolean;
@@ -55,7 +57,7 @@ export const enum COERCE_RETURN_MODE_ENUM {
 	ALL = 'all',
 }
 
-export const Settings: IAVM2Settings = {
+export const Settings: IAVM2Settings = ConfigManager.instance.addStore('avm2', {
 	/**
 	 * @description Enable debug mode, will throw error descriptions
 	 */
@@ -182,4 +184,4 @@ export const Settings: IAVM2Settings = {
 	 * @description Use `WeakRef` for holding a Orphan in OrphanaManager on supported platforms
 	 */
 	USE_WEAK_REF: true
-};
+});
