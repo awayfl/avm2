@@ -1,4 +1,4 @@
-import { MovieClip, FrameScriptManager, DisplayObject, Sprite, DisplayObjectContainer } from '@awayjs/scene';
+import { MovieClip, FrameScriptManager, DisplayObject, Sprite, DisplayObjectContainer, Timeline } from '@awayjs/scene';
 import { AssetBase } from '@awayjs/core';
 import { AXClass, IS_AX_CLASS } from './AXClass';
 import { Multiname } from '../abc/lazy/Multiname';
@@ -183,7 +183,7 @@ export function axConstruct(argArray?: any[]) {
 	// @todo: this is a hack for getting adaptee
 	// for dynamic created SimpleButton
 	if (instName === 'SimpleButton') {
-		object.adaptee = new MovieClip();
+		object.adaptee = new MovieClip(new Timeline(this.sec.player.factory));
 	}
 
 	// mark object that it is AX object, not a regular class
