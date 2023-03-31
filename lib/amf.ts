@@ -256,18 +256,18 @@ export const enum AMF3Marker {
 function readU29(ba: ByteArray): number {
 	const b1 = ba.readByte();
 	if ((b1 & 0x80) === 0) {
-		return b1;
+		return (b1 & 0x7F);
 	}
 	const b2 = ba.readByte();
 	if ((b2 & 0x80) === 0) {
-		return ((b1 & 0x7F) << 7) | b2;
+		return ((b1 & 0x7F) << 7) | (b2 & 0x7F);
 	}
 	const b3 = ba.readByte();
 	if ((b3 & 0x80) === 0) {
-		return ((b1 & 0x7F) << 14) | ((b2 & 0x7F) << 7) | b3;
+		return ((b1 & 0x7F) << 14) | ((b2 & 0x7F) << 7) | (b3 & 0x7F);
 	}
 	const b4 = ba.readByte();
-	let val = ((b1 & 0x7f) << 22) | ((b2 & 0x7f) << 15) | ((b3 & 0x7f) << 8) | b4;
+	let val = ((b1 & 0x7f) << 22) | ((b2 & 0x7f) << 15) | ((b3 & 0x7f) << 8) | (b4 & 0xFF);
 
 	// handle negative
 	// https://github.com/Ventero/amf-cpp/blob/master/src/types/amfinteger.cpp#L92
