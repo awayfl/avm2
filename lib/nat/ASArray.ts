@@ -465,11 +465,17 @@ export class ASArray extends ASObject {
 		// For use with uniqueSort and returnIndexedArray once we support them.
 		var optionsVal: number = optionsList[0];
 		release || Debug.assertNotImplemented(!(optionsVal & SORT.UNIQUESORT), 'UNIQUESORT');
-		release || Debug.assertNotImplemented(!(optionsVal & SORT.RETURNINDEXEDARRAY),
-			'RETURNINDEXEDARRAY');
 
-		o.sort((a, b) => axCompareFields(a, b, names, optionsList));
-		return this;
+		let ret = o;
+		if (optionsVal & SORT.RETURNINDEXEDARRAY) {
+			const cp = o.concat(); // Make a copy of the array
+			cp.sort((a, b) => axCompareFields(a, b, names, optionsList));
+			ret = cp.map((e) => o.indexOf(e)); // TODO: What happens if there are duplicate elements in the array?
+		} else {
+			o.sort((a, b) => axCompareFields(a, b, names, optionsList));
+		}
+
+		return ret;
 	}
 
 	generic_sortOn() {
