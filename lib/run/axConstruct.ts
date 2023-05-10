@@ -66,17 +66,17 @@ export class OrphanManager {
 
 	static updateOrphans() {
 
-		let orphan: DisplayObject;
+		let orphan: WeakRef<DisplayObject> | DisplayObject;
 
 		for (const key in this.orphans) {
-			orphan = <DisplayObject> this.orphans[key];
+			orphan = this.orphans[key];
 
 			if (USE_WEAK && orphan) {
-				orphan = (<any> orphan)?.deref();
+				orphan = (<WeakRef<DisplayObject>> orphan)?.deref();
 			}
 
 			if (orphan) {
-				if (!orphan.parent) {
+				if (!(<DisplayObject> orphan).parent) {
 					(<MovieClip>orphan).advanceFrame();
 					FrameScriptManager.execute_as3_constructors_recursiv(<MovieClip> orphan);
 				} else {
