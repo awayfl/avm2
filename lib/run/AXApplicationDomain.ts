@@ -85,12 +85,13 @@ export class AXApplicationDomain {
 
 	public findClassInfo(name: string | Multiname): ClassInfo | null {
 		const argName = typeof name === 'string' ? name : name.name;
-
+		const uri =  typeof name === 'string' ? '' : name.namespaces[0].uri;
 		for (let i = 0; i < this._abcs.length; i++) {
 			const abc = this._abcs[i];
 			for (let j = 0; j < abc.instances.length; j++) {
 				const c = abc.classes[j];
-				if (c.instanceInfo.getName().name === argName) {
+				const mn = c.instanceInfo.getName();
+				if (mn.name === argName && mn.namespaces[0].uri == uri) {
 					return c;
 				}
 			}
