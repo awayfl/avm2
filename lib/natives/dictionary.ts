@@ -4,6 +4,13 @@ import { addPrototypeFunctionAlias } from '../nat/addPrototypeFunctionAlias';
 import { assert } from '@awayjs/graphics';
 import { release } from '@awayfl/swf-loader';
 import { Bytecode } from '../abc/ops';
+import { Settings } from '../Settings';
+
+declare global {
+	interface Window { WeakRef: typeof WeakRef}
+}
+
+const USE_WEAK = ('WeakRef' in self) && Settings.USE_WEAK_REF;
 
 /*
  * Copyright 2014 Mozilla Foundation
@@ -32,26 +39,23 @@ export class Dictionary extends ASObject {
 		addPrototypeFunctionAlias(proto, '$BgtoJSON', asProto.toJSON);
 	}
 
-	private map: WeakMap<any, any>;
-	private keys: any [];
+	private map: WeakMap<any, any> = new WeakMap();
+	private refs: WeakMap<any, WeakRef<any>>;
+	private keys: Set<any> = new Set();
 	private weakKeys: boolean;
-	private primitiveMap: Object;
+	private primitiveMap: Record< string | number, any> = Object.create(null);
 
 	constructor(weakKeys: boolean = false) {
 		super();
-		this.map = new WeakMap();
-		this.keys = null;
-		this.weakKeys = !!weakKeys;
-		if (!weakKeys) {
-			this.keys = [];
-		}
-		this.primitiveMap = Object.create(null);
+	
+		if (this.weakKeys = !!weakKeys && USE_WEAK)
+			this.refs = new WeakMap();
 	}
 
 	static makePrimitiveKey(key: any) {
-		if (typeof key === 'string' || typeof key === 'number') {
+		if (typeof key === 'string' || typeof key === 'number')
 			return key;
-		}
+
 		release || assert(typeof key === 'object' || typeof key === 'function', typeof key);
 		return undefined;
 	}
@@ -66,7 +70,7 @@ export class Dictionary extends ASObject {
 		}
 		const key = Dictionary.makePrimitiveKey(mn.name);
 		if (key !== undefined) {
-			return this.primitiveMap[<any>key];
+			return this.primitiveMap[key];
 		}
 		return this.map.get(Object(mn.name));
 	}
@@ -78,13 +82,23 @@ export class Dictionary extends ASObject {
 		}
 		const key = Dictionary.makePrimitiveKey(mn.name);
 		if (key !== undefined) {
-			this.primitiveMap[<any>key] = value;
+			this.primitiveMap[key] = value;
 			return;
 		}
-		this.map.set(Object(mn.name), value);
-		if (!this.weakKeys && this.keys.indexOf(mn.name) < 0) {
-			this.keys.push(mn.name);
+
+		let okey = Object(mn.name);
+
+		if (!this.map.has(okey)) {
+			if (this.weakKeys) {
+				const wkey = new self.WeakRef(okey);
+				this.refs.set(okey, wkey);
+				this.keys.add(wkey);
+			} else {
+				this.keys.add(okey);
+			}
 		}
+
+		this.map.set(okey, value);
 	}
 
 	// TODO: Not implemented yet.
@@ -110,12 +124,23 @@ export class Dictionary extends ASObject {
 		const key = Dictionary.makePrimitiveKey(mn.name);
 		if (key !== undefined) {
 			delete this.primitiveMap[<any>key];
+			return;
 		}
-		this.map.delete(Object(mn.name));
-		let i;
-		if (!this.weakKeys && (i = this.keys.indexOf(mn.name)) >= 0) {
-			this.keys.splice(i, 1);
+
+		let okey = Object(mn.name);
+
+		if (!this.map.has(okey))
+			return false;
+
+		this.map.delete(okey);
+
+		if (this.weakKeys) {
+			this.keys.delete(this.refs.get(okey));
+			this.refs.delete(okey)
+		} else {
+			this.keys.delete(okey)
 		}
+
 		return true;
 	}
 
@@ -134,17 +159,20 @@ export class Dictionary extends ASObject {
 		if (<any> this === this.axClass.dPrototype) {
 			return super.axGetEnumerableKeys();
 		}
-		const primitiveMapKeys = [];
-		for (const k in this.primitiveMap) {
-			primitiveMapKeys.push(k);
-		}
-		if (this.weakKeys) {
-			// TODO implement workaround for flashx.textLayout.external.WeakRef
-			return primitiveMapKeys; // assuming all weak ref objects are gone
-		}
-		if (this.keys) {
-			return primitiveMapKeys.concat(this.keys);
-		}
-		return primitiveMapKeys.slice();
+		const enumerableKeys = [];
+
+		for (const k in this.primitiveMap)
+			enumerableKeys.push(k);
+
+		this.keys.forEach((value) => {
+			const k = this.weakKeys? value.deref() : value;
+			if (k) {
+				enumerableKeys.push(k);
+			} else {
+				this.keys.delete(value);
+			}
+		});
+
+		return enumerableKeys;
 	}
 }
