@@ -47,7 +47,7 @@ export class Dictionary extends ASObject {
 
 	constructor(weakKeys: boolean = false) {
 		super();
-	
+
 		if (this.weakKeys = !!weakKeys && USE_WEAK)
 			this.refs = new WeakMap();
 	}
@@ -86,7 +86,7 @@ export class Dictionary extends ASObject {
 			return;
 		}
 
-		let okey = Object(mn.name);
+		const okey = Object(mn.name);
 
 		if (!this.map.has(okey)) {
 			if (this.weakKeys) {
@@ -127,7 +127,7 @@ export class Dictionary extends ASObject {
 			return;
 		}
 
-		let okey = Object(mn.name);
+		const okey = Object(mn.name);
 
 		if (!this.map.has(okey))
 			return false;
@@ -136,9 +136,9 @@ export class Dictionary extends ASObject {
 
 		if (this.weakKeys) {
 			this.keys.delete(this.refs.get(okey));
-			this.refs.delete(okey)
+			this.refs.delete(okey);
 		} else {
-			this.keys.delete(okey)
+			this.keys.delete(okey);
 		}
 
 		return true;
@@ -165,7 +165,7 @@ export class Dictionary extends ASObject {
 			enumerableKeys.push(k);
 
 		this.keys.forEach((value) => {
-			const k = this.weakKeys? value.deref() : value;
+			const k = this.weakKeys ? value.deref() : value;
 			if (k) {
 				enumerableKeys.push(k);
 			} else {
