@@ -6,10 +6,6 @@ import { release } from '@awayfl/swf-loader';
 import { Bytecode } from '../abc/ops';
 import { Settings } from '../Settings';
 
-declare global {
-	interface Window { WeakRef: typeof WeakRef}
-}
-
 const USE_WEAK = ('WeakRef' in self) && Settings.USE_WEAK_REF;
 
 /*

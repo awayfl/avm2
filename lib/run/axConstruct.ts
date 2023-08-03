@@ -17,9 +17,6 @@ interface IAwayApplicationDomain {
 	getSymbolDefinition(clasName: string): any;
 	getSymbolAdaptee(clasName: string): any;
 }
-declare global {
-	interface Window { WeakRef: typeof WeakRef}
-}
 
 const USE_WEAK = ('WeakRef' in self) && Settings.USE_WEAK_REF;
 
