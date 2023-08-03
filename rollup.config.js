@@ -1,39 +1,38 @@
-var includePaths = require('rollup-plugin-includepaths');
-var commonjs = require('rollup-plugin-commonjs');
-var nodeResolve = require('rollup-plugin-node-resolve');
+import nodeResolve from '@rollup/plugin-node-resolve';
+import commonjs from '@rollup/plugin-commonjs';
+import terser from '@rollup/plugin-terser';
 
-module.exports = {
+export default {
 	input: './dist/index.js',
 	output: {
-		name: 'AwayflAvm1',
-		sourcemap: true,
-		format: 'umd',
-		file: './bundle/awayfl-avm2.umd.js',
+		name: 'AwayflAvm2',
 		globals: {
 			'@awayfl/swf-loader': 'AwayflSwfLoader',
 			'@awayjs/core': 'AwayjsCore',
-			'@awayjs/graphics': 'AwayjsGraphics',
-			'@awayjs/scene': 'AwayjsScene',
 			'@awayjs/stage': 'AwayjsStage',
+			'@awayjs/view': 'AwayjsView',
+			'@awayjs/renderer': 'AwayjsRenderer',
+			'@awayjs/graphics': 'AwayjsGraphics',
+			'@awayjs/materials': 'AwayjsMaterials',
+			'@awayjs/scene': 'AwayjsScene'
 		},
+		sourcemap: true,
+		format: 'umd',
+		file: './bundle/awayfl-avm2.umd.js'
 	},
 	external: [
 		'@awayfl/swf-loader',
 		'@awayjs/core',
-		'@awayjs/graphics',
-		'@awayjs/scene',
 		'@awayjs/stage',
+		'@awayjs/view',
+		'@awayjs/renderer',
+		'@awayjs/graphics',
+		'@awayjs/materials',
+		'@awayjs/scene'
 	],
 	plugins: [
-		nodeResolve({
-			jsnext: true,
-			main: true,
-			module: true
-		}),
-		commonjs({
-			namedExports: {
-				'blocks': './node_modules/xregexp/tools/output/blocks.js'
-			}
-		})
+		nodeResolve(),
+		commonjs(),
+		terser(),
 	]
 };

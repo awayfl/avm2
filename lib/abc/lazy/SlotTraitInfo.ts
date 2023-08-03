@@ -31,7 +31,7 @@ export class SlotTraitInfo extends TraitInfo {
 	}
 
 	getDefaultValue(): any {
-		if (this.defaultValueKind === -1) {
+		if (<number> this.defaultValueKind === -1) {
 			if (this.typeName === null) {
 				return undefined;
 			}
