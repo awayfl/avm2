@@ -1,4 +1,4 @@
-import { MapObject, ObjectUtilities, assert, release } from '@awayfl/swf-loader';
+import { MapObject, createMap, assert, release } from '@awayfl/swf-loader';
 import { AXApplicationDomain } from '../../run/AXApplicationDomain';
 import { ABCFile } from './ABCFile';
 import { Multiname } from './Multiname';
@@ -11,9 +11,9 @@ export class ABCCatalog {
 
 	constructor(app: AXApplicationDomain, abcs: Uint8Array, index: any) {
 		this.app = app;
-		this.map = ObjectUtilities.createMap<MapObject<string>>();
+		this.map = createMap<MapObject<string>>();
 		this.abcs = abcs;
-		this.scripts = ObjectUtilities.createMap<string>();
+		this.scripts = createMap<string>();
 		for (let i = 0; i < index.length; i++) {
 			const abc = index[i];
 			this.scripts[abc.name] = abc;

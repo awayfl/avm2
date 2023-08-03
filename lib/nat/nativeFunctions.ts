@@ -1,3 +1,3 @@
-import { MapObject, ObjectUtilities } from '@awayfl/swf-loader';
+import { MapObject, createMap } from '@awayfl/swf-loader';
 
-export var nativeFunctions: MapObject<Function> = ObjectUtilities.createMap<Function>();
+export var nativeFunctions: MapObject<Function> = createMap<Function>();
