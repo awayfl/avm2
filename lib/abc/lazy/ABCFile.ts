@@ -46,23 +46,17 @@ export class ABCFile {
 	private _stream: AbcStream;
 
 	private _strings: string [];
-	private _stringOffsets: Uint32Array;
 
 	private _namespaces: Namespace [];
-	private _namespaceOffsets: Uint32Array;
 
 	private _namespaceSets: Namespace [][];
-	private _namespaceSetOffsets: Uint32Array;
 
 	private _multinames: Multiname [];
-	private _multinameOffsets: Uint32Array;
 
 	private _metadata: MetadataInfo [];
-	private _metadataInfoOffsets: Uint32Array;
 
 	private _methods: MethodInfo [];
 	private _methodBodies: MethodBodyInfo [];
-	private _methodInfoOffsets: Uint32Array;
 
 	public classes: ClassInfo [];
 	public scripts: ScriptInfo [];
@@ -132,11 +126,9 @@ export class ABCFile {
 
 		// Record the offset of each string in |stringOffsets|. This array has one extra
 		// element so that we can compute the length of the last string.
-		const stringOffsets = this._stringOffsets = new Uint32Array(n);
-		stringOffsets[0] = -1;
 		for (let i = 1; i < n; i++) {
-			stringOffsets[i] = s.position;
-			s.advance(s.readU30());
+			const l = s.readU30();
+			this._strings[i] = s.readUTFString(l);
 		}
 	}
 
@@ -144,12 +136,45 @@ export class ABCFile {
 		const s = this._stream;
 		const n = s.readU30();
 		this._namespaces = new Array(n);
-		const namespaceOffsets = this._namespaceOffsets = new Uint32Array(n);
-		namespaceOffsets[0] = -1;
 		for (let i = 1; i < n; i++) {
-			namespaceOffsets[i] = s.position;
-			s.readU8(); // Kind
-			s.readU30(); // String
+			const kind = s.readU8();
+			const uriIndex = s.readU30();
+			let uri = uriIndex ? this.getString(uriIndex) : undefined;
+			let type: NamespaceType;
+			switch (kind) {
+				case CONSTANT.Namespace:
+				case CONSTANT.PackageNamespace:
+					type = NamespaceType.Public;
+					break;
+				case CONSTANT.PackageInternalNs:
+					type = NamespaceType.PackageInternal;
+					break;
+				case CONSTANT.ProtectedNamespace:
+					type = NamespaceType.Protected;
+					break;
+				case CONSTANT.ExplicitNamespace:
+					type = NamespaceType.Explicit;
+					break;
+				case CONSTANT.StaticProtectedNs:
+					type = NamespaceType.StaticProtected;
+					break;
+				case CONSTANT.PrivateNs:
+					type = NamespaceType.Private;
+					break;
+				default:
+					this.applicationDomain.sec.throwError('VerifierError',
+						Errors.CpoolEntryWrongTypeError, i);
+			}
+			if (uri && type !== NamespaceType.Private) {
+				// TODO: deal with API versions here. Those are suffixed to the uri. We used to
+				// just strip them out, but we also had an assert against them occurring at all,
+				// so it might be the case that we don't even need to do anything at all.
+			} else if (uri === undefined) {
+				// Only private namespaces gets the empty string instead of undefined. A comment
+				// in Tamarin source code indicates this might not be intentional, but oh well.
+				uri = '';
+			}
+			this._namespaces[i] = internNamespace(type, uri);
 		}
 	}
 
@@ -157,47 +182,13 @@ export class ABCFile {
 		const s = this._stream;
 		const n = s.readU30();
 		this._namespaceSets = new Array(n);
-		const namespaceSetOffsets = this._namespaceSetOffsets = new Uint32Array(n);
-		namespaceSetOffsets[0] = -1;
 		for (let i = 1; i < n; i++) {
-			namespaceSetOffsets[i] = s.position;
 			const c = s.readU30(); // Count
+			const nss = this._namespaceSets[i] = new Array(c);
 			for (let j = 0; j < c; j++) {
-				s.readU30(); // Namespace
+				const x = s.readU30();
+				nss[j] = this.getNamespace(x);
 			}
-		}
-	}
-
-	private _consumeMultiname() {
-		const s = this._stream;
-		const kind = s.readU8();
-		switch (kind) {
-			case CONSTANT.QName: case CONSTANT.QNameA:
-				s.readU30();
-				s.readU30();
-				break;
-			case CONSTANT.RTQName: case CONSTANT.RTQNameA:
-				s.readU30();
-				break;
-			case CONSTANT.RTQNameL: case CONSTANT.RTQNameLA:
-				break;
-			case CONSTANT.Multiname: case CONSTANT.MultinameA:
-				s.readU30();
-				s.readU30();
-				break;
-			case CONSTANT.MultinameL: case CONSTANT.MultinameLA:
-				s.readU30();
-				break;
-			case CONSTANT.TypeName:
-				s.readU32();
-				var typeParameterCount = s.readU32();
-				release || assert(typeParameterCount === 1); // This is probably the number of type
-				// parameters.
-				s.readU32();
-				break;
-			default:
-				unexpected(kind);
-				break;
 		}
 	}
 
@@ -205,11 +196,8 @@ export class ABCFile {
 		const s = this._stream;
 		const n = s.readU30();
 		this._multinames = new Array(n);
-		const multinameOffsets = this._multinameOffsets = new Uint32Array(n);
-		multinameOffsets[0] = -1;
 		for (let i = 1; i < n; i++) {
-			multinameOffsets[i] = s.position;
-			this._consumeMultiname();
+			this._multinames[i] = this._parseMultiname(i);
 		}
 	}
 
@@ -309,94 +297,37 @@ export class ABCFile {
      * Returns the string at the specified index in the string table.
      */
 	public getString(i: number): string {
-		release || assert(i >= 0 && i < this._stringOffsets.length);
-		let str = this._strings[i];
-		if (str === undefined) {
-			const s = this._stream;
-			s.seek(this._stringOffsets[i]);
-			const l = s.readU30();
-			str = this._strings[i] = s.readUTFString(l);
-		}
-		return str;
+		release || assert(i >= 0 && i < this._strings.length);
+		return this._strings[i];
 	}
 
 	/**
      * Returns the multiname at the specified index in the multiname table.
      */
 	public getMultiname(i: number): Multiname {
-		if (i < 0 || i >= this._multinameOffsets.length) {
+		if (i < 0 || i >= this._multinames.length) {
 			this.applicationDomain.sec.throwError('VerifierError',
 				Errors.CpoolIndexRangeError, i,
-				this._multinameOffsets.length);
+				this._multinames.length);
 		}
 		if (i === 0) {
 			return null;
 		}
-		let mn = this._multinames[i];
-		if (mn === undefined) {
-			const s = this._stream;
-			s.seek(this._multinameOffsets[i]);
-			mn = this._multinames[i] = this._parseMultiname(i);
-		}
-		return mn;
+		return this._multinames[i];
 	}
 
 	/**
      * Returns the namespace at the specified index in the namespace table.
      */
 	public getNamespace(i: number): Namespace {
-		if (i < 0 || i >= this._namespaceOffsets.length) {
+		if (i < 0 || i >= this._namespaces.length) {
 			this.applicationDomain.sec.throwError('VerifierError', Errors.CpoolIndexRangeError, i,
-				this._namespaceOffsets.length);
+				this._namespaces.length);
 		}
 		if (i === 0) {
 			return Namespace.PUBLIC;
 		}
-		let ns = this._namespaces[i];
-		if (ns !== undefined) {
-			return ns;
-		}
-		const s = this._stream;
-		s.seek(this._namespaceOffsets[i]);
-		const kind = s.readU8();
-		const uriIndex = s.readU30();
-		let uri = uriIndex ? this.getString(uriIndex) : undefined;
-		let type: NamespaceType;
-		switch (kind) {
-			case CONSTANT.Namespace:
-			case CONSTANT.PackageNamespace:
-				type = NamespaceType.Public;
-				break;
-			case CONSTANT.PackageInternalNs:
-				type = NamespaceType.PackageInternal;
-				break;
-			case CONSTANT.ProtectedNamespace:
-				type = NamespaceType.Protected;
-				break;
-			case CONSTANT.ExplicitNamespace:
-				type = NamespaceType.Explicit;
-				break;
-			case CONSTANT.StaticProtectedNs:
-				type = NamespaceType.StaticProtected;
-				break;
-			case CONSTANT.PrivateNs:
-				type = NamespaceType.Private;
-				break;
-			default:
-				this.applicationDomain.sec.throwError('VerifierError',
-					Errors.CpoolEntryWrongTypeError, i);
-		}
-		if (uri && type !== NamespaceType.Private) {
-			// TODO: deal with API versions here. Those are suffixed to the uri. We used to
-			// just strip them out, but we also had an assert against them occurring at all,
-			// so it might be the case that we don't even need to do anything at all.
-		} else if (uri === undefined) {
-			// Only private namespaces gets the empty string instead of undefined. A comment
-			// in Tamarin source code indicates this might not be intentional, but oh well.
-			uri = '';
-		}
-		ns = this._namespaces[i] = internNamespace(type, uri);
-		return ns;
+		return this._namespaces[i];
 	}
 
 	/**
@@ -410,57 +341,15 @@ export class ABCFile {
 		if (i === 0) {
 			return null;
 		}
-		let nss = this._namespaceSets[i];
-		if (nss === undefined) {
-			const s = this._stream;
-			let o = this._namespaceSetOffsets[i];
-			s.seek(o);
-			const c = s.readU30(); // Count
-			nss = this._namespaceSets[i] = new Array(c);
-			o = s.position;
-			for (let j = 0; j < c; j++) {
-				s.seek(o);
-				const x = s.readU30();
-				o = s.position; // The call to |getNamespace| can change our current position.
-				nss[j] = this.getNamespace(x);
-			}
-		}
-		return nss;
+		return this._namespaceSets[i];
 	}
 
 	private _parseMethodInfos() {
 		const s = this._stream;
 		const n = s.readU30();
 		this._methods = new Array(n);
-		this._methodInfoOffsets = new Uint32Array(n);
 		for (let i = 0; i < n; ++i) {
-			this._methodInfoOffsets[i] = s.position;
-			this._consumeMethodInfo();
-		}
-	}
-
-	private _consumeMethodInfo() {
-		const s = this._stream;
-		const parameterCount = s.readU30();
-		s.readU30(); // Return Type
-		const parameterOffset = s.position;
-		for (var i = 0; i < parameterCount; i++) {
-			s.readU30();
-		}
-		const nm = s.readU30();
-		const flags = s.readU8();
-		if (flags & METHOD.HasOptional) {
-			const optionalCount = s.readU30();
-			release || assert(parameterCount >= optionalCount);
-			for (var i = parameterCount - optionalCount; i < parameterCount; i++) {
-				s.readU30(); // Value Index
-				s.readU8(); // Value Kind
-			}
-		}
-		if (flags & METHOD.HasParamNames) {
-			for (var i = 0; i < parameterCount; i++) {
-				s.readU30();
-			}
+			this._methods[i] = this._parseMethodInfo(i);
 		}
 	}
 
@@ -498,14 +387,8 @@ export class ABCFile {
      * Returns the method info at the specified index in the method info table.
      */
 	public getMethodInfo(i: number) {
-		release || assert(i >= 0 && i < this._methodInfoOffsets.length);
-		let mi = this._methods[i];
-		if (mi === undefined) {
-			const s = this._stream;
-			s.seek(this._methodInfoOffsets[i]);
-			mi = this._methods[i] = this._parseMethodInfo(i);
-		}
-		return mi;
+		release || assert(i >= 0 && i < this._methods.length);
+		return this._methods[i];
 	}
 
 	public getMethodBodyInfo(i: number) {
@@ -516,24 +399,7 @@ export class ABCFile {
 		const s = this._stream;
 		const n = s.readU30();
 		this._metadata = new Array(n);
-		const metadataInfoOffsets = this._metadataInfoOffsets = new Uint32Array(n);
 		for (let i = 0; i < n; i++) {
-			metadataInfoOffsets[i] = s.position;
-			s.readU30(); // Name
-			const itemCount = s.readU30(); // Item Count
-			for (let j = 0; j < itemCount; j++) {
-				s.readU30();
-				s.readU30();
-			}
-		}
-	}
-
-	public getMetadataInfo(i: number): MetadataInfo {
-		release || assert(i >= 0 && i < this._metadata.length);
-		let mi = this._metadata[i];
-		if (mi === undefined) {
-			const s = this._stream;
-			s.seek(this._metadataInfoOffsets[i]);
 			const name = s.readU30(); // Name
 			const itemCount = s.readU30(); // Item Count
 			const keys = new Uint32Array(itemCount);
@@ -544,9 +410,13 @@ export class ABCFile {
 			for (var j = 0; j < itemCount; j++) {
 				values[j] = s.readU30();
 			}
-			mi = this._metadata[i] = new MetadataInfo(this, name, keys, values);
+			this._metadata[i] = new MetadataInfo(this, name, keys, values);
 		}
-		return mi;
+	}
+
+	public getMetadataInfo(i: number): MetadataInfo {
+		release || assert(i >= 0 && i < this._metadata.length);
+		return this._metadata[i];
 	}
 
 	private _parseInstanceAndClassInfos() {
@@ -622,10 +492,8 @@ export class ABCFile {
 			case TRAIT.Setter:
 				var dispID = s.readU30(); // Tamarin optimization.
 				var methodInfoIndex = s.readU30();
-				var o = s.position;
 				var methodInfo = this.getMethodInfo(methodInfoIndex);
 				trait = methodInfo.trait = new MethodTraitInfo(this, kind, name, methodInfo);
-				s.seek(o);
 				break;
 			case TRAIT.Class:
 				var slot = s.readU30();
