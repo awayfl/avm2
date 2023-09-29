@@ -3,6 +3,7 @@ import { ABCFile } from './ABCFile';
 import { Multiname } from './Multiname';
 import { SlotTraitInfo } from './SlotTraitInfo';
 import { TRAIT } from './TRAIT';
+import { TraitInfo } from './TraitInfo';
 
 export class ExceptionInfo {
 	public catchPrototype: Object = null;
@@ -13,7 +14,7 @@ export class ExceptionInfo {
 		public end: number,
 		public target: number,
 		public type: Multiname | number,
-		public varName: number
+		public varIndex: number
 	) {
 		// ...
 	}
@@ -27,9 +28,9 @@ export class ExceptionInfo {
 
 	getTraits(): Traits {
 		if (!this._traits) {
-			const traits = [];
-			if (this.varName) {
-				traits.push(new SlotTraitInfo(this.abc, TRAIT.Slot, this.varName, 1, this.type, 0, 0));
+			const traits:TraitInfo [] = [];
+			if (this.varIndex) {
+				traits.push(new SlotTraitInfo(this.abc, TRAIT.Slot,this.abc.getMultiname(this.varIndex), 1, this.type, 0, 0));
 			}
 			this._traits = new Traits(traits);
 			this._traits.resolve();
