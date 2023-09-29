@@ -74,16 +74,36 @@ export class Traits {
 		return -1;
 	}
 
-	private multinames: object = {}
+	private static multinames: any = {}
 
 	getTrait(mn: Multiname): TraitInfo {
-		let t = this.multinames[mn.id];
+		// let t = Traits.multinames[mn.id];
 
-		if (t === undefined) {
-			const i = this.indexOf(mn);
-			t = i >= 0 ? this.traits[i] : this;
-			this.multinames[mn.id] = t;
+		// if (t === undefined) {
+		// 	const i = this.indexOf(mn);
+		// 	t = i >= 0 ? this.traits[i] : this;
+		// 	Traits.multinames[mn.id] = t;
+		// }
+		let nm = mn.name;
+		let nss = mn.namespaces;
+		let t;
+		for (let ns of nss) {
+			t = Traits.multinames[ns.uri + "." + nm];
+			if (t)
+				return t;
 		}
+
+		const i = this.indexOf(mn);
+		
+		if (i >= 0) {
+			t = this.traits[i];
+			nm = t.name.name;
+			nss = t.name.namespaces;
+		} else {
+			t = this;
+		}
+		
+		Traits.multinames[nss[0] + "." + nm] = t;
 
 		return t === this ? null : t;
 	}
