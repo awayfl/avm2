@@ -87,14 +87,14 @@ export class Traits {
 		let nm = mn.name;
 		let nss = mn.namespaces;
 		let t;
-		for (let ns of nss) {
-			t = Traits.multinames[ns.uri + "." + nm];
+		for (const ns of nss) {
+			t = Traits.multinames[ns.uri + '.' + nm];
 			if (t)
 				return t;
 		}
 
 		const i = this.indexOf(mn);
-		
+
 		if (i >= 0) {
 			t = this.traits[i];
 			nm = t.name.name;
@@ -102,8 +102,8 @@ export class Traits {
 		} else {
 			t = this;
 		}
-		
-		Traits.multinames[nss[0] + "." + nm] = t;
+
+		Traits.multinames[nss[0] + '.' + nm] = t;
 
 		return t === this ? null : t;
 	}

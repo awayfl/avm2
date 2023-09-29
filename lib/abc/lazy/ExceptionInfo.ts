@@ -28,7 +28,7 @@ export class ExceptionInfo {
 
 	getTraits(): Traits {
 		if (!this._traits) {
-			const traits:TraitInfo [] = [];
+			const traits: TraitInfo [] = [];
 			if (this.varIndex) {
 				traits.push(new SlotTraitInfo(this.abc, TRAIT.Slot,this.abc.getMultiname(this.varIndex), 1, this.type, 0, 0));
 			}
