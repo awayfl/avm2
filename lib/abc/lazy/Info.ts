@@ -1,9 +1,9 @@
-import { Traits } from "./Traits";
+import { Traits } from './Traits';
 
 export class Info {
 
-constructor(
-	public traits: Traits
+	constructor(
+		public traits: Traits
 	) {
 		// ...
 	}

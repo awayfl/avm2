@@ -44,9 +44,9 @@ export class Traits {
 	private static multinames: any = {}
 
 	getTrait(mn: Multiname): TraitInfo {
-		let nm = mn.name;
-		let nss = mn.namespaces;
-		for (let ns of nss) {
+		const nm = mn.name;
+		const nss = mn.namespaces;
+		for (const ns of nss) {
 			const t: TraitInfo = Traits.multinames[ns.uri + '.' + nm];
 			if (t && t.holder.traits === this)
 				return t;
