@@ -466,7 +466,6 @@ export class AXSecurityDomain {
 	createActivation(methodInfo: MethodInfo, scope: Scope): AXActivation {
 		const body = methodInfo.getBody();
 		if (!body.activationPrototype) {
-			body.traits.resolve();
 			body.activationPrototype = Object.create(this.AXActivationPrototype);
 			defineReadOnlyProperty(body.activationPrototype, 'traits', body.traits.resolveRuntimeTraits(null, null, scope));
 		}

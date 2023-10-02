@@ -9,25 +9,13 @@ export class SlotTraitInfo extends TraitInfo {
 	constructor(
 		abc: ABCFile,
 		kind: TRAIT,
-		name: Multiname | number,
+		multiname: Multiname,
 		public slot: number,
-		public typeName: Multiname | number,
+		public typeName: Multiname,
 		public defaultValueKind: CONSTANT,
 		public defaultValueIndex: number
 	) {
-		super(abc, kind, name);
-	}
-
-	resolve() {
-		super.resolve();
-		if (typeof this.typeName === 'number') {
-			this.typeName = this.abc.getMultiname(<number> this.typeName);
-		}
-	}
-
-	getTypeName() {
-		this.resolve();
-		return <Multiname> this.typeName;
+		super(abc, kind, multiname);
 	}
 
 	getDefaultValue(): any {

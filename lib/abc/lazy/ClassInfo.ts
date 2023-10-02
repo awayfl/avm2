@@ -17,7 +17,7 @@ export class ClassInfo extends Info {
 		public initializer: MethodInfo | number,
 		public traits: Traits
 	) {
-		super();
+		super(traits);
 	}
 
 	getNativeMetadata(): MetadataInfo {

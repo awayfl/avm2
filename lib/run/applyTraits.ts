@@ -25,6 +25,6 @@ export function applyTraits(object: ITraits, traits: RuntimeTraits): void {
 		if (!release && (t.kind === TRAIT.Slot || t.kind === TRAIT.Const)) {
 			checkValue(p.value);
 		}
-		Object.defineProperty(object, t.name.getMangledName(), p);
+		Object.defineProperty(object, t.multiname.getMangledName(), p);
 	}
 }

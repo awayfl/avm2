@@ -17,7 +17,7 @@ export function emitOpenCatchConditions (state: CompilerState, catchBlocks: Exce
 
 	let lastCatchItem = '';
 	for (let i = 0; i < catchBlocks.length; i++) {
-		const typeName = catchBlocks[i].getType();
+		const typeName = catchBlocks[i].type;
 		if (!typeName) {
 			lastCatchItem = `{ p = ${catchBlocks[i].target}; continue; };`;
 			continue;

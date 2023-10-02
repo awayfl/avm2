@@ -182,7 +182,6 @@ export class AXApplicationDomain {
 		for (let j = 0; j < scripts.length; j++) {
 			const script = scripts[j];
 			const traits = script.traits;
-			traits.resolve();
 			if (traits.getTrait(mn)) {
 				// Ensure script is executed.
 				if (execute && script.state === ScriptInfoState.None) {

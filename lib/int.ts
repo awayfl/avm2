@@ -900,7 +900,7 @@ function _interpret(methodInfo: MethodInfo, savedScope: Scope, callee: AXFunctio
 				for (var i = 0; i < catchBlocks.length; i++) {
 					const handler = catchBlocks[i];
 					if (frame.pc >= handler.start && frame.pc <= handler.end) {
-						const typeName = handler.getType();
+						const typeName = handler.type;
 						if (!typeName || frame.app.getClass(typeName).axIsType(e)) {
 							stack.length = 0;
 							stack.push(e);

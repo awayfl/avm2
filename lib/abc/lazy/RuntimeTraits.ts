@@ -13,7 +13,7 @@ export class RuntimeTraits {
 	private _nextSlotID: number = 1;
 
 	constructor(public superTraits: RuntimeTraits,
-		public protectedNs: Namespace, public protectedNsMappings: any) {
+		public protectedNs: Namespace, public protectedNsMappings: Record <string, RuntimeTraitInfo>) {
 		const traits = this._traits = Object.create(null);
 		if (!superTraits) {
 			return;
@@ -30,7 +30,7 @@ export class RuntimeTraits {
      * See the comment for `Trait#resolveRuntimeTraits` for an explanation of the lookup scheme.
      */
 	public addTrait(trait: RuntimeTraitInfo): RuntimeTraitInfo {
-		const mn = trait.name;
+		const mn = trait.multiname;
 		let mappings = this._traits[mn.name];
 		if (!mappings) {
 			mappings = this._traits[mn.name] = Object.create(null);
@@ -112,10 +112,10 @@ export class RuntimeTraits {
 		const names = [];
 		for (let i = 1; i < slots.length; i++) {
 			const slot = slots[i];
-			if (!(<Multiname>slot.name).namespace.isPublic()) {
+			if (!(<Multiname>slot.multiname).namespace.isPublic()) {
 				continue;
 			}
-			names.push((<Multiname>slot.name).name);
+			names.push((<Multiname>slot.multiname).name);
 		}
 		return names;
 	}

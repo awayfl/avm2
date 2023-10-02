@@ -7,22 +7,11 @@ import { MethodInfo } from './MethodInfo';
 export class MethodTraitInfo extends TraitInfo {
 	public method: Function = null;
 	constructor(
-		abc: ABCFile,
-		kind: TRAIT,
-		name: Multiname | number,
-		public methodInfo: MethodInfo | number
+		public abc: ABCFile,
+		public kind: TRAIT,
+		public multiname: Multiname,
+		public methodInfo: MethodInfo
 	) {
-		super(abc, kind, name);
-	}
-
-	getMethodInfo(): MethodInfo {
-		return <MethodInfo> this.methodInfo;
-	}
-
-	resolve() {
-		super.resolve();
-		if (typeof this.methodInfo === 'number') {
-			this.methodInfo = this.abc.getMethodInfo(<number> this.methodInfo);
-		}
+		super(abc, kind, multiname);
 	}
 }

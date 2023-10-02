@@ -25,7 +25,7 @@ export class InstanceInfo extends Info {
 		public initializer: MethodInfo | number,
 		public traits: Traits
 	) {
-		super();
+		super(traits);
 		this._interfaces = null;
 	}
 

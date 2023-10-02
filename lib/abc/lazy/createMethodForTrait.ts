@@ -13,7 +13,7 @@ export function createMethodForTrait(methodTraitInfo: MethodTraitInfo, scope: Sc
 	if (methodTraitInfo.method) {
 		return methodTraitInfo.method;
 	}
-	const methodInfo = methodTraitInfo.getMethodInfo();
+	const methodInfo = methodTraitInfo.methodInfo;
 	let method;
 	if (methodInfo.flags & METHOD.Native) {
 		const metadata = methodInfo.getNativeMetadata();
@@ -21,7 +21,7 @@ export function createMethodForTrait(methodTraitInfo: MethodTraitInfo, scope: Sc
 			if (metadata) {
 				method = getNative(metadata.getValueAt(0));
 			} else {
-				const mn = methodTraitInfo.getName();
+				const mn = methodTraitInfo.multiname;
 				method = getNative(mn.uri + '.' + mn.name);
 			}
 			method = createGlobalNative(method, scope.object.sec);

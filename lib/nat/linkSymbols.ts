@@ -7,16 +7,16 @@ import { containsSymbol } from './containsSymbol';
 export function linkSymbols(symbols: string [], traits: Traits, object) {
 	for (let i = 0; i < traits.traits.length; i++) {
 		const trait = traits.traits[i];
-		if (!containsSymbol(symbols, trait.getName().name)) {
+		if (!containsSymbol(symbols, trait.multiname.name)) {
 			continue;
 		}
-		release || assert (trait.getName().namespace.type !== NamespaceType.Private, 'Why are you linking against private members?');
+		release || assert (trait.multiname.namespace.type !== NamespaceType.Private, 'Why are you linking against private members?');
 		if (trait.isConst()) {
 			release || release || notImplemented('Don\'t link against const traits.');
 			return;
 		}
-		const name = trait.getName().name;
-		const qn = trait.getName().getMangledName();
+		const name = trait.multiname.name;
+		const qn = trait.multiname.getMangledName();
 		if (trait.isSlot()) {
 			Object.defineProperty(object, name, {
 				get: <() => any> new Function('', 'return this.' + qn +

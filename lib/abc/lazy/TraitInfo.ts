@@ -11,7 +11,7 @@ export class TraitInfo {
 	constructor(
 		public abc: ABCFile,
 		public kind: TRAIT,
-		public name: Multiname | number
+		public multiname: Multiname
 	) {
 		this.metadata = null;
 		this.holder = null;
@@ -31,24 +31,12 @@ export class TraitInfo {
 		return <MetadataInfo []> this.metadata;
 	}
 
-	getName(): Multiname {
-		this.resolve();
-		return <Multiname> this.name;
-	}
-
-	resolve() {
-		if (typeof this.name === 'number') {
-			this.name = this.abc.getMultiname(<number> this.name);
-		}
-	}
-
 	toString() {
-		return getTRAITName(this.kind) + ' ' + this.name;
+		return getTRAITName(this.kind) + ' ' + this.multiname;
 	}
 
 	toFlashlogString(): string {
-		this.resolve();
-		return this.getName().toFlashlogString();
+		return this.multiname.toFlashlogString();
 	}
 
 	isConst(): boolean {

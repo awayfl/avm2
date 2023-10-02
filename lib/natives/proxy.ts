@@ -95,7 +95,7 @@ export class ASProxy extends ASObject {
 		let value: any;
 		const trait = typeof mn.name === 'string' ? this.traits.getTrait(mn.namespaces, mn.name) : null;
 		if (trait) {
-			const name = trait.name.getMangledName();
+			const name = trait.multiname.getMangledName();
 			value = this[name];
 			if (typeof value === 'function') {
 				return this.axGetMethod(name);
@@ -155,7 +155,7 @@ export class ASProxy extends ASObject {
 	public axDeleteProperty(mn: Multiname): any {
 		const trait = typeof mn.name === 'string' ? this.traits.getTrait(mn.namespaces, mn.name) : null;
 		if (trait) {
-			return delete this[trait.name.getMangledName()];
+			return delete this[trait.multiname.getMangledName()];
 		}
 		return this[proxyPrefix + 'deleteProperty'](this.sec.AXQName.FromMultiname(mn));
 	}

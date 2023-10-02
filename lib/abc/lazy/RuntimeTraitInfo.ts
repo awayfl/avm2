@@ -15,7 +15,7 @@ export class RuntimeTraitInfo {
 
 	private _type: AXClass;
 
-	constructor(public name: Multiname, public kind: TRAIT, private abc: ABCFile) {
+	constructor(public multiname: Multiname, public kind: TRAIT, private abc: ABCFile) {
 		this._type = undefined;
 		this.typeName = null;
 	}

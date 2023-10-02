@@ -468,7 +468,7 @@ export class ABCFile {
 
 	private _parseTrait() {
 		const s = this._stream;
-		const name = s.readU30();
+		const nameIndex = s.readU30();
 		const tag = s.readU8();
 
 		const kind = tag & 0x0F;
@@ -479,13 +479,13 @@ export class ABCFile {
 			case TRAIT.Slot:
 			case TRAIT.Const:
 				var slot = s.readU30();
-				var type = s.readU30();
+				var typeIndex = s.readU30();
 				var valueIndex = s.readU30();
 				var valueKind = -1;
 				if (valueIndex !== 0) {
 					valueKind = s.readU8();
 				}
-				trait = new SlotTraitInfo(this, kind, name, slot, type, valueKind, valueIndex);
+				trait = new SlotTraitInfo(this, kind, this.getMultiname(nameIndex), slot, this.getMultiname(typeIndex), valueKind, valueIndex);
 				break;
 			case TRAIT.Method:
 			case TRAIT.Getter:
@@ -493,12 +493,12 @@ export class ABCFile {
 				var dispID = s.readU30(); // Tamarin optimization.
 				var methodInfoIndex = s.readU30();
 				var methodInfo = this.getMethodInfo(methodInfoIndex);
-				trait = methodInfo.trait = new MethodTraitInfo(this, kind, name, methodInfo);
+				trait = methodInfo.trait = new MethodTraitInfo(this, kind, this.getMultiname(nameIndex), methodInfo);
 				break;
 			case TRAIT.Class:
 				var slot = s.readU30();
 				var classInfo = this.classes[s.readU30()];
-				trait = classInfo.trait = new ClassTraitInfo(this, kind, name, slot, classInfo);
+				trait = classInfo.trait = new ClassTraitInfo(this, kind, this.getMultiname(nameIndex), slot, classInfo);
 				break;
 			default:
 				this.applicationDomain.sec.throwError('VerifierError',
@@ -580,9 +580,9 @@ export class ABCFile {
 		const start = s.readU30();
 		const end = s.readU30();
 		const target = s.readU30();
-		const type = s.readU30();
-		const varName = s.readU30();
-		return new ExceptionInfo(this, start, end, target, type, varName);
+		const typeIndex = s.readU30();
+		const nameIndex = s.readU30();
+		return new ExceptionInfo(this, start, end, target, this.getMultiname(nameIndex), this.getMultiname(typeIndex));
 	}
 
 	public getConstant(kind: CONSTANT, i: number): any {

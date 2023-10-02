@@ -15,7 +15,7 @@ export class MethodBodyInfo extends Info {
 		public catchBlocks: ExceptionInfo [],
 		public traits: Traits
 	) {
-		super();
+		super(traits);
 	}
 
 	trace(writer: IndentingWriter) {

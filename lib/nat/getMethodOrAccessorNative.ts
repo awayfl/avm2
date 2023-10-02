@@ -8,7 +8,7 @@ import { assert } from '@awayjs/graphics';
  */
 export function getMethodOrAccessorNative(trait: TraitInfo, throwErrors: boolean = true): any {
 	const natives = getNativesForTrait(trait, throwErrors);
-	const name = trait.getName().name;
+	const name = trait.multiname.name;
 	for (let i = 0; i < natives.length; i++) {
 		const native = natives[i];
 		let fullName = name;

@@ -96,7 +96,7 @@ function initTraitsForObject (object: ASObject, traits: RuntimeTraits) {
 	if (traits.slots) {
 		for (let i = 0; i < traits.slots.length; i++) {
 			if (traits.slots[i]) {
-				object[traits.slots[i].name.getMangledName()] =  traits.slots[i].value;
+				object[traits.slots[i].multiname.getMangledName()] =  traits.slots[i].value;
 			}
 		}
 	}

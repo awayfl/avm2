@@ -168,7 +168,7 @@ export class ASObject implements IMetaobjectProtocol {
 
 		if (mn.mutable) {
 			const t = this.traits.getTrait(mn.namespaces, s);
-			return t ? t.name.getMangledName() : '$Bg' + s;
+			return t ? t.multiname.getMangledName() : '$Bg' + s;
 		} else {
 			const c = mn.resolved[this.axClassName];
 
@@ -177,7 +177,7 @@ export class ASObject implements IMetaobjectProtocol {
 
 			const t = this.traits.getTraitMultiname(mn);
 
-			const r = t ? t.name.getMangledName() : ('$Bg' + s);
+			const r = t ? t.multiname.getMangledName() : ('$Bg' + s);
 
 			mn.resolved[this.axClassName] = r;
 
@@ -213,7 +213,7 @@ export class ASObject implements IMetaobjectProtocol {
 		let freeze = false;
 		const t = this.traits.getTrait(mn.namespaces, name);
 		if (t) {
-			var mangledName = t.name.getMangledName();
+			var mangledName = t.multiname.getMangledName();
 			switch (t.kind) {
 				case TRAIT.Method:
 					this.sec.throwError('ReferenceError', Errors.CannotAssignToMethodError, name,
@@ -294,7 +294,7 @@ export class ASObject implements IMetaobjectProtocol {
 		if (trait.kind === TRAIT.Getter || trait.kind === TRAIT.GetterSetter) {
 			value = trait.get.call(this);
 		} else {
-			const mangledName = trait.name.getMangledName();
+			const mangledName = trait.multiname.getMangledName();
 			const fun = (<AXClass>scope.parent.object).tPrototype[mangledName];
 			if (fun)
 				return this.sec.AXMethodClosure.Create(<any> this, fun);
@@ -315,7 +315,7 @@ export class ASObject implements IMetaobjectProtocol {
 		if (trait.kind === TRAIT.Setter || trait.kind === TRAIT.GetterSetter) {
 			trait.set.call(this, value);
 		} else {
-			this[trait.name.getMangledName()] = value;
+			this[trait.multiname.getMangledName()] = value;
 		}
 	}
 
@@ -404,7 +404,7 @@ export class ASObject implements IMetaobjectProtocol {
 
 	axGetSlot(i: number): any {
 		const t = this.traits.getSlot(i);
-		const value = this[t.name.getMangledName()];
+		const value = this[t.multiname.getMangledName()];
 		release || checkValue(value);
 		return value;
 	}
@@ -412,7 +412,7 @@ export class ASObject implements IMetaobjectProtocol {
 	axSetSlot(i: number, value: any) {
 		release || checkValue(value);
 		const t = this.traits.getSlot(i);
-		const name = t.name.getMangledName();
+		const name = t.multiname.getMangledName();
 		const type = t.getType();
 		this[name] = type ? type.axCoerce(value) : value;
 	}

@@ -13,28 +13,16 @@ export class ExceptionInfo {
 		public start: number,
 		public end: number,
 		public target: number,
-		public type: Multiname | number,
-		public varIndex: number
+		public multiname: Multiname,
+		public type: Multiname
 	) {
 		// ...
 	}
 
-	getType(): Multiname {
-		if (typeof this.type === 'number') {
-			this.type = this.abc.getMultiname(<number> this.type);
-		}
-		return <Multiname> this.type;
-	}
-
 	getTraits(): Traits {
-		if (!this._traits) {
-			const traits: TraitInfo [] = [];
-			if (this.varIndex) {
-				traits.push(new SlotTraitInfo(this.abc, TRAIT.Slot,this.abc.getMultiname(this.varIndex), 1, this.type, 0, 0));
-			}
-			this._traits = new Traits(traits);
-			this._traits.resolve();
-		}
+		if (!this._traits)
+			this._traits = new Traits([new SlotTraitInfo(this.abc, TRAIT.Slot,this.multiname, 1, this.type, 0, 0)]);
+
 		return this._traits;
 	}
 }

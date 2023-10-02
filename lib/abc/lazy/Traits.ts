@@ -20,21 +20,14 @@ import { SlotTraitInfo } from './SlotTraitInfo';
  * a type and all its super types is resolved and translated to an instance of RuntimeTraits.
  */
 export class Traits {
-	private _resolved = false;
 	constructor(
 		public traits: TraitInfo []
 	) {
-		// ...
-	}
-
-	resolve() {
-		if (this._resolved) {
-			return;
-		}
 		for (let i = 0; i < this.traits.length; i++) {
-			this.traits[i].resolve();
+			const trait = this.traits[i];
+			const mn: Multiname = <Multiname> trait.multiname;
+			Traits.multinames[mn.namespaces[0].uri + '.' + mn.name] = trait;
 		}
-		this._resolved = true;
 	}
 
 	attachHolder(holder: Info) {
@@ -45,67 +38,21 @@ export class Traits {
 	}
 
 	trace(writer: IndentingWriter = new IndentingWriter()) {
-		this.resolve();
 		this.traits.forEach(x => writer.writeLn(x.toString()));
-	}
-
-	/**
-     * Searches for a trait with the specified name.
-     */
-	private indexOf(mn: Multiname): number {
-		release || assert(this._resolved);
-		const mnName = mn.name;
-		const nss = mn.namespaces;
-		const traits = this.traits;
-
-		for (let i = 0; i < traits.length; i++) {
-			const trait = traits[i];
-			const traitMn = <Multiname>trait.name;
-
-			if (traitMn.name === mnName) {
-				const ns = traitMn.namespaces[0];
-				for (let j = 0; j < nss.length; j++) {
-					if (ns === nss[j]) {
-						return i;
-					}
-				}
-			}
-		}
-		return -1;
 	}
 
 	private static multinames: any = {}
 
 	getTrait(mn: Multiname): TraitInfo {
-		// let t = Traits.multinames[mn.id];
-
-		// if (t === undefined) {
-		// 	const i = this.indexOf(mn);
-		// 	t = i >= 0 ? this.traits[i] : this;
-		// 	Traits.multinames[mn.id] = t;
-		// }
 		let nm = mn.name;
 		let nss = mn.namespaces;
-		let t;
-		for (const ns of nss) {
-			t = Traits.multinames[ns.uri + '.' + nm];
-			if (t)
+		for (let ns of nss) {
+			const t: TraitInfo = Traits.multinames[ns.uri + '.' + nm];
+			if (t && t.holder.traits === this)
 				return t;
 		}
 
-		const i = this.indexOf(mn);
-
-		if (i >= 0) {
-			t = this.traits[i];
-			nm = t.name.name;
-			nss = t.name.namespaces;
-		} else {
-			t = this;
-		}
-
-		Traits.multinames[nss[0] + '.' + nm] = t;
-
-		return t === this ? null : t;
+		return null;
 	}
 
 	/**
@@ -134,23 +81,21 @@ export class Traits {
 	resolveRuntimeTraits(superTraits: RuntimeTraits, protectedNs: Namespace,
 		scope: Scope, forceNativeMethods: boolean = false): RuntimeTraits {
 		// Resolve traits so that indexOf works out.
-		this.resolve();
-
 		const protectedNsMappings = Object.create(superTraits ? superTraits.protectedNsMappings : null);
 		const result = new RuntimeTraits(superTraits, protectedNs, protectedNsMappings);
 
 		// Add all of the child traits, replacing or extending parent traits where necessary.
 		for (let i = 0; i < this.traits.length; i++) {
 			const trait = this.traits[i];
-			const name = <Multiname>trait.name;
-			const runtimeTrait = new RuntimeTraitInfo(name, trait.kind, trait.abc);
-			if (name.namespaces[0].type === NamespaceType.Protected) {
+			const mn = trait.multiname;
+			const runtimeTrait = new RuntimeTraitInfo(mn, trait.kind, trait.abc);
+			if (mn.namespaces[0].type === NamespaceType.Protected) {
 				// Names for protected traits get canonicalized to the name of the type that initially
 				// introduces the trait.
-				if (result.protectedNsMappings[name.name]) {
-					runtimeTrait.name = result.protectedNsMappings[name.name].name;
+				if (result.protectedNsMappings[mn.name]) {
+					runtimeTrait.multiname = result.protectedNsMappings[mn.name].multiname;
 				}
-				result.protectedNsMappings[name.name] = runtimeTrait;
+				result.protectedNsMappings[mn.name] = runtimeTrait;
 			}
 
 			const currentTrait = result.addTrait(runtimeTrait);
@@ -182,7 +127,7 @@ export class Traits {
 					var slotTrait = <SlotTraitInfo>trait;
 					runtimeTrait.slot = slotTrait.slot;
 					runtimeTrait.value = slotTrait.getDefaultValue();
-					runtimeTrait.typeName = <Multiname>slotTrait.typeName;
+					runtimeTrait.typeName = slotTrait.typeName;
 					// TODO: Throw error for const without default.
 					result.addSlotTrait(runtimeTrait);
 			}

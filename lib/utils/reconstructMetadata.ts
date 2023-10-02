@@ -54,8 +54,8 @@ export function reconstructMetadata (methodInfo: MethodInfo, id: number): IMetho
 				toFQNString(false).replace(/\./g, '/');
 		}
 		if (methodInfo.trait instanceof MethodTraitInfo) {
-			methodName = (<Multiname>methodInfo.trait.name).name;
-			methodType = namespaceTypeNames[(<Multiname>methodInfo.trait.name).namespace.type];
+			methodName = methodInfo.trait.multiname.name;
+			methodType = namespaceTypeNames[methodInfo.trait.multiname.namespace.type];
 		}
 
 		if (methodInfo.trait && methodInfo.trait.kind === TRAIT.Getter) {

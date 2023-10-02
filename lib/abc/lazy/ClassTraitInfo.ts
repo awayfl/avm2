@@ -8,10 +8,10 @@ export class ClassTraitInfo extends SlotTraitInfo {
 	constructor(
 		abc: ABCFile,
 		kind: TRAIT,
-		name: Multiname | number,
+		multiname: Multiname,
 		slot: number,
 		public classInfo: ClassInfo
 	) {
-		super(abc, kind, name, slot, 0, 0, -1);
+		super(abc, kind, multiname, slot, abc.getMultiname(0), 0, -1);
 	}
 }

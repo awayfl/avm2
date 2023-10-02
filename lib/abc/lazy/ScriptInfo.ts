@@ -15,7 +15,7 @@ export class ScriptInfo extends Info {
 		public initializer: number,
 		public traits: Traits
 	) {
-		super();
+		super(traits);
 	}
 
 	getInitializer(): MethodInfo {

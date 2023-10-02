@@ -114,7 +114,7 @@ export class MethodInfo {
 			return this.abc.getString(this.name) || 'anonymous';
 		}
 		if (this.trait) {
-			return this.trait.getName().name;
+			return this.trait.multiname.name;
 		}
 		return 'anonymous';
 	}

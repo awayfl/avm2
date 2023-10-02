@@ -150,8 +150,6 @@ function isFastReturnVoid(
 self.attach_hook = UNSAFE_attachMethodHook;
 
 function resolveTrait(info: InstanceInfo, name: Multiname): TraitInfo | RuntimeTraitInfo {
-	info.traits.resolve();
-
 	let trait = info.traits.getTrait(name);
 	let superInstance = info;
 
@@ -175,7 +173,6 @@ function resolveTrait(info: InstanceInfo, name: Multiname): TraitInfo | RuntimeT
 			}
 		}
 
-		superInstance.traits.resolve();
 		trait = superInstance.traits.getTrait(name);
 
 		if (trait) {
@@ -2127,7 +2124,7 @@ export class Context {
 	}
 
 	call(value: AXCallable, obj: ASObject, pp: any[], scope: Scope = null): any {
-		if (scope && (<any>value.methodInfo?.trait?.name)?.name == 'getDefinitionByName') {
+		if (scope && value.methodInfo.trait.multiname.name == 'getDefinitionByName') {
 			return this.getdefinitionbyname(scope, obj, pp);
 		}
 		validateCall(this.sec, value, pp.length);

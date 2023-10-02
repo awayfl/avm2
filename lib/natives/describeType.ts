@@ -30,6 +30,7 @@ import { MethodTraitInfo } from '../abc/lazy/MethodTraitInfo';
 import { TRAIT } from '../abc/lazy/TRAIT';
 import { MetadataInfo } from '../abc/lazy/MetadataInfo';
 import { SlotTraitInfo } from '../abc/lazy/SlotTraitInfo';
+import { TraitInfo } from '../abc/lazy/TraitInfo';
 
 const enum DescribeTypeFlags {
 	HIDE_NSURI_METHODS  = 0x0001,
@@ -380,7 +381,7 @@ function addTraits(cls: AXClass, info: ClassInfo, describingClass: boolean,
 
 	// Having a hot function closed over isn't all that great, but moving this out would involve
 	// passing lots and lots of arguments. We might do that if performance becomes an issue.
-	function describeTraits(sec: AXSecurityDomain, traits: any[]/*TraitInfo[]*/, isInterface: boolean) {
+	function describeTraits(sec: AXSecurityDomain, traits: TraitInfo[], isInterface: boolean) {
 		release || assert(traits, 'No traits array found on class' + cls.name);
 
 		// All types share some fields, but setting them in one place changes the order in which
@@ -388,7 +389,7 @@ function addTraits(cls: AXClass, info: ClassInfo, describingClass: boolean,
 		// real content relies on that order, tests certainly do, so we duplicate the code.
 		for (let i = 0; i < traits.length; i++) {
 			const t = traits[i];
-			const mn = t.getName();
+			const mn = t.multiname;
 			const ns = mn.namespace;
 			// Hide all non-public members whose namespace doesn't have a URI specified.
 			// Or, if HIDE_NSURI_METHODS is set, hide those, too, because bugs in Flash.
@@ -404,7 +405,7 @@ function addTraits(cls: AXClass, info: ClassInfo, describingClass: boolean,
 				var val = encounteredKeys[name];
 				val.$Bgaccess = 'readwrite';
 				if (t.kind === TRAIT.Getter) {
-					const type = (<MethodTraitInfo>t).getMethodInfo().getType();
+					const type = (<MethodTraitInfo>t).methodInfo.getType();
 					val.$Bgtype = type ? type.name.toFQNString(true) : '*';
 				}
 				continue;
@@ -425,7 +426,7 @@ function addTraits(cls: AXClass, info: ClassInfo, describingClass: boolean,
 					}
 					val.$Bgname = name;
 					val.$Bguri = ns.reflectedURI;
-					var typeName = (<SlotTraitInfo>t).getTypeName();
+					var typeName = (<SlotTraitInfo>t).typeName;
 					val.$Bgtype = typeName ? typeName.toFQNString(true) : '*';
 					val.$Bgaccess = 'readwrite';
 					val.$Bgmetadata = flags & DescribeTypeFlags.INCLUDE_METADATA ?
@@ -437,7 +438,7 @@ function addTraits(cls: AXClass, info: ClassInfo, describingClass: boolean,
 					if (!includeMethods) {
 						continue;
 					}
-					var returnType = (<MethodTraitInfo>t).getMethodInfo().getType();
+					var returnType = (<MethodTraitInfo>t).methodInfo.getType();
 					val.$BgreturnType = returnType ? returnType.name.toFQNString(true) : '*';
 					val.$Bgmetadata = flags & DescribeTypeFlags.INCLUDE_METADATA ?
 						describeMetadataList(sec, metadata) :
@@ -445,7 +446,7 @@ function addTraits(cls: AXClass, info: ClassInfo, describingClass: boolean,
 					val.$Bgname = name;
 					val.$Bguri = ns.reflectedURI;
 					var parametersVal = val.$Bgparameters = sec.createArray([]);
-					var parameters = (<MethodTraitInfo>t).getMethodInfo().parameters;
+					var parameters = (<MethodTraitInfo>t).methodInfo.parameters;
 					for (let j = 0; j < parameters.length; j++) {
 						const param = parameters[j];
 						const paramVal = sec.createObject();
@@ -463,11 +464,11 @@ function addTraits(cls: AXClass, info: ClassInfo, describingClass: boolean,
 					}
 					val.$Bgname = name;
 					if (t.kind === TRAIT.Getter) {
-						var returnType = (<MethodTraitInfo>t).getMethodInfo().getType();
+						var returnType = (<MethodTraitInfo>t).methodInfo.getType();
 						val.$Bgtype = returnType ? returnType.name.toFQNString(true) : '*';
 						encounteredGetters[name] = val;
 					} else {
-						const paramType = (<MethodTraitInfo>t).getMethodInfo().parameters[0].getType();
+						const paramType = (<MethodTraitInfo>t).methodInfo.parameters[0].getType();
 						val.$Bgtype = paramType ? paramType.toFQNString(true) : '*';
 						encounteredSetters[name] = val;
 					}
