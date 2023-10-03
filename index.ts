@@ -1,4 +1,4 @@
-console.debug('AwayFL - 0.2.206');
+console.debug('AwayFL - 0.2.207');
 
 // export {AVMAwayStage} from "./lib/AVMAwayStage";
 export { ASObject } from './lib/nat/ASObject';
