@@ -219,10 +219,12 @@ export class ASObject implements IMetaobjectProtocol {
 					this.sec.throwError('ReferenceError', Errors.CannotAssignToMethodError, name,
 						this.axClass.name.name);
 					// Unreachable because of throwError.
+					break;
 				case TRAIT.Getter:
 					this.sec.throwError('ReferenceError', Errors.ConstWriteError, name,
 						this.axClass.name.name);
 					// Unreachable because of throwError.
+					break;
 				case TRAIT.Class:
 				case TRAIT.Const:
 					// Technically, we need to check if the currently running function is the

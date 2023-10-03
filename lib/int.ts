@@ -82,7 +82,9 @@ export class ScopeStack {
 		}
 		let parent = this.parent;
 		for (let i = 0; i < this.stack.length; i++) {
-			let object = this.stack[i], isWith = this.isWith[i], scope = this.scopes[i];
+			const object = this.stack[i];
+			const isWith = this.isWith[i];
+			let scope = this.scopes[i];
 			if (!scope || scope.parent !== parent || scope.object !== object || scope.isWith !== isWith) {
 				scope = this.scopes[i] = new Scope(parent, object, isWith);
 			}
@@ -336,8 +338,9 @@ function _interpret(methodInfo: MethodInfo, savedScope: Scope, callee: AXFunctio
 				interpreterWriter.greenLn('' + frame.pc + ': ' + getBytecodeName(frame.code[frame.pc]) + ' [' +
                                 frame.stack.map(x => stringifyStackEntry(x)).join(', ') + ']');
 			}
+			let bc: Bytecode;
 			try {
-				var bc = frame.bc();
+				bc = frame.bc();
 				switch (bc) {
 					case Bytecode.LABEL:
 						continue;
@@ -413,10 +416,10 @@ function _interpret(methodInfo: MethodInfo, savedScope: Scope, callee: AXFunctio
 							frame.pc += offset;
 						}
 						continue;
-					case Bytecode.LOOKUPSWITCH:
-						var basePC = frame.pc - 1;
+					case Bytecode.LOOKUPSWITCH: {
+						const basePC = frame.pc - 1;
 						offset = frame.s24();
-						var caseCount = frame.u30();
+						const caseCount = frame.u30();
 						index = stack.pop();
 						if (index <= caseCount) {
 							frame.pc += 3 * index; // Jump to case offset.
@@ -424,6 +427,7 @@ function _interpret(methodInfo: MethodInfo, savedScope: Scope, callee: AXFunctio
 						}
 						frame.pc = basePC + offset;
 						continue;
+					}
 					case Bytecode.POPSCOPE:
 						scopes.pop();
 						break;
@@ -433,15 +437,16 @@ function _interpret(methodInfo: MethodInfo, savedScope: Scope, callee: AXFunctio
 					case Bytecode.NEXTVALUE:
 						stack[stack.length - 2] = sec.box(stack[stack.length - 2]).axNextValue(stack.pop());
 						break;
-					case Bytecode.HASNEXT2:
-						var hasNext2Info = frame.getHasNext2Info();
-						var objectIndex = frame.u30();
-						var indexIndex = frame.u30();
+					case Bytecode.HASNEXT2: {
+						const hasNext2Info = frame.getHasNext2Info();
+						const objectIndex = frame.u30();
+						const indexIndex = frame.u30();
 						hasNext2Info.next(sec.box(locals[objectIndex]), <number>locals[indexIndex]);
 						locals[objectIndex] = hasNext2Info.object;
 						locals[indexIndex] = hasNext2Info.index;
 						stack.push(!!hasNext2Info.index);
 						break;
+					}
 					case Bytecode.PUSHNULL:
 						stack.push(null);
 						break;
@@ -579,7 +584,7 @@ function _interpret(methodInfo: MethodInfo, savedScope: Scope, callee: AXFunctio
 						argCount = frame.u30();
 						// For LIFO-order iteration to be correct, we have to add items highest on the stack
 						// first.
-						for (var i = stack.length - argCount * 2; i < stack.length; i += 2) {
+						for (let i = stack.length - argCount * 2; i < stack.length; i += 2) {
 							value = stack[i + 1];
 							object.axSetPublicProperty(stack[i], value);
 						}
@@ -589,7 +594,7 @@ function _interpret(methodInfo: MethodInfo, savedScope: Scope, callee: AXFunctio
 					case Bytecode.NEWARRAY:
 						object = [];
 						argCount = frame.u30();
-						for (var i = stack.length - argCount; i < stack.length; i++) {
+						for (let i = stack.length - argCount; i < stack.length; i++) {
 							object.push(stack[i]);
 						}
 						stack.length -= argCount;
@@ -809,11 +814,12 @@ function _interpret(methodInfo: MethodInfo, savedScope: Scope, callee: AXFunctio
 					case Bytecode.ISTYPELATE:
 						stack[stack.length - 2] = stack.pop().axIsType(stack[stack.length - 1]);
 						break;
-					case Bytecode.IN:
+					case Bytecode.IN: {
 						receiver = sec.box(stack.pop());
-						var name = stack[stack.length - 1];
+						const name = stack[stack.length - 1];
 						stack[stack.length - 1] = (name && name.axClass === sec.AXQName) ? receiver.axHasProperty(name.name) : receiver.axHasPublicProperty(name);
 						break;
+					}
 					case Bytecode.INCREMENT_I:
 						stack[stack.length - 1] = (stack[stack.length - 1] | 0) + 1;
 						break;
@@ -887,23 +893,24 @@ function _interpret(methodInfo: MethodInfo, savedScope: Scope, callee: AXFunctio
 			} catch (e) {
 				// TODO: e = translateError(e);
 
+				let err = e;
 				// All script exceptions must be primitive or have a security domain, if they don't then
 				// this must be a VM exception.
-				if (!isValidASValue(e)) {
+				if (!isValidASValue(err)) {
 					// We omit many checks in the interpreter loop above to keep the code small. These
 					// checks can be done after the fact here by turning the VM-internal exception into a
 					// proper error according to the current operation.
-					e = createValidException(sec, e, bc, value, receiver, a, b, rn, scopeStacksHeight + 1);
+					err = createValidException(sec, err, bc, value, receiver, a, b, rn, scopeStacksHeight + 1);
 				}
 
 				const catchBlocks = frame.body.catchBlocks;
-				for (var i = 0; i < catchBlocks.length; i++) {
+				for (let i = 0; i < catchBlocks.length; i++) {
 					const handler = catchBlocks[i];
 					if (frame.pc >= handler.start && frame.pc <= handler.end) {
 						const typeName = handler.type;
-						if (!typeName || frame.app.getClass(typeName).axIsType(e)) {
+						if (!typeName || frame.app.getClass(typeName).axIsType(err)) {
 							stack.length = 0;
-							stack.push(e);
+							stack.push(err);
 							scopes.clear();
 							frame.pc = handler.target;
 							continue interpretLabel;
@@ -913,7 +920,7 @@ function _interpret(methodInfo: MethodInfo, savedScope: Scope, callee: AXFunctio
 
 				release || assert(scopeStacks.length === scopeStacksHeight + 1);
 				scopeStacks.length--;
-				throw e;
+				throw err;
 			}
 		}
 	};
@@ -1016,19 +1023,20 @@ function createValidException(sec: AXSecurityDomain, internalError, bc: Bytecode
 			}
 			break;
 		case Bytecode.INITPROPERTY:
-		case Bytecode.SETPROPERTY:
+		case Bytecode.SETPROPERTY: {
 			if (receiver === null) {
 				return sec.createError('TypeError', Errors.ConvertNullToObjectError);
 			}
 			if (receiver === undefined) {
 				return sec.createError('TypeError', Errors.ConvertUndefinedToObjectError);
 			}
-			var nm = receiver.axResolveMultiname(mn);
+			const nm = receiver.axResolveMultiname(mn);
 			if (nm in receiver && getPropertyDescriptor(receiver, nm).writable === false) {
 				return sec.createError('ReferenceError', Errors.ConstWriteError, nm,
 					receiver.axClass.name.name);
 			}
 			break;
+		}
 		case Bytecode.INSTANCEOF:
 			if (!receiver || !receiver.axIsInstanceOf) {
 				return sec.createError('TypeError', Errors.CantUseInstanceofOnNonObjectError);
@@ -1077,17 +1085,17 @@ function createValidException(sec: AXSecurityDomain, internalError, bc: Bytecode
 				}
 			}
 			break;
-		default:
+		default: {
 			// Pattern-match some otherwise-annoying-to-convert exceptions. This is all best-effort,
 			// so we fail if we're not sure about something.
 			if (!internalError || typeof internalError.message !== 'string' ||
-          typeof internalError.stack !== 'string' ||
-          typeof internalError.name !== 'string') {
+				typeof internalError.stack !== 'string' ||
+				typeof internalError.name !== 'string') {
 				break;
 			}
 			message = internalError.message;
-			var stack = internalError.stack.split('\n');
-			var lastFunctionEntry = stack[0].indexOf('at ') === 0 ? stack[0].substr(3) : stack[0];
+			const stack = internalError.stack.split('\n');
+			const lastFunctionEntry = stack[0].indexOf('at ') === 0 ? stack[0].substr(3) : stack[0];
 			switch (internalError.name) {
 				case 'TypeError':
 					if (lastFunctionEntry.indexOf('AXBasePrototype_valueOf') === 0 ||
@@ -1095,11 +1103,12 @@ function createValidException(sec: AXSecurityDomain, internalError, bc: Bytecode
 						return sec.createError('TypeError', Errors.CallOfNonFunctionError, 'value');
 					}
 			}
+		}
 	}
 	// To be sure we don't let VM exceptions flow into the player, box them manually here,
 	// even in release builds.
 	message = 'Uncaught VM-internal exception during op ' + getBytecodeName(bc) + ': ';
-	var stack;
+	let stack;
 	try {
 		message += internalError.toString();
 		stack = internalError.stack;

@@ -5,8 +5,6 @@ import { Multiname } from '../abc/lazy/Multiname';
 import { Namespace } from '../abc/lazy/Namespace';
 import { AXObject } from './AXObject';
 import { IS_AX_CLASS } from './AXClass';
-import { AXFunction } from './AXFunction';
-import { ASObject } from '../nat/ASObject';
 import { ASFunction } from '../nat/ASFunction';
 
 export class Scope {
@@ -35,7 +33,7 @@ export class Scope {
 		this.global = parent ? parent.global : this;
 		this.isWith = isWith;
 		this.cache = [];
-	  this.defaultNamespace = null;
+		this.defaultNamespace = null;
 
 		object['__scope__'] = this;
 	}
@@ -117,8 +115,8 @@ export class Scope {
 		if (mn.name === null) {
 			this.global.object.sec.throwError('ReferenceError', Errors.UndefinedVarError, '*');
 		}
-		var object: AXObject;
-		if ((object = this.cache[mn.id]))
+		let object: AXObject = this.cache[mn.id];
+		if (object)
 			return object;
 
 		// Scope lookups should not be trapped by proxies. Except for with scopes, check only trait
@@ -129,7 +127,7 @@ export class Scope {
 			return (this.isWith || mn.isRuntime()) ? this.object : (this.cache[mn.id] = this.object);
 		}
 		if (this.parent) {
-			var object: AXObject = this.parent.findScopeProperty(mn, strict, scopeOnly);
+			object = this.parent.findScopeProperty(mn, strict, scopeOnly);
 			if (mn.kind === CONSTANT.QName) {
 				this.cache[mn.id] = object;
 			}

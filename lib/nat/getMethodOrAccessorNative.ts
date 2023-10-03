@@ -18,7 +18,7 @@ export function getMethodOrAccessorNative(trait: TraitInfo, throwErrors: boolean
 			fullName = 'native_' + name;
 		}
 		if (hasOwnProperty(native, fullName)) {
-			var value;
+			let value;
 			if (trait.isAccessor()) {
 				const pd = Object.getOwnPropertyDescriptor(native, fullName);
 				if (trait.isGetter()) {

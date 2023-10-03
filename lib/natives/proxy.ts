@@ -129,7 +129,7 @@ export class ASProxy extends ASObject {
 			return super.axCallProperty(mn, args, isLex);
 		}
 		const callArgs = [this.sec.AXQName.FromMultiname(mn)].concat(args);
-		return this[proxyPrefix + 'callProperty'].apply(this, callArgs);
+		return this[proxyPrefix + 'callProperty'](...callArgs);
 	}
 
 	public axHasProperty(mn: Multiname): any {
@@ -173,4 +173,4 @@ export class ASProxy extends ASObject {
 	}
 }
 
-var rn = new Multiname(null, 0, CONSTANT.RTQNameL, [], null, null, true);
+const rn = new Multiname(null, 0, CONSTANT.RTQNameL, [], null, null, true);

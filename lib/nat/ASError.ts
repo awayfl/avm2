@@ -8,11 +8,11 @@ export class ASError extends ASObject {
 
 	public static getErrorMessage = getErrorMessage;
 
-	public static throwError(type: AXClass, id: number /*, ...rest */) {
+	public static throwError(type: AXClass, id: number, ...rest) {
 		const info = getErrorInfo(id);
 		const args = [info];
-		for (let i = 2; i < arguments.length; i++) {
-			args.push(arguments[i]);
+		for (let i = 0; i < rest.length; i++) {
+			args.push(rest[i]);
 		}
 		const message = formatErrorMessage.apply(null, args);
 		throw type.axConstruct([message, id]);

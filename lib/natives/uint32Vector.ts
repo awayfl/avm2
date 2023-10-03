@@ -1,6 +1,6 @@
 import { BaseVector, GenericVector } from './GenericVector';
 import { ASObject } from '../nat/ASObject';
-import { defineNonEnumerableProperty, unexpected, release, assertNotImplemented, isNumeric, isIndex } from '@awayfl/swf-loader';
+import { defineNonEnumerableProperty, unexpected, release, assertNotImplemented, isIndex } from '@awayfl/swf-loader';
 import { AXObject } from '../run/AXObject';
 import { axCoerceName } from '../run/axCoerceName';
 import { assert } from '@awayjs/graphics';
@@ -208,8 +208,8 @@ export class Uint32Vector extends BaseVector {
 
 	concat() {
 		let length = this._length;
-		for (var i = 0; i < arguments.length; i++) {
-			var vector: Uint32Vector = arguments[i];
+		for (let i = 0; i < arguments.length; i++) {
+			const vector: Uint32Vector = arguments[i];
 			if (!(vector._buffer instanceof Uint32Array)) {
 				assert(false); // TODO
 				// this.sec.throwError('TypeError', Errors.CheckTypeFailedError,
@@ -221,8 +221,8 @@ export class Uint32Vector extends BaseVector {
 		const buffer = result._buffer;
 		buffer.set(this._buffer);
 		let offset = this._length;
-		for (var i = 0; i < arguments.length; i++) {
-			var vector: Uint32Vector = arguments[i];
+		for (let i = 0; i < arguments.length; i++) {
+			const vector: Uint32Vector = arguments[i];
 			if (offset + vector._buffer.length < vector._buffer.length) {
 				buffer.set(vector._buffer, offset);
 			} else {
@@ -315,7 +315,7 @@ export class Uint32Vector extends BaseVector {
 	}
 
 	indexOf(searchElement, fromIndex = 0) {
-		var length = this._length;
+		let length = this._length;
 		let start = fromIndex|0;
 		if (start < 0) {
 			start = start + length;
@@ -326,8 +326,8 @@ export class Uint32Vector extends BaseVector {
 			return -1;
 		}
 		const buffer = this._buffer;
-		var length = this._length;
 		const offset = this._offset;
+		length = this._length;
 		start += offset;
 		const end = offset + length;
 		for (let i = start; i < end; i++) {

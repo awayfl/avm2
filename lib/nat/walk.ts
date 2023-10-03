@@ -7,7 +7,7 @@ export function walk(sec: AXSecurityDomain, holder: any, name: string, reviver: 
 	if (Array.isArray(val)) {
 		const v: any[] = <any>val;
 		for (let i = 0, limit = v.length; i < limit; i++) {
-			var newElement = walk(sec, v, axCoerceString(i), reviver);
+			const newElement = walk(sec, v, axCoerceString(i), reviver);
 			if (newElement === undefined) {
 				delete v[i];
 			} else {
@@ -21,7 +21,7 @@ export function walk(sec: AXSecurityDomain, holder: any, name: string, reviver: 
 			if (!val.hasOwnProperty(p) || !Multiname.isPublicQualifiedName(p)) {
 				break;
 			}
-			var newElement = walk(sec, val, p, reviver);
+			const newElement = walk(sec, val, p, reviver);
 			if (newElement === undefined) {
 				delete val[p];
 			} else {

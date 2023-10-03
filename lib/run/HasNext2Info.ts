@@ -48,19 +48,18 @@ export class HasNext2Info {
 			return;
 		}
 		// If there are no more properties in the object then follow the prototype chain.
-		while (true) {
-			var object = safeGetPrototypeOf(object);
+		while (!(nextIndex > 0)) {
+			object = safeGetPrototypeOf(object);
 			if (!object) {
 				this.index = 0;
 				this.object = null;
 				return;
 			}
 			nextIndex = object.axNextNameIndex(0);
-			if (nextIndex > 0) {
-				this.index = nextIndex;
-				this.object = object;
-				return;
-			}
 		}
+
+		this.index = nextIndex;
+		this.object = object;
+		return;
 	}
 }

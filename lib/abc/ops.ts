@@ -272,14 +272,12 @@ const enum Flags {
 /**
  * A array that maps from a bytecode value to the set of {@link OPFlags} for the corresponding instruction.
  */
-export var BytecodeFlags = new Uint32Array(256);
-export var BytecodeFormat = new Array(256);
+export const BytecodeFlags = new Uint32Array(256);
+export const BytecodeFormat = new Array(256);
 
 function define(bytecode: Bytecode, format: string, flags: Flags = 0) {
-	const instructionLength = format.length;
 	BytecodeFlags[bytecode] = flags;
 	BytecodeFormat[bytecode] = format;
-	// release || assert (!isConditionalBranch(opcode) || isBranch(opcode), "a conditional branch must also be a branch");
 }
 
 /**

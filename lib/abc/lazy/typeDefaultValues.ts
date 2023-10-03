@@ -1,5 +1,5 @@
 
-export var typeDefaultValues = {
+export const typeDefaultValues = {
 	__proto__: null,
 	$BgNumber: NaN,
 	$Bgint: 0,

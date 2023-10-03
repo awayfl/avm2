@@ -157,39 +157,39 @@ export function describeType(sec: AXSecurityDomain, value: any, flags: number): 
 function describeTraits(x: ASXML, traits: any): boolean {
 	let traitsCount = 0;
 	const bases = traits.$Bgbases && traits.$Bgbases.value;
-	for (var i = 0; bases && i < bases.length; i++) {
+	for (let i = 0; bases && i < bases.length; i++) {
 		const base: string = bases[i];
-		var e: ASXML = x.sec.AXXML.Create('<extendsClass type="' + escapeAttributeValue(base) + '"/>');
+		const e: ASXML = x.sec.AXXML.Create('<extendsClass type="' + escapeAttributeValue(base) + '"/>');
 		x.appendChild(e);
 		traitsCount++;
 	}
 	const interfaces = traits.$Bginterfaces && traits.$Bginterfaces.value;
-	for (var i = 0; interfaces && i < interfaces.length; i++) {
-		var e: ASXML = x.sec.AXXML.Create('<implementsInterface type="' +
+	for (let i = 0; interfaces && i < interfaces.length; i++) {
+		const e: ASXML = x.sec.AXXML.Create('<implementsInterface type="' +
                                       escapeAttributeValue(interfaces[i]) + '"/>');
 		x.appendChild(e);
 		traitsCount++;
 	}
 	if (traits.$Bgconstructor !== null) {
-		var e: ASXML = x.sec.AXXML.Create('<constructor/>');
+		const e: ASXML = x.sec.AXXML.Create('<constructor/>');
 		describeParams(e, traits.$Bgconstructor);
 		x.appendChild(e);
 		traitsCount++;
 	}
 	const variables = traits.$Bgvariables && traits.$Bgvariables.value;
-	for (var i = 0; variables && i < variables.length; i++) {
+	for (let i = 0; variables && i < variables.length; i++) {
 		const variable: any = variables[i];
 		const nodeName = variable.$Bgaccess === 'readonly' ? 'constant' : 'variable';
-		var e: ASXML = x.sec.AXXML.Create('<' + nodeName +
+		const e: ASXML = x.sec.AXXML.Create('<' + nodeName +
                                       ' name="' + escapeAttributeValue(variable.$Bgname) +
                                       '" type="' + variable.$Bgtype + '"/>');
 		finishTraitDescription(variable, e, x);
 		traitsCount++;
 	}
 	const accessors = traits.$Bgaccessors && traits.$Bgaccessors.value;
-	for (var i = 0; accessors && i < accessors.length; i++) {
+	for (let i = 0; accessors && i < accessors.length; i++) {
 		const accessor: any = accessors[i];
-		var e: ASXML = x.sec.AXXML.Create('<accessor ' +
+		const e: ASXML = x.sec.AXXML.Create('<accessor ' +
                                       'name="' + escapeAttributeValue(accessor.$Bgname) +
                                       '" access="' + accessor.$Bgaccess +
                                       '" type="' + escapeAttributeValue(accessor.$Bgtype) +
@@ -199,9 +199,9 @@ function describeTraits(x: ASXML, traits: any): boolean {
 		traitsCount++;
 	}
 	const methods = traits.$Bgmethods && traits.$Bgmethods.value;
-	for (var i = 0; methods && i < methods.length; i++) {
+	for (let i = 0; methods && i < methods.length; i++) {
 		const method: any = methods[i];
-		var e: ASXML = x.sec.AXXML.Create('<method ' + 'name="' +
+		const e: ASXML = x.sec.AXXML.Create('<method ' + 'name="' +
                                       escapeAttributeValue(method.$Bgname) +
                                       '" declaredBy="' +
                                       escapeAttributeValue(method.$BgdeclaredBy) +
@@ -341,8 +341,9 @@ function addTraits(cls: AXClass, info: ClassInfo, describingClass: boolean,
 
 	let addBase = false;
 	const isInterface = info.instanceInfo.isInterface();
+	let className;
 	while (cls) {
-		var className = cls.classInfo.instanceInfo.getName().toFQNString(true);
+		className = cls.classInfo.instanceInfo.getName().toFQNString(true);
 		if (includeBases && addBase && !describingClass) {
 			basesVal.push(className);
 		} else {
@@ -402,7 +403,7 @@ function addTraits(cls: AXClass, info: ClassInfo, describingClass: boolean,
 			// Strip the namespace off of interface methods. They're always treated as public.
 			const name = isInterface ? mn.name : mn.toFQNString(true);
 			if (encounteredGetters[name] !== encounteredSetters[name]) {
-				var val = encounteredKeys[name];
+				const val = encounteredKeys[name];
 				val.$Bgaccess = 'readwrite';
 				if (t.kind === TRAIT.Getter) {
 					const type = (<MethodTraitInfo>t).methodInfo.getType();
@@ -415,18 +416,18 @@ function addTraits(cls: AXClass, info: ClassInfo, describingClass: boolean,
 			}
 			//TODO: check why we have public$$_init in `Object`
 
-			var val = sec.createObject();
+			const val = sec.createObject();
 			encounteredKeys[name] = val;
 			const metadata: MetadataInfo[] = t.getMetadata();
 			switch (t.kind) {
 				case TRAIT.Const:
-				case TRAIT.Slot:
+				case TRAIT.Slot: {
 					if (!(flags & DescribeTypeFlags.INCLUDE_VARIABLES)) {
 						continue;
 					}
 					val.$Bgname = name;
 					val.$Bguri = ns.reflectedURI;
-					var typeName = (<SlotTraitInfo>t).typeName;
+					const typeName = (<SlotTraitInfo>t).typeName;
 					val.$Bgtype = typeName ? typeName.toFQNString(true) : '*';
 					val.$Bgaccess = 'readwrite';
 					val.$Bgmetadata = flags & DescribeTypeFlags.INCLUDE_METADATA ?
@@ -434,19 +435,20 @@ function addTraits(cls: AXClass, info: ClassInfo, describingClass: boolean,
 						null;
 					variablesVal.push(val);
 					break;
-				case TRAIT.Method:
+				}
+				case TRAIT.Method: {
 					if (!includeMethods) {
 						continue;
 					}
-					var returnType = (<MethodTraitInfo>t).methodInfo.getType();
+					const returnType = (<MethodTraitInfo>t).methodInfo.getType();
 					val.$BgreturnType = returnType ? returnType.name.toFQNString(true) : '*';
 					val.$Bgmetadata = flags & DescribeTypeFlags.INCLUDE_METADATA ?
 						describeMetadataList(sec, metadata) :
 						null;
 					val.$Bgname = name;
 					val.$Bguri = ns.reflectedURI;
-					var parametersVal = val.$Bgparameters = sec.createArray([]);
-					var parameters = (<MethodTraitInfo>t).methodInfo.parameters;
+					const parametersVal = val.$Bgparameters = sec.createArray([]);
+					const parameters = (<MethodTraitInfo>t).methodInfo.parameters;
 					for (let j = 0; j < parameters.length; j++) {
 						const param = parameters[j];
 						const paramVal = sec.createObject();
@@ -457,14 +459,15 @@ function addTraits(cls: AXClass, info: ClassInfo, describingClass: boolean,
 					val.$BgdeclaredBy = className;
 					methodsVal.push(val);
 					break;
+				}
 				case TRAIT.Getter:
-				case TRAIT.Setter:
+				case TRAIT.Setter: {
 					if (!(flags & DescribeTypeFlags.INCLUDE_ACCESSORS) || describingClass) {
 						continue;
 					}
 					val.$Bgname = name;
 					if (t.kind === TRAIT.Getter) {
-						var returnType = (<MethodTraitInfo>t).methodInfo.getType();
+						const returnType = (<MethodTraitInfo>t).methodInfo.getType();
 						val.$Bgtype = returnType ? returnType.name.toFQNString(true) : '*';
 						encounteredGetters[name] = val;
 					} else {
@@ -480,6 +483,7 @@ function addTraits(cls: AXClass, info: ClassInfo, describingClass: boolean,
 					val.$BgdeclaredBy = className;
 					accessorsVal.push(val);
 					break;
+				}
 				default:
 					release || assert(false, 'Unknown trait type: ' + t.kind);
 					break;

@@ -40,7 +40,7 @@ export class ClassInfo extends Info {
 		if (typeof this.initializer === 'number') {
 			this.initializer = this.abc.getMethodInfo(<number> this.initializer);
 			this.initializer.classInfo = this;
-	  }
+		}
 		return <MethodInfo> this.initializer;
 	}
 

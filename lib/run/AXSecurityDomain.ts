@@ -412,8 +412,9 @@ export class AXSecurityDomain {
 	}
 
 	createFunction(methodInfo: MethodInfo, scope: Scope, hasDynamicScope: boolean): AXFunction {
-		const traceMsg = !release && flashlog && methodInfo.trait ? methodInfo.toFlashlogString() : null;
-		var fun = this.boxFunction(interpret(methodInfo, scope, fun));
+		//const traceMsg = !release && flashlog && methodInfo.trait ? methodInfo.toFlashlogString() : null;
+		let fun;
+		fun = this.boxFunction(interpret(methodInfo, scope, fun));
 		//fun.methodInfo = methodInfo;
 		fun.receiver = { scope: scope };
 		if (!release) {

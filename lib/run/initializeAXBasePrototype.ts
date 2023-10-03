@@ -18,7 +18,7 @@ function AXBasePrototype_valueOf() {
 
 const D = defineNonEnumerableProperty;
 
-export var AXBasePrototype = null;
+export let AXBasePrototype = null;
 
 export function isValidASValue(value: any) {
 	return AXBasePrototype.isPrototypeOf(value) || isPrimitiveJSValue(value);

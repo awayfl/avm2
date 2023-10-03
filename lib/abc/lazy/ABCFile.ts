@@ -88,13 +88,13 @@ export class ABCFile {
 	}
 
 	private _parseNumericConstants() {
-		let n = 0, s = this._stream;
+		const s = this._stream;
 
 		// Parse Signed Integers
-		n = s.readU30();
+		let n = s.readU30();
 		const ints = new Int32Array(n);
 		ints[0] = 0;
-		for (var i = 1; i < n; i++) {
+		for (let i = 1; i < n; i++) {
 			ints[i] = s.readS32();
 		}
 		this.ints = ints;
@@ -103,7 +103,7 @@ export class ABCFile {
 		n = s.readU30();
 		const uints = new Uint32Array(n);
 		uints[0] = 0;
-		for (var i = 1; i < n; i++) {
+		for (let i = 1; i < n; i++) {
 			uints[i] = s.readS32();
 		}
 		this.uints = uints;
@@ -112,15 +112,15 @@ export class ABCFile {
 		n = s.readU30();
 		const doubles = new Float64Array(n);
 		doubles[0] = NaN;
-		for (var i = 1; i < n; i++) {
+		for (let i = 1; i < n; i++) {
 			doubles[i] = s.readDouble();
 		}
 		this.doubles = doubles;
 	}
 
 	private _parseStringConstants() {
-		let n = 0, s = this._stream;
-		n = s.readU30();
+		const s = this._stream;
+		const n = s.readU30();
 		this._strings = new Array(n);
 		this._strings[0] = null;
 
@@ -182,6 +182,7 @@ export class ABCFile {
 		const s = this._stream;
 		const n = s.readU30();
 		this._namespaceSets = new Array(n);
+		this._namespaceSets[0] = null;
 		for (let i = 1; i < n; i++) {
 			const c = s.readU30(); // Count
 			const nss = this._namespaceSets[i] = new Array(c);
@@ -196,6 +197,7 @@ export class ABCFile {
 		const s = this._stream;
 		const n = s.readU30();
 		this._multinames = new Array(n);
+		this._multinames[0] = null;
 		for (let i = 1; i < n; i++) {
 			this._multinames[i] = this._parseMultiname(i);
 		}
@@ -238,16 +240,17 @@ export class ABCFile {
 				/**
          * This is undocumented, looking at Tamarin source for this one.
          */
-			case CONSTANT.TypeName:
-				var mn = stream.readU32();
-				var typeParameterCount = stream.readU32();
+			case CONSTANT.TypeName: {
+				const nameIndex = stream.readU32();
+				const typeParameterCount = stream.readU32();
 				if (!release && typeParameterCount !== 1) {
 					// TODO: figure out what to do in this case. What would Tamarin do?
 					warning('Invalid multiname: bad type parameter count ' + typeParameterCount);
 				}
-				var typeParameter = this.getMultiname(stream.readU32());
-				var factory = this.getMultiname(mn);
+				const typeParameter = this._multinames[stream.readU32()];
+				const factory = this._multinames[nameIndex];
 				return new Multiname(this, i, kind, factory.namespaces, factory.name, typeParameter);
+			}
 			default:
 				unexpected();
 				break;
@@ -260,7 +263,7 @@ export class ABCFile {
 			namespaces = null;
 		} else {
 			namespaces = useNamespaceSet ?
-				this.getNamespaceSet(namespaceIndex) :
+				this._namespaceSets[namespaceIndex] :
 				[this.getNamespace(namespaceIndex)];
 		}
 
@@ -281,11 +284,11 @@ export class ABCFile {
      */
 	private _checkForDuplicateStrings(): boolean {
 		const a = [];
-		for (var i = 0; i < this._strings.length; i++) {
+		for (let i = 0; i < this._strings.length; i++) {
 			a.push(this.getString(i));
 		}
 		a.sort();
-		for (var i = 0; i < a.length - 1; i++) {
+		for (let i = 0; i < a.length - 1; i++) {
 			if (a[i] === a[i + 1]) {
 				return true;
 			}
@@ -357,9 +360,8 @@ export class ABCFile {
 		const s = this._stream;
 		const parameterCount = s.readU30();
 		const returnType = s.readU30();
-		const parameterOffset = s.position;
 		const parameters = new Array<ParameterInfo>(parameterCount);
-		for (var i = 0; i < parameterCount; i++) {
+		for (let i = 0; i < parameterCount; i++) {
 			parameters[i] = new ParameterInfo(this, s.readU30(), 0, -1, -1);
 		}
 		const name = s.readU30();
@@ -368,13 +370,13 @@ export class ABCFile {
 		if (flags & METHOD.HasOptional) {
 			optionalCount = s.readU30();
 			release || assert(parameterCount >= optionalCount);
-			for (var i = parameterCount - optionalCount; i < parameterCount; i++) {
+			for (let i = parameterCount - optionalCount; i < parameterCount; i++) {
 				parameters[i].optionalValueIndex = s.readU30();
 				parameters[i].optionalValueKind = s.readU8();
 			}
 		}
 		if (flags & METHOD.HasParamNames) {
-			for (var i = 0; i < parameterCount; i++) {
+			for (let i = 0; i < parameterCount; i++) {
 				// NOTE: We can't get the parameter name as described in the spec because some SWFs have
 				// invalid parameter names. Tamarin ignores parameter names and so do we.
 				parameters[i].name = s.readU30();
@@ -403,11 +405,11 @@ export class ABCFile {
 			const name = s.readU30(); // Name
 			const itemCount = s.readU30(); // Item Count
 			const keys = new Uint32Array(itemCount);
-			for (var j = 0; j < itemCount; j++) {
+			for (let j = 0; j < itemCount; j++) {
 				keys[j] = s.readU30();
 			}
 			const values = new Uint32Array(itemCount);
-			for (var j = 0; j < itemCount; j++) {
+			for (let j = 0; j < itemCount; j++) {
 				values[j] = s.readU30();
 			}
 			this._metadata[i] = new MetadataInfo(this, name, keys, values);
@@ -423,12 +425,12 @@ export class ABCFile {
 		const s = this._stream;
 		const n = s.readU30();
 		const instances = this.instances = new Array(n);
-		for (var i = 0; i < n; i++) {
+		for (let i = 0; i < n; i++) {
 			instances[i] = this._parseInstanceInfo();
 		}
 		this._parseClassInfos(n);
 		const o = s.position;
-		for (var i = 0; i < n; i++) {
+		for (let i = 0; i < n; i++) {
 			instances[i].classInfo = this.classes[i];
 		}
 		s.seek(o);
@@ -468,7 +470,7 @@ export class ABCFile {
 
 	private _parseTrait() {
 		const s = this._stream;
-		const nameIndex = s.readU30();
+		const multiname = this._multinames[s.readU30()];
 		const tag = s.readU8();
 
 		const kind = tag & 0x0F;
@@ -477,29 +479,31 @@ export class ABCFile {
 		let trait: TraitInfo;
 		switch (kind) {
 			case TRAIT.Slot:
-			case TRAIT.Const:
-				var slot = s.readU30();
-				var typeIndex = s.readU30();
-				var valueIndex = s.readU30();
-				var valueKind = -1;
+			case TRAIT.Const: {
+				const slot = s.readU30();
+				const typeName = this._multinames[s.readU30()];
+				const valueIndex = s.readU30();
+				let valueKind = -1;
 				if (valueIndex !== 0) {
 					valueKind = s.readU8();
 				}
-				trait = new SlotTraitInfo(this, kind, this.getMultiname(nameIndex), slot, this.getMultiname(typeIndex), valueKind, valueIndex);
+				trait = new SlotTraitInfo(this, kind, multiname, slot, typeName, valueKind, valueIndex);
 				break;
+			}
 			case TRAIT.Method:
 			case TRAIT.Getter:
-			case TRAIT.Setter:
-				var dispID = s.readU30(); // Tamarin optimization.
-				var methodInfoIndex = s.readU30();
-				var methodInfo = this.getMethodInfo(methodInfoIndex);
-				trait = methodInfo.trait = new MethodTraitInfo(this, kind, this.getMultiname(nameIndex), methodInfo);
+			case TRAIT.Setter: {
+				s.readU30(); // Tamarin optimization.
+				const methodInfo = this._methods[s.readU30()];
+				trait = methodInfo.trait = new MethodTraitInfo(this, kind, multiname, methodInfo);
 				break;
-			case TRAIT.Class:
-				var slot = s.readU30();
-				var classInfo = this.classes[s.readU30()];
-				trait = classInfo.trait = new ClassTraitInfo(this, kind, this.getMultiname(nameIndex), slot, classInfo);
+			}
+			case TRAIT.Class: {
+				const slot = s.readU30();
+				const classInfo = this.classes[s.readU30()];
+				trait = classInfo.trait = new ClassTraitInfo(this, kind, multiname, slot, classInfo);
 				break;
+			}
 			default:
 				this.applicationDomain.sec.throwError('VerifierError',
 					Errors.UnsupportedTraitsKindError, kind);
@@ -517,7 +521,6 @@ export class ABCFile {
 	}
 
 	private _parseClassInfos(n: number) {
-		const s = this._stream;
 		const classes = this.classes = new Array(n);
 		for (let i = 0; i < n; i++) {
 			classes[i] = this._parseClassInfo(i);
@@ -525,8 +528,7 @@ export class ABCFile {
 	}
 
 	private _parseClassInfo(i: number) {
-		const s = this._stream;
-		const initializer = s.readU30();
+		const initializer = this._stream.readU30();
 		const traits = this._parseTraits();
 		const classInfo = new ClassInfo(this, this.instances[i], initializer, traits);
 		traits.attachHolder(classInfo);
@@ -534,8 +536,7 @@ export class ABCFile {
 	}
 
 	private _parseScriptInfos() {
-		const s = this._stream;
-		const n = s.readU30();
+		const n = this._stream.readU30();
 		const scripts = this.scripts = new Array(n);
 		for (let i = 0; i < n; i++) {
 			scripts[i] = this._parseScriptInfo();
@@ -543,8 +544,7 @@ export class ABCFile {
 	}
 
 	private _parseScriptInfo() {
-		const s = this._stream;
-		const initializer = s.readU30();
+		const initializer = this._stream.readU30();
 		const traits = this._parseTraits();
 		const scriptInfo = new ScriptInfo(this, initializer, traits);
 		traits.attachHolder(scriptInfo);
@@ -555,7 +555,6 @@ export class ABCFile {
 		const s = this._stream;
 		const methodBodies = this._methodBodies = new Array(this._methods.length);
 		const n = s.readU30();
-		const o = s.position;
 		for (let i = 0; i < n; i++) {
 			const methodInfo = s.readU30();
 			const maxStack = s.readU30();
@@ -582,7 +581,7 @@ export class ABCFile {
 		const target = s.readU30();
 		const typeIndex = s.readU30();
 		const nameIndex = s.readU30();
-		return new ExceptionInfo(this, start, end, target, this.getMultiname(nameIndex), this.getMultiname(typeIndex));
+		return new ExceptionInfo(this, start, end, target, this._multinames[nameIndex], this._multinames[typeIndex]);
 	}
 
 	public getConstant(kind: CONSTANT, i: number): any {
@@ -614,7 +613,7 @@ export class ABCFile {
 			case CONSTANT.RTQNameLA:
 			case CONSTANT.NameL:
 			case CONSTANT.NameLA:
-				return this.getMultiname(i);
+				return this._multinames[i];
 			case CONSTANT.Float:
 				warning('TODO: CONSTANT.Float may be deprecated?');
 				break;
@@ -624,95 +623,87 @@ export class ABCFile {
 	}
 
 	stress() {
-		for (var i = 0; i < this._multinames.length; i++) {
-			this.getMultiname(i);
-		}
-		for (var i = 0; i < this._namespaceSets.length; i++) {
-			this.getNamespaceSet(i);
-		}
-		for (var i = 0; i < this._namespaces.length; i++) {
+		for (let i = 0; i < this._multinames.length; i++)
+			this._multinames[i];
+
+		for (let i = 0; i < this._namespaceSets.length; i++)
+			this._namespaceSets[i];
+
+		for (let i = 0; i < this._namespaces.length; i++)
 			this.getNamespace(i);
-		}
-		for (var i = 0; i < this._strings.length; i++) {
+
+		for (let i = 0; i < this._strings.length; i++)
 			this.getString(i);
-		}
+
 	}
 
 	trace(writer: IndentingWriter) {
 		writer.writeLn('Multinames: ' + this._multinames.length);
-		if (true) {
-			writer.indent();
-			for (var i = 0; i < this._multinames.length; i++) {
-				writer.writeLn(i + ' ' + this.getMultiname(i));
-			}
-			writer.outdent();
+
+		writer.indent();
+		for (let i = 0; i < this._multinames.length; i++) {
+			writer.writeLn(i + ' ' + this._multinames[i]);
 		}
+		writer.outdent();
 
 		writer.writeLn('Namespace Sets: ' + this._namespaceSets.length);
-		if (true) {
-			writer.indent();
-			for (var i = 0; i < this._namespaceSets.length; i++) {
-				writer.writeLn(i + ' ' + this.getNamespaceSet(i));
-			}
-			writer.outdent();
+
+		writer.indent();
+		for (let i = 0; i < this._namespaceSets.length; i++) {
+			writer.writeLn(i + ' ' + this._multinames[i]);
 		}
+		writer.outdent();
 
 		writer.writeLn('Namespaces: ' + this._namespaces.length);
-		if (true) {
-			writer.indent();
-			for (var i = 0; i < this._namespaces.length; i++) {
-				writer.writeLn(i + ' ' + this.getNamespace(i));
-			}
-			writer.outdent();
+
+		writer.indent();
+		for (let i = 0; i < this._namespaces.length; i++) {
+			writer.writeLn(i + ' ' + this.getNamespace(i));
 		}
+		writer.outdent();
 
 		writer.writeLn('Strings: ' + this._strings.length);
-		if (true) {
-			writer.indent();
-			for (var i = 0; i < this._strings.length; i++) {
-				writer.writeLn(i + ' ' + this.getString(i));
-			}
-			writer.outdent();
+
+		writer.indent();
+		for (let i = 0; i < this._strings.length; i++) {
+			writer.writeLn(i + ' ' + this.getString(i));
 		}
+		writer.outdent();
 
 		writer.writeLn('MethodInfos: ' + this._methods.length);
-		if (true) {
-			writer.indent();
-			for (var i = 0; i < this._methods.length; i++) {
-				writer.writeLn(i + ' ' + this.getMethodInfo(i));
-				if (this._methodBodies[i]) {
-					this._methodBodies[i].trace(writer);
-				}
+
+		writer.indent();
+		for (let i = 0; i < this._methods.length; i++) {
+			writer.writeLn(i + ' ' + this.getMethodInfo(i));
+			if (this._methodBodies[i]) {
+				this._methodBodies[i].trace(writer);
 			}
-			writer.outdent();
 		}
+		writer.outdent();
 
 		writer.writeLn('InstanceInfos: ' + this.instances.length);
-		if (true) {
-			writer.indent();
-			for (var i = 0; i < this.instances.length; i++) {
-				writer.writeLn(i + ' ' + this.instances[i]);
-				this.instances[i].trace(writer);
-			}
-			writer.outdent();
+
+		writer.indent();
+		for (let i = 0; i < this.instances.length; i++) {
+			writer.writeLn(i + ' ' + this.instances[i]);
+			this.instances[i].trace(writer);
 		}
+		writer.outdent();
 
 		writer.writeLn('ClassInfos: ' + this.classes.length);
-		if (true) {
-			writer.indent();
-			for (var i = 0; i < this.classes.length; i++) {
-				this.classes[i].trace(writer);
-			}
-			writer.outdent();
+
+		writer.indent();
+		for (let i = 0; i < this.classes.length; i++) {
+			this.classes[i].trace(writer);
 		}
+		writer.outdent();
 
 		writer.writeLn('ScriptInfos: ' + this.scripts.length);
-		if (true) {
-			writer.indent();
-			for (var i = 0; i < this.scripts.length; i++) {
-				this.scripts[i].trace(writer);
-			}
-			writer.outdent();
+
+		writer.indent();
+		for (let i = 0; i < this.scripts.length; i++) {
+			this.scripts[i].trace(writer);
 		}
+		writer.outdent();
 	}
 }

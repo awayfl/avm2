@@ -102,8 +102,7 @@ export class Traits {
 
 			switch (trait.kind) {
 				case TRAIT.Method:
-					var method = createMethodForTrait(<MethodTraitInfo>trait, scope, forceNativeMethods);
-					runtimeTrait.value = method;
+					runtimeTrait.value = createMethodForTrait(<MethodTraitInfo>trait, scope, forceNativeMethods);
 					break;
 				case TRAIT.Getter:
 					runtimeTrait.get = createMethodForTrait(<MethodTraitInfo>trait, scope, forceNativeMethods);
@@ -124,10 +123,9 @@ export class Traits {
 				case TRAIT.Class:
 					// Only non-const slots need to be writable. Everything else is fixed.
 					runtimeTrait.writable = true;
-					var slotTrait = <SlotTraitInfo>trait;
-					runtimeTrait.slot = slotTrait.slot;
-					runtimeTrait.value = slotTrait.getDefaultValue();
-					runtimeTrait.typeName = slotTrait.typeName;
+					runtimeTrait.slot = (<SlotTraitInfo>trait).slot;
+					runtimeTrait.value = (<SlotTraitInfo>trait).getDefaultValue();
+					runtimeTrait.typeName = (<SlotTraitInfo>trait).typeName;
 					// TODO: Throw error for const without default.
 					result.addSlotTrait(runtimeTrait);
 			}

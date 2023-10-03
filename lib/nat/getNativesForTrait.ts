@@ -11,7 +11,7 @@ export function getNativesForTrait(trait: TraitInfo, throwErrors: boolean): Obje
 	if (trait.holder instanceof InstanceInfo) {
 		const instanceInfo = <InstanceInfo>trait.holder;
 		className = instanceInfo.getClassName();
-		var native = builtinNativeClasses[className] || nativeClasses[className];
+		const native = builtinNativeClasses[className] || nativeClasses[className];
 		if (!native && !throwErrors)	return [];
 		assert (native, 'Class native is not defined: ' + className);
 		natives = [native.prototype];
@@ -21,7 +21,7 @@ export function getNativesForTrait(trait: TraitInfo, throwErrors: boolean): Obje
 	} else if (trait.holder instanceof ClassInfo) {
 		const classInfo = <ClassInfo>trait.holder;
 		className = classInfo.instanceInfo.getClassName();
-		var native = builtinNativeClasses[className] || nativeClasses[className];
+		const native = builtinNativeClasses[className] || nativeClasses[className];
 		if (!native && !throwErrors)	return [];
 		assert (native, 'Class native is not defined: ' + className);
 		natives = [native];

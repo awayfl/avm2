@@ -19,14 +19,14 @@ export class ScriptInfo extends Info {
 	}
 
 	getInitializer(): MethodInfo {
-	  if (this.initialiser) {
-		  return this.initialiser;
-	  }
+		if (this.initialiser) {
+			return this.initialiser;
+		}
 
-	  this.initialiser = this.abc.getMethodInfo(this.initializer);
-	  this.initialiser.scriptInfo = this;
+		this.initialiser = this.abc.getMethodInfo(this.initializer);
+		this.initialiser.scriptInfo = this;
 
-	  return this.initialiser;
+		return this.initialiser;
 	}
 
 	trace(writer: IndentingWriter) {

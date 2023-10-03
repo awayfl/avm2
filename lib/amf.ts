@@ -145,8 +145,8 @@ export class AMF0 {
 				ba.writeByte(AMF0Marker.STRING);
 				writeString(ba, value);
 				break;
-			case 'object':
-				var object = (<ASObject>value);
+			case 'object': {
+				const object = (<ASObject>value);
 				release || assert(object === null || AXBasePrototype.isPrototypeOf(object));
 				if (object === null) {
 					ba.writeByte(AMF0Marker.NULL);
@@ -176,6 +176,7 @@ export class AMF0 {
 					ba.writeByte(AMF0Marker.OBJECT_END);
 				}
 				return;
+			}
 		}
 	}
 
@@ -188,42 +189,43 @@ export class AMF0 {
 				return !!ba.readByte();
 			case AMF0Marker.STRING:
 				return readString(ba);
-			case AMF0Marker.OBJECT:
-				var object = ba.sec.createObject();
-				while (true) {
-					var key = readString(ba);
-					if (!key.length) break;
+			case AMF0Marker.OBJECT: {
+				const object = ba.sec.createObject();
+				let key;
+				while ((key = readString(ba)).length) {
 					object.axSetPublicProperty(key, this.read(ba));
 				}
 				if (ba.readByte() !== AMF0Marker.OBJECT_END) {
 					throw 'AMF0 End marker is not found';
 				}
 				return object;
+			}
 			case AMF0Marker.NULL:
 				return null;
 			case AMF0Marker.UNDEFINED:
 				return undefined;
-			case AMF0Marker.ECMA_ARRAY:
-				var array = ba.sec.createArray([]);
+			case AMF0Marker.ECMA_ARRAY: {
+				const array = ba.sec.createArray([]);
 				array.length = (ba.readByte() << 24) | (ba.readByte() << 16) |
-          (ba.readByte() << 8) | ba.readByte();
-				while (true) {
-					var key = readString(ba);
-					if (!key.length) break;
+					(ba.readByte() << 8) | ba.readByte();
+				let key;
+				while ((key = readString(ba)).length) {
 					array.axSetPublicProperty(key, this.read(ba));
 				}
 				if (ba.readByte() !== AMF0Marker.OBJECT_END) {
 					throw 'AMF0 End marker is not found';
 				}
 				return array;
-			case AMF0Marker.STRICT_ARRAY:
-				var array = ba.sec.createArray([]);
-				var length = array.length = (ba.readByte() << 24) | (ba.readByte() << 16) |
+			}
+			case AMF0Marker.STRICT_ARRAY: {
+				const array = ba.sec.createArray([]);
+				const length = array.length = (ba.readByte() << 24) | (ba.readByte() << 16) |
           (ba.readByte() << 8) | ba.readByte();
 				for (let i = 0; i < length; i++) {
 					array.axSetPublicProperty(i, this.read(ba));
 				}
 				return array;
+			}
 			case AMF0Marker.AVMPLUS:
 				return readAMF3Value(ba, new AMF3ReferenceTables());
 			default:
@@ -374,22 +376,23 @@ function readAMF3Value(ba: ByteArray, references: AMF3ReferenceTables) {
 			return readDouble(ba);
 		case AMF3Marker.STRING:
 			return readUTF8(ba, references);
-		case AMF3Marker.DATE:
-			var u29o = readU29(ba);
+		case AMF3Marker.DATE: {
+			const u29o = readU29(ba);
 			release || assert((u29o & 1) === 1);
 			return ba.sec.AXDate.axConstruct([readDouble(ba)]);
-		case AMF3Marker.OBJECT:
-			var u29o = readU29(ba);
+		}
+		case AMF3Marker.OBJECT: {
+			const u29o = readU29(ba);
 			if ((u29o & 1) === 0) {
 				return references.objects[u29o >> 1];
 			}
 			if ((u29o & 4) !== 0) {
 				throw 'AMF3 Traits-Ext is not supported';
 			}
-			var axClass: AXClass;
-			var traits: ITraits;
-			var isDynamic = true;
-			var traitNames;
+			let axClass: AXClass;
+			let traits: ITraits;
+			let isDynamic = true;
+			let traitNames;
 			if ((u29o & 2) === 0) {
 				traits = references.traits[u29o >> 2];
 				traitNames = references.traitNames[u29o >> 2];
@@ -400,49 +403,49 @@ function readAMF3Value(ba: ByteArray, references: AMF3ReferenceTables) {
 				}
 				isDynamic = (u29o & 8) !== 0;
 				traitNames = [];
-				for (var i = 0, j = u29o >> 4; i < j; i++) {
+				for (let i = 0, j = u29o >> 4; i < j; i++) {
 					traitNames.push(readUTF8(ba, references));
 				}
 				references.traits.push(traits);
 				references.traitNames.push(traitNames);
 			}
 
-			var object = axClass ? axClass.axConstruct([]) : ba.sec.createObject();
+			const object = axClass ? axClass.axConstruct([]) : ba.sec.createObject();
 			references.objects.push(object);
 			// Read trait properties.
-			for (var i = 0; i < traitNames.length; i++) {
-				var value = readAMF3Value(ba, references);
+			for (let i = 0; i < traitNames.length; i++) {
+				const value = readAMF3Value(ba, references);
 				object.axSetPublicProperty(traitNames[i], value);
 			}
 			// Read dynamic properties.
 			if (isDynamic) {
-				while (true) {
-					var key = readUTF8(ba, references);
-					if (key === '') break;
-					var value = readAMF3Value(ba, references);
+				let key;
+				while ((key = readUTF8(ba, references)) !== '') {
+					const value = readAMF3Value(ba, references);
 					object.axSetPublicProperty(key, value);
 				}
 			}
 			return object;
-		case AMF3Marker.ARRAY:
-			var u29o = readU29(ba);
+		}
+		case AMF3Marker.ARRAY: {
+			const u29o = readU29(ba);
 			if ((u29o & 1) === 0) {
 				return references.objects[u29o >> 1];
 			}
-			var array = ba.sec.createArray([]);
+			const array = ba.sec.createArray([]);
 			references.objects.push(array);
-			var densePortionLength = u29o >> 1;
-			while (true) {
-				var key = readUTF8(ba, references);
-				if (!key.length) break;
-				var value = readAMF3Value(ba, references);
+			const densePortionLength = u29o >> 1;
+			let key;
+			while ((key = readUTF8(ba, references)).length) {
+				const value = readAMF3Value(ba, references);
 				array.axSetPublicProperty(key, value);
 			}
-			for (var i = 0; i < densePortionLength; i++) {
-				var value = readAMF3Value(ba, references);
+			for (let i = 0; i < densePortionLength; i++) {
+				const value = readAMF3Value(ba, references);
 				array.axSetPublicProperty(i, value);
 			}
 			return array;
+		}
 		default:
 			throw 'AMF3 Unknown marker ' + marker;
 	}
@@ -470,8 +473,8 @@ function writeAMF3Value(ba: ByteArray, value: any, references: AMF3ReferenceTabl
 		case 'boolean':
 			ba.writeByte(value ? AMF3Marker.TRUE : AMF3Marker.FALSE);
 			break;
-		case 'number':
-			var useInteger = value === (value | 0);
+		case 'number': {
+			let useInteger = value === (value | 0);
 			if (useInteger) {
 				if (value > MAX_INT || value < MIN_INT) {
 					useInteger = false;
@@ -485,6 +488,7 @@ function writeAMF3Value(ba: ByteArray, value: any, references: AMF3ReferenceTabl
 				writeDouble(ba, value);
 			}
 			break;
+		}
 		case 'undefined':
 			ba.writeByte(AMF3Marker.UNDEFINED);
 			break;
@@ -549,7 +553,7 @@ function writeAMF3Value(ba: ByteArray, value: any, references: AMF3ReferenceTabl
 						writeU29(ba, (isDynamic ? 0x0B : 0x03) + (traitNames.length << 4));
 						writeUTF8(ba, alias, references);
 						// Write trait names.
-						for (var i = 0; i < traitNames.length; i++) {
+						for (let i = 0; i < traitNames.length; i++) {
 							writeUTF8(ba, traitNames[i], references);
 						}
 					} else {
@@ -558,7 +562,7 @@ function writeAMF3Value(ba: ByteArray, value: any, references: AMF3ReferenceTabl
 						writeU29(ba, 0x01 + (traitsRef << 2));
 					}
 					// Write the actual trait values.
-					for (var i = 0; i < traitNames.length; i++) {
+					for (let i = 0; i < traitNames.length; i++) {
 						writeAMF3Value(ba, object.axGetPublicProperty(traitNames[i]), references);
 					}
 				} else {

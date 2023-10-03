@@ -1,9 +1,8 @@
 import { ClassInfo } from '../abc/lazy/ClassInfo';
 import { InstanceInfo } from '../abc/lazy/InstanceInfo';
 import { MethodTraitInfo } from '../abc/lazy/MethodTraitInfo';
-import { Multiname } from '../abc/lazy/Multiname';
 import { namespaceTypeNames } from '../abc/lazy/NamespaceType';
-import { getTRAITName, TRAIT, TRAITNames } from '../abc/lazy/TRAIT';
+import { TRAIT, TRAITNames } from '../abc/lazy/TRAIT';
 import { MethodInfo } from './../abc/lazy/MethodInfo';
 
 let SCRIPT_ID = 0;

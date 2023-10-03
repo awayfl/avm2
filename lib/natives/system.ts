@@ -159,7 +159,7 @@ export class System extends ASObject {
 	}
 }
 
-export var OriginalSystem = System;
+export const OriginalSystem = System;
 export function initSystem() {
 	// Do this here temporarily until we find a nicer place.
 	initializeBuiltins();

@@ -44,7 +44,7 @@ export class Dictionary extends ASObject {
 	constructor(weakKeys: boolean = false) {
 		super();
 
-		if (this.weakKeys = !!weakKeys && USE_WEAK)
+		if ((this.weakKeys = !!weakKeys && USE_WEAK))
 			this.refs = new WeakMap();
 	}
 

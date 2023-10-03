@@ -17,18 +17,18 @@ const getQualifiedClassName = function(_: AXSecurityDomain, value: any): string 
 	const valueType = typeof value;
 	switch (valueType) {
 		case 'undefined':
-	  return 'void';
+			return 'void';
 		case 'object':
-	  if (value === null) {
+			if (value === null) {
 				return 'null';
-	  }
-	  return value.classInfo.instanceInfo.name.toFQNString(false);
+			}
+			return value.classInfo.instanceInfo.name.toFQNString(false);
 		case 'number':
-	  return (value | 0) === value ? 'int' : 'Number';
+			return (value | 0) === value ? 'int' : 'Number';
 		case 'string':
-	  return 'String';
+			return 'String';
 		case 'boolean':
-	  return 'Boolean';
+			return 'Boolean';
 	}
 	release || assertUnreachable('invalid value type ' + valueType);
 };
@@ -36,7 +36,7 @@ const getQualifiedClassName = function(_: AXSecurityDomain, value: any): string 
  * Other natives can live in this module
  */
 
-export var Natives = {
+export const Natives = {
 	print: function(sec: AXSecurityDomain, expression: any, arg1?: any, arg2?: any, arg3?: any, arg4?: any) {
 		let message;
 		const objects = [];

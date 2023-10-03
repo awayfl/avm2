@@ -34,10 +34,10 @@ export class Namespace {
 		const data: Uint8Array = length < 101 ? namespaceHashingBuffer : new Uint8Array(length);
 		let j = 0;
 		data[j++] = type;
-		for (var i = 0; i < uri.length; i++) {
+		for (let i = 0; i < uri.length; i++) {
 			data[j++] = uri.charCodeAt(i);
 		}
-		for (var i = 0; i < prefix.length; i++) {
+		for (let i = 0; i < prefix.length; i++) {
 			data[j++] = prefix.charCodeAt(i);
 		}
 		return HashUtilities.hashBytesTo32BitsMD5(data, 0, j);

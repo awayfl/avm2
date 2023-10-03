@@ -38,7 +38,8 @@ export class XMLNode extends ASObject {
 	// Static   AS -> JS Bindings
 	static escapeXML(value: string): string {
 		value = axCoerceString(value);
-		let i = 0, length = value.length, ch;
+		const length = value.length;
+		let i = 0, ch;
 		while (i < length) {
 			ch = value.charCodeAt(i);
 			if (ch === XMLSpecialChars.APOS || ch === XMLSpecialChars.AMP ||

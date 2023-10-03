@@ -34,7 +34,7 @@ export class InstanceInfo extends Info {
 			this.initializer = this.abc.getMethodInfo(<number> this.initializer);
 			this.initializer.instanceInfo = this;
 			this.initializer.isConstructor = true;
-	  }
+		}
 		return <MethodInfo> this.initializer;
 	}
 

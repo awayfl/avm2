@@ -3,7 +3,6 @@ import { ABCFile } from './ABCFile';
 import { Multiname } from './Multiname';
 import { SlotTraitInfo } from './SlotTraitInfo';
 import { TRAIT } from './TRAIT';
-import { TraitInfo } from './TraitInfo';
 
 export class ExceptionInfo {
 	public catchPrototype: Object = null;

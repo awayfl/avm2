@@ -1,5 +1,5 @@
 import { BaseVector, GenericVector } from './GenericVector';
-import { defineNonEnumerableProperty, release, assertNotImplemented, unexpected, isNumeric, isIndex } from '@awayfl/swf-loader';
+import { defineNonEnumerableProperty, release, assertNotImplemented, unexpected, isIndex } from '@awayfl/swf-loader';
 import { assert } from '@awayjs/graphics';
 import { Errors } from '../errors';
 import { Multiname } from '../abc/lazy/Multiname';
@@ -206,8 +206,8 @@ export class Int32Vector extends BaseVector {
 
 	concat() {
 		let length = this._length;
-		for (var i = 0; i < arguments.length; i++) {
-			var vector: Int32Vector = arguments[i];
+		for (let i = 0; i < arguments.length; i++) {
+			const vector: Int32Vector = arguments[i];
 			if (!(vector._buffer instanceof Int32Array)) {
 				assert(false); // TODO
 				// this.sec.throwError('TypeError', Errors.CheckTypeFailedError,
@@ -219,8 +219,8 @@ export class Int32Vector extends BaseVector {
 		const buffer = result._buffer;
 		buffer.set(this._buffer);
 		let offset = this._length;
-		for (var i = 0; i < arguments.length; i++) {
-			var vector: Int32Vector = arguments[i];
+		for (let i = 0; i < arguments.length; i++) {
+			const vector: Int32Vector = arguments[i];
 			if (offset + vector._buffer.length < vector._buffer.length) {
 				buffer.set(vector._buffer, offset);
 			} else {
@@ -313,7 +313,7 @@ export class Int32Vector extends BaseVector {
 	}
 
 	indexOf(searchElement, fromIndex = 0) {
-		var length = this._length;
+		const length = this._length;
 		let start = fromIndex|0;
 		if (start < 0) {
 			start = start + length;
@@ -324,7 +324,6 @@ export class Int32Vector extends BaseVector {
 			return -1;
 		}
 		const buffer = this._buffer;
-		var length = this._length;
 		const offset = this._offset;
 		start += offset;
 		const end = offset + length;

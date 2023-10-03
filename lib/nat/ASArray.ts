@@ -18,8 +18,6 @@ import { axCompare } from '../run/axCompare';
 import { axCompareFields } from '../run/axCompareFields';
 import { Errors } from '../errors';
 import { axBoxPrimitive } from '../run/axBoxPrimitive';
-import { AXFunction } from '../run/AXFunction';
-import { ASMethodClosure } from './ASMethodClosure';
 import { ASFunction } from './ASFunction';
 
 export class ASArray extends ASObject {

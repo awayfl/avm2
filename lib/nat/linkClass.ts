@@ -5,7 +5,6 @@ import { release, copyOwnPropertyDescriptors, copyPropertiesByList } from '@away
 import { runtimeWriter } from '../run/writers';
 import { traceASClass } from './traceASClass';
 import { axTrapNames } from './axTrapNames';
-import { ASObject } from './ASObject';
 import { ASClass } from './ASClass';
 
 export function linkClass(axClass: AXClass, asClass: ASClass) {
@@ -39,7 +38,7 @@ export function linkClass(axClass: AXClass, asClass: ASClass) {
 
 	// Copy class methods and properties.
 	if (asClass.classNatives) {
-		for (var i = 0; i < asClass.classNatives.length; i++) {
+		for (let i = 0; i < asClass.classNatives.length; i++) {
 			copyOwnPropertyDescriptors(axClass, asClass.classNatives[i], filter);
 		}
 	}
@@ -56,7 +55,7 @@ export function linkClass(axClass: AXClass, asClass: ASClass) {
 
 	// Copy instance methods and properties.
 	if (asClass.instanceNatives) {
-		for (var i = 0; i < asClass.instanceNatives.length; i++) {
+		for (let i = 0; i < asClass.instanceNatives.length; i++) {
 			copyOwnPropertyDescriptors(axClass.dPrototype, asClass.instanceNatives[i], filter);
 		}
 	}
