@@ -333,6 +333,7 @@ function _interpret(methodInfo: MethodInfo, savedScope: Scope, callee: AXFunctio
 		scopeStacks.push(frame.scopes);
 
 		interpretLabel:
+		// eslint-disable-next-line no-constant-condition
 		while (true) {
 			if (!release && interpreterWriter) {
 				interpreterWriter.greenLn('' + frame.pc + ': ' + getBytecodeName(frame.code[frame.pc]) + ' [' +
@@ -708,13 +709,15 @@ function _interpret(methodInfo: MethodInfo, savedScope: Scope, callee: AXFunctio
 						break;
 					case Bytecode.COERCE:
 						popNameInto(stack, abc.getMultiname(frame.u30()), rn);
-						stack[stack.length - 1] = (<AXClass> scopes.topScope().getScopeProperty(rn, true, false)).axCoerce(stack[stack.length - 1]);
+						stack[stack.length - 1] = (<AXClass> scopes.topScope().getScopeProperty(rn, true, false))
+							.axCoerce(stack[stack.length - 1]);
 						break;
 					case Bytecode.COERCE_A: /* NOP */
 						break;
 					case Bytecode.ASTYPE:
 						popNameInto(stack, abc.getMultiname(frame.u30()), rn);
-						stack[stack.length - 1] = (<AXClass> scopes.topScope().getScopeProperty(rn, true, false)).axAsType(stack[stack.length - 1]);
+						stack[stack.length - 1] = (<AXClass> scopes.topScope().getScopeProperty(rn, true, false))
+							.axAsType(stack[stack.length - 1]);
 						break;
 					case Bytecode.ASTYPELATE:
 						stack[stack.length - 2] = stack.pop().axAsType(stack[stack.length - 1]);
@@ -809,7 +812,8 @@ function _interpret(methodInfo: MethodInfo, savedScope: Scope, callee: AXFunctio
 						break;
 					case Bytecode.ISTYPE:
 						popNameInto(stack, abc.getMultiname(frame.u30()), rn);
-						stack[stack.length - 1] = (<AXClass> scopes.topScope().findScopeProperty(rn, true, false)).axIsType(stack[stack.length - 1]);
+						stack[stack.length - 1] = (<AXClass> scopes.topScope().findScopeProperty(rn, true, false))
+							.axIsType(stack[stack.length - 1]);
 						break;
 					case Bytecode.ISTYPELATE:
 						stack[stack.length - 2] = stack.pop().axIsType(stack[stack.length - 1]);
@@ -817,7 +821,9 @@ function _interpret(methodInfo: MethodInfo, savedScope: Scope, callee: AXFunctio
 					case Bytecode.IN: {
 						receiver = sec.box(stack.pop());
 						const name = stack[stack.length - 1];
-						stack[stack.length - 1] = (name && name.axClass === sec.AXQName) ? receiver.axHasProperty(name.name) : receiver.axHasPublicProperty(name);
+						stack[stack.length - 1] = (name && name.axClass === sec.AXQName)
+							? receiver.axHasProperty(name.name)
+							: receiver.axHasPublicProperty(name);
 						break;
 					}
 					case Bytecode.INCREMENT_I:
@@ -871,10 +877,12 @@ function _interpret(methodInfo: MethodInfo, savedScope: Scope, callee: AXFunctio
 						locals[3] = stack.pop();
 						break;
 					case Bytecode.DXNS:
-						scopes.topScope().defaultNamespace = internNamespace(NamespaceType.Public, abc.getString(frame.u30()));
+						scopes.topScope().defaultNamespace
+							= internNamespace(NamespaceType.Public, abc.getString(frame.u30()));
 						break;
 					case Bytecode.DXNSLATE:
-						scopes.topScope().defaultNamespace = internNamespace(NamespaceType.Public, stack.pop());
+						scopes.topScope().defaultNamespace
+							= internNamespace(NamespaceType.Public, stack.pop());
 						break;
 					case Bytecode.DEBUG:
 						frame.pc++; frame.u30();

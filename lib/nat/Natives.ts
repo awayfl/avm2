@@ -42,16 +42,18 @@ export const Natives = {
 		const objects = [];
 		if (arguments.length == 2) {
 			message = arguments[1] ? arguments[1].toString() : arguments[1];
-			if (['string', 'boolean', 'number', 'null', 'undefined'].indexOf(typeof arguments[1]) === -1) objects.push(arguments[1]);
+			if (['string', 'boolean', 'number', 'null', 'undefined'].indexOf(typeof arguments[1]) === -1)
+				objects.push(arguments[1]);
 		} else {
 			message = '';
 			for (let i = 1; i < arguments.length;i++) {
 				message += arguments[i] ? arguments[i].toString() : arguments[i];
-				if (['string', 'boolean', 'number', 'null', 'undefined'].indexOf(typeof arguments[i]) === -1) objects.push(arguments[i]);
-				if (i != arguments.length - 1) {
-					message += ' ';
-				}
 
+				if (['string', 'boolean', 'number', 'null', 'undefined'].indexOf(typeof arguments[i]) === -1)
+					objects.push(arguments[i]);
+
+				if (i != arguments.length - 1)
+					message += ' ';
 			}
 		}
 		console.log('%c Trace from SWF:', 'color: DodgerBlue', message, objects.length == 0 ? '' : objects);

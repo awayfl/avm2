@@ -75,7 +75,15 @@ export class ASDate extends ASObject {
 		return Date.parse(date);
 	}
 
-	static UTC(year: number, month: number, date: number = 1, hour: number = 0, minute: number = 0, second: number = 0, millisecond: number = 0) {
+	static UTC(
+		year: number,
+		month: number,
+		date: number = 1,
+		hour: number = 0,
+		minute: number = 0,
+		second: number = 0,
+		millisecond: number = 0
+	) {
 		return Date.parse.apply(null, arguments);
 	}
 
@@ -83,7 +91,15 @@ export class ASDate extends ASObject {
 		return this.axConstruct([value]);
 	}
 
-	constructor(yearOrTimevalue: any, month: number, date: number = 1, hour: number = 0, minute: number = 0, second: number = 0, millisecond: number = 0) {
+	constructor(
+		yearOrTimevalue: any,
+		month: number,
+		date: number = 1,
+		hour: number = 0,
+		minute: number = 0,
+		second: number = 0,
+		millisecond: number = 0
+	) {
 		super();
 		switch (arguments.length) {
 			case  0: this.value = new Date(); break;

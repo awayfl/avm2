@@ -173,7 +173,10 @@ export class AbcStream {
 					code = ((c & 0x0f) << 12) | ((bytes[pos++] & 0x3f) << 6) | (bytes[pos++] & 0x3f);
 				} else { // 4 bytes
 					// turned into two characters in JS as surrogate pair
-					code = (((c & 0x07) << 18) | ((bytes[pos++] & 0x3f) << 12) | ((bytes[pos++] & 0x3f) << 6) | (bytes[pos++] & 0x3f)) - 0x10000;
+					code = (((c & 0x07) << 18)
+						| ((bytes[pos++] & 0x3f) << 12)
+						| ((bytes[pos++] & 0x3f) << 6)
+						| (bytes[pos++] & 0x3f)) - 0x10000;
 					// High surrogate
 					result[i++] = ((code & 0xffc00) >>> 10) + 0xd800;
 					// Low surrogate

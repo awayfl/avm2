@@ -1,4 +1,4 @@
-export var createContainersFromPath = function (pathTokens, container) {
+export const createContainersFromPath = function (pathTokens, container) {
 	for (let i = 0, j = pathTokens.length; i < j; i++) {
 		if (!container[pathTokens[i]]) {
 			container[pathTokens[i]] = Object.create(null);

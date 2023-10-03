@@ -16,7 +16,8 @@
 
 import { ASXML } from './xml';
 import { axCoerceString } from '../run/axCoerceString';
-import { release, warning, somewhatImplemented, defineNonEnumerableProperty, ClipboardService } from '@awayfl/swf-loader';
+import { release, warning, somewhatImplemented,
+	defineNonEnumerableProperty, ClipboardService } from '@awayfl/swf-loader';
 import { ASObject } from '../nat/ASObject';
 import { initializeBuiltins } from '../nat/initializeBuiltins';
 

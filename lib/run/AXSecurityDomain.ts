@@ -397,13 +397,16 @@ export class AXSecurityDomain {
 			// referring to global names that would be shadowed if the class scope were active.
 			// Haxe's stdlib uses just such constructs, e.g. Std.parseFloat calls the global
 			// parseFloat.
-			classTraits = classInfo.traits.resolveRuntimeTraits(rootClassTraits, null, scope.parent, forceNativeMethods);
+			classTraits = classInfo.traits
+				.resolveRuntimeTraits(rootClassTraits, null, scope.parent, forceNativeMethods);
 		}
 		classInfo.runtimeTraits = classTraits;
 		applyTraits(axClass, classTraits);
 
 		// Prepare instance traits.
-		const superInstanceTraits = (superClass && superClass[IS_AX_CLASS]) ? superClass.classInfo.instanceInfo.runtimeTraits : null;
+		const superInstanceTraits = (superClass && superClass[IS_AX_CLASS])
+			? superClass.classInfo.instanceInfo.runtimeTraits : null;
+
 		const protectedNs = classInfo.abc.getNamespace(instanceInfo.protectedNs);
 		const instanceTraits = instanceInfo.traits.resolveRuntimeTraits(superInstanceTraits,
 			protectedNs, scope, forceNativeMethods);
@@ -413,8 +416,8 @@ export class AXSecurityDomain {
 
 	createFunction(methodInfo: MethodInfo, scope: Scope, hasDynamicScope: boolean): AXFunction {
 		//const traceMsg = !release && flashlog && methodInfo.trait ? methodInfo.toFlashlogString() : null;
-		let fun;
-		fun = this.boxFunction(interpret(methodInfo, scope, fun));
+		// eslint-disable-next-line no-var
+		var fun = this.boxFunction(interpret(methodInfo, scope, fun));
 		//fun.methodInfo = methodInfo;
 		fun.receiver = { scope: scope };
 		if (!release) {
@@ -466,11 +469,12 @@ export class AXSecurityDomain {
 
 	createActivation(methodInfo: MethodInfo, scope: Scope): AXActivation {
 		const body = methodInfo.getBody();
-		if (!body.activationPrototype) {
-			body.activationPrototype = Object.create(this.AXActivationPrototype);
-			defineReadOnlyProperty(body.activationPrototype, 'traits', body.traits.resolveRuntimeTraits(null, null, scope));
+		let aPrototype = body.activationPrototype;
+		if (!aPrototype) {
+			aPrototype = body.activationPrototype = Object.create(this.AXActivationPrototype);
+			defineReadOnlyProperty(aPrototype, 'traits', body.traits.resolveRuntimeTraits(null, null, scope));
 		}
-		return Object.create(body.activationPrototype);
+		return Object.create(aPrototype);
 	}
 
 	createCatch(exceptionInfo: ExceptionInfo, scope: Scope): AXCatch {

@@ -201,7 +201,7 @@ export interface ICompilerOptions {
 export function compile(methodInfo: MethodInfo, options: ICompilerOptions = {}): ICompilerProcess {
 	const {
 		optimise = COMPILER_DEFAULT_OPT,
-		scope: executionScope,
+		//scope: executionScope,
 	} = options;
 
 	const state = new CompilerState(methodInfo);
@@ -411,7 +411,8 @@ export function compile(methodInfo: MethodInfo, options: ICompilerOptions = {}):
 		}
 
 		if (Settings.PRINT_BYTE_INSTRUCTION) {
-			state.emitMain(`//${BytecodeName[z.name]} ${ typeof z.params === 'number' ? z.params : z.params.join(' / ')} -> ${z.returnTypeId}`);
+			const params = typeof z.params === 'number' ? z.params : z.params.join(' / ');
+			state.emitMain(`//${BytecodeName[z.name]} ${params} -> ${z.returnTypeId}`);
 		}
 
 		if (z.comment) {
@@ -1673,10 +1674,11 @@ export function compile(methodInfo: MethodInfo, options: ICompilerOptions = {}):
 					) {
 						const trait = resolveTrait(instanceInfo, mn);
 						if (trait) {
+							const local = emitInlineLocal(state, 0);
 							// eslint-disable-next-line max-len
 							state.emitMain(`/* GETLEX We sure that this safe get, represented in TRAIT as ${TRAITNames[trait.kind]}  */ `);
 							if (trait.kind === TRAIT.Method) {
-								state.emitMain(`${target} = ${emitInlineLocal(state, 0)}.axGetProperty(${getname(param(0))});`);
+								state.emitMain(`${target} = ${local}.axGetProperty(${getname(param(0))});`);
 								break;
 							} else if (
 								trait.kind === TRAIT.Slot ||
@@ -1684,7 +1686,7 @@ export function compile(methodInfo: MethodInfo, options: ICompilerOptions = {}):
 								trait.kind === TRAIT.Getter
 							) {
 								state.emitMain(
-									`${target} = ${emitAccess(emitInlineLocal(state, 0), mn.getMangledName())};`
+									`${target} = ${emitAccess(local, mn.getMangledName())};`
 								);
 								break;
 							}

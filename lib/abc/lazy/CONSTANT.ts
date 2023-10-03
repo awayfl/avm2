@@ -38,7 +38,37 @@ export const enum CONSTANT {
 	ClassProtectedNs   = 0x08
 }
 
-const CONSTANTNames = ['Undefined','Utf8|ClassSealed','Float|ClassFinal','Int','UInt|ClassInterface','PrivateNs','Double','QName','Namespace|ClassProtectedNs','Multiname','False','True','Null','QNameA','MultinameA','RTQName','RTQNameA','RTQNameL','RTQNameLA','NameL','NameLA','NamespaceSet','PackageNamespace','PackageInternalNs','ProtectedNamespace','ExplicitNamespace','StaticProtectedNs','MultinameL','MultinameLA','TypeName'];
+const CONSTANTNames = [
+	'Undefined',
+	'Utf8|ClassSealed',
+	'Float|ClassFinal',
+	'Int',
+	'UInt|ClassInterface',
+	'PrivateNs',
+	'Double',
+	'QName',
+	'Namespace|ClassProtectedNs',
+	'Multiname',
+	'False',
+	'True',
+	'Null',
+	'QNameA',
+	'MultinameA',
+	'RTQName',
+	'RTQNameA',
+	'RTQNameL',
+	'RTQNameLA',
+	'NameL',
+	'NameLA',
+	'NamespaceSet',
+	'PackageNamespace',
+	'PackageInternalNs',
+	'ProtectedNamespace',
+	'ExplicitNamespace',
+	'StaticProtectedNs',
+	'MultinameL',
+	'MultinameLA',
+	'TypeName'];
 
 export function getCONSTANTName(constant: CONSTANT): string {
 	return release ? String(constant) : CONSTANTNames[constant];

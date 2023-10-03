@@ -2,7 +2,8 @@ import { assert } from '@awayjs/graphics';
 
 import { Multiname } from '../abc/lazy/Multiname';
 import { Bytecode } from '../abc/ops';
-import { isNumeric, toNumber, isIndex, isNullOrUndefined, release, assertNotImplemented, unexpected, defineNonEnumerableProperty } from '@awayfl/swf-loader';
+import { isNumeric, toNumber, isIndex, isNullOrUndefined, release,
+	assertNotImplemented, unexpected, defineNonEnumerableProperty } from '@awayfl/swf-loader';
 import { Errors } from '../errors';
 import { ASObject } from '../nat/ASObject';
 import { axCoerceName } from '../run/axCoerceName';

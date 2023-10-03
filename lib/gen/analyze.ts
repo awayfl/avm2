@@ -6,8 +6,6 @@ import { COMPILATION_FAIL_REASON } from '../flags';
 import { Settings } from '../Settings';
 import { ABCFile } from '../abc/lazy/ABCFile';
 
-const BytecodeName = Bytecode;
-
 const enum PRIMITIVE_TYPE {
 	VOID = -1,
 	BOOL = -2,
@@ -946,13 +944,15 @@ export function analyze(methodInfo: MethodInfo): IAnalyseResult | IAnalyzeError 
 				ins = (new Instruction(oldi, z, null, 0));
 				ins.returnTypeId = lastType =  PRIMITIVE_TYPE.NUMBER;
 				break;
-			default:
+			default: {
+				const c = code[state.index - 1];
 				return {
 					error: {
-						message: `UNKNOWN BYTECODE ${code[state.index - 1].toString(16)} ${BytecodeName[code[state.index - 1]]} at ${oldi}`,
+						message: `UNKNOWN BYTECODE ${c.toString(16)} ${Bytecode[c]} at ${oldi}`,
 						reason: COMPILATION_FAIL_REASON.UNKNOW_BYTECODE,
 					}
 				} as any;
+			}
 		}
 
 		q.push(ins);

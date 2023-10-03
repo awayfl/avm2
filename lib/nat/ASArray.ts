@@ -433,25 +433,25 @@ export class ASArray extends ASObject {
 			optionsList = [options | 0];
 		} else if (names && Array.isArray(names.value)) {
 			names = names.value;
-			for (var i = 0; i < names.length; i++) {
+			for (let i = 0; i < names.length; i++) {
 				names[i] = Multiname.getPublicMangledName(names[i]);
 			}
 			if (options && Array.isArray(options.value)) {
 				options = options.value;
 				// Use the options Array only if it's the same length as names.
 				if (options.length === names.length) {
-					for (var i = 0; i < options.length; i++) {
+					for (let i = 0; i < options.length; i++) {
 						optionsList[i] = options[i] | 0;
 					}
 					// Otherwise, use 0 for all options.
 				} else {
-					for (var i = 0; i < names.length; i++) {
+					for (let i = 0; i < names.length; i++) {
 						optionsList[i] = 0;
 					}
 				}
 			} else {
-				var optionsVal = options | 0;
-				for (var i = 0; i < names.length; i++) {
+				const optionsVal = options | 0;
+				for (let i = 0; i < names.length; i++) {
 					optionsList[i] = optionsVal;
 				}
 			}
@@ -461,7 +461,7 @@ export class ASArray extends ASObject {
 		}
 		release || assert(optionsList.length === names.length);
 		// For use with uniqueSort and returnIndexedArray once we support them.
-		var optionsVal: number = optionsList[0];
+		const optionsVal: number = optionsList[0];
 		release || Debug.assertNotImplemented(!(optionsVal & SORT.UNIQUESORT), 'UNIQUESORT');
 
 		let ret = o;

@@ -4,7 +4,7 @@
  */
 export function as3ToLowerCase(value: string) {
 	let chars: string [] = null;
-	for (var i = 0; i < value.length; i++) {
+	for (let i = 0; i < value.length; i++) {
 		const charCode = value.charCodeAt(i);
 		if (charCode >= 0x10A0 && charCode <= 0x10C5) {
 			if (!chars) {
@@ -15,7 +15,7 @@ export function as3ToLowerCase(value: string) {
 	}
 	if (chars) {
 		// Fill in remaining chars if the bug needs to be emulated.
-		for (var i = 0; i < chars.length; i++) {
+		for (let i = 0; i < chars.length; i++) {
 			const char = chars[i];
 			if (!char) {
 				chars[i] = value.charAt(i).toLocaleString();

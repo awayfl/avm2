@@ -15,9 +15,9 @@
  */
 'use strict';
 
-export var timelineBuffer = null;
+export const timelineBuffer = null;
 //export var timelineBuffer = Shumway.Tools ? new TimelineBuffer("AVX") : null;
-export var counter = null;//new Counter(!release);
+export const counter = null;//new Counter(!release);
 const profile = false;
 export function countTimeline(name: string, value: number = 1) {
 	timelineBuffer && timelineBuffer.count(name, value);

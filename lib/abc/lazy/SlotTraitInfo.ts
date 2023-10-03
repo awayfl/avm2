@@ -16,9 +16,6 @@ export class SlotTraitInfo extends TraitInfo {
 		public defaultValueIndex: number
 	) {
 		super(abc, kind, multiname);
-		if (typeName == undefined && <number> this.defaultValueKind === -1) {
-			console.log('undefined');
-		}
 	}
 
 	getDefaultValue(): any {

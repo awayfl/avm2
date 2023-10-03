@@ -212,8 +212,9 @@ export class ASObject implements IMetaobjectProtocol {
 		}
 		let freeze = false;
 		const t = this.traits.getTrait(mn.namespaces, name);
+		let mangledName: string;
 		if (t) {
-			var mangledName = t.multiname.getMangledName();
+			mangledName = t.multiname.getMangledName();
 			switch (t.kind) {
 				case TRAIT.Method:
 					this.sec.throwError('ReferenceError', Errors.CannotAssignToMethodError, name,

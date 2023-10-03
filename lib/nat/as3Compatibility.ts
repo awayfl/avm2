@@ -3,4 +3,4 @@
  */
 import { Settings } from '../Settings';
 
-export var as3Compatibility = Settings.FOLLOW_AS3_BUG;
+export const as3Compatibility = Settings.FOLLOW_AS3_BUG;

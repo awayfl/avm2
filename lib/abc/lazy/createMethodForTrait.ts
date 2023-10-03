@@ -9,7 +9,11 @@ import { getNative } from '../../nat/getNative';
 import { getMethodOrAccessorNative } from '../../nat/getMethodOrAccessorNative';
 import { assert } from '@awayjs/graphics';
 
-export function createMethodForTrait(methodTraitInfo: MethodTraitInfo, scope: Scope, forceNativeMethods: boolean = false) {
+export function createMethodForTrait(
+	methodTraitInfo: MethodTraitInfo,
+	scope: Scope,
+	forceNativeMethods: boolean = false
+) {
 	if (methodTraitInfo.method) {
 		return methodTraitInfo.method;
 	}

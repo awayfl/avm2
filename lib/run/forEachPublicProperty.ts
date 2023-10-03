@@ -1,6 +1,10 @@
 import { ASObject } from '../nat/ASObject';
 
-export function forEachPublicProperty(object: ASObject, callbackfn: (property: any, value: any) => void, thisArg?: any) {
+export function forEachPublicProperty(
+	object: ASObject,
+	callbackfn: (property: any, value: any) => void,
+	thisArg?: any
+) {
 	// REDUX: Do we need to walk the proto chain here?
 	const properties = object.axGetEnumerableKeys();
 	for (let i = 0; i < properties.length; i++) {

@@ -30,11 +30,13 @@ export function getMethodOrAccessorNative(trait: TraitInfo, throwErrors: boolean
 				release || assert (trait.isMethod());
 				value = native[fullName];
 			}
-			release || assert (value, 'Method or Accessor property exists but it\'s undefined: ' + trait.holder + ' ' + trait);
+			release || assert (value, 'Method or Accessor property exists but it\'s undefined: '
+				+ trait.holder + ' ' + trait);
 			return value;
 		}
 	}
-	warning('No native method for: ' + trait.holder + ' ' + trait + ', make sure you\'ve got the static keyword for static methods.');
+	warning('No native method for: ' + trait.holder + ' ' + trait
+		+ ', make sure you\'ve got the static keyword for static methods.');
 	release || assertUnreachable('Cannot find ' + trait + ' in natives.');
 	return null;
 }

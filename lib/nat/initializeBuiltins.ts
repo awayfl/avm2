@@ -26,7 +26,9 @@ import { FlashNetScript_sendToURL } from './FlashNetScript_sendToURL';
 import { wrapJSGlobalFunction } from './wrapJSGlobalFunction';
 import { Toplevel_registerClassAlias } from './Toplevel_registerClassAlias';
 import { Toplevel_getClassByAlias } from './Toplevel_getClassByAlias';
-import { ASError, ASArgumentError, ASUninitializedError, ASVerifyError, ASURIError, ASTypeError, ASSyntaxError, ASSecurityError, ASReferenceError, ASRangeError, ASEvalError, ASDefinitionError, ASIllegalOperationError, ASMemoryError, ASEOFError, ASIOError } from './ASError';
+import { ASError, ASArgumentError, ASUninitializedError, ASVerifyError, ASURIError, ASTypeError, ASSyntaxError,
+	ASSecurityError, ASReferenceError, ASRangeError, ASEvalError, ASDefinitionError, ASIllegalOperationError,
+	ASMemoryError, ASEOFError, ASIOError } from './ASError';
 
 /* 80pro: todo: XML
 import { XMLParser } from '../natives/xml';

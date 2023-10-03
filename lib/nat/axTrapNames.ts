@@ -1,5 +1,5 @@
 
-export var axTrapNames = [
+export const axTrapNames = [
 	'axResolveMultiname',
 	'axHasProperty',
 	'axDeleteProperty',

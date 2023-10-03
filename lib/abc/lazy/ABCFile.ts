@@ -569,7 +569,8 @@ export class ABCFile {
 				exceptions[j] = this._parseException();
 			}
 			const traits = this._parseTraits();
-			methodBodies[methodInfo] = new MethodBodyInfo(maxStack, localCount, initScopeDepth, maxScopeDepth, code, exceptions, traits);
+			methodBodies[methodInfo]
+				= new MethodBodyInfo(maxStack, localCount, initScopeDepth, maxScopeDepth, code, exceptions, traits);
 			traits.attachHolder(methodBodies[methodInfo]);
 		}
 	}
