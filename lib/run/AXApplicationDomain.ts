@@ -115,7 +115,7 @@ export class AXApplicationDomain {
 		if (mn.script)
 			return mn.script.global;
 
-		let script: ScriptInfo = <ScriptInfo> Traits.getTrait(mn)?.holder || this.findDefiningScript(mn, execute);
+		const script: ScriptInfo = <ScriptInfo> Traits.getTrait(mn)?.holder || this.findDefiningScript(mn, execute);
 
 		if (!mn.mutable)
 			mn.script = script;
@@ -149,7 +149,7 @@ export class AXApplicationDomain {
 	}
 
 	public findDefiningScript(mn: Multiname, execute: boolean): ScriptInfo {
-		
+
 		// Look in parent domain first.
 		let script: ScriptInfo;
 
@@ -159,7 +159,7 @@ export class AXApplicationDomain {
 			this.loadABC(abc);
 			script = <ScriptInfo> Traits.getTrait(mn)?.holder;
 			release || assert(script, 'Shall find class in loaded ABC');
-			
+
 			return script;
 		}
 
