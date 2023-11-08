@@ -12,6 +12,7 @@ import { release } from '@awayfl/swf-loader';
 import { AXClass } from './AXClass';
 import { AXObject } from './AXObject';
 import { ClassInfo } from '../abc/lazy/ClassInfo';
+import { Traits } from '../abc/lazy/Traits';
 
 /**
  * All code lives within an application domain.
@@ -111,8 +112,18 @@ export class AXApplicationDomain {
 	}
 
 	public findProperty(mn: Multiname, _strict: boolean, execute: boolean): AXGlobal {
-		const script: ScriptInfo = this.findDefiningScript(mn, execute);
+		if (mn.script)
+			return mn.script.global;
+
+		let script: ScriptInfo = <ScriptInfo> Traits.getTrait(mn)?.holder || this.findDefiningScript(mn, execute);
+
+		if (!mn.mutable)
+			mn.script = script;
+
 		if (script) {
+			if (execute && script.state === ScriptInfoState.None) {
+				this.executeScript(script);
+			}
 			return script.global;
 		}
 		return null;
@@ -130,66 +141,28 @@ export class AXApplicationDomain {
 
 	public getProperty(mn: Multiname, strict: boolean, execute: boolean): AXObject {
 		const global: AXGlobal = this.findProperty(mn, strict, execute);
-		if (global) {
+		if (global)
 			return global.axGetProperty(mn);
-		}
 
-		if (mn.name != 'void') {
+		if (mn.name != 'void')
 			this.sec.throwError('ReferenceError', Errors.DefinitionNotFoundError, mn.name);
-		}
 	}
 
 	public findDefiningScript(mn: Multiname, execute: boolean): ScriptInfo {
-		if (mn.script)
-			return mn.script;
-
+		
 		// Look in parent domain first.
 		let script: ScriptInfo;
-		if (this.parent) {
-			script = this.parent.findDefiningScript(mn, execute);
-			if (script) {
-				return script;
-			}
-		}
-
-		// Search through the loaded abcs.
-		for (let i = 0; i < this._abcs.length; i++) {
-			const abc = this._abcs[i];
-			script = this._findDefiningScriptInABC(abc, mn, execute);
-			if (script) {
-				if (!mn.mutable)
-					mn.script = script;
-				return script;
-			}
-		}
 
 		// Still no luck, so let's ask the security domain to load additional ABCs and try again.
 		const abc: ABCFile = this.system.sec.findDefiningABC(mn);
 		if (abc) {
 			this.loadABC(abc);
-			script = this._findDefiningScriptInABC(abc, mn, execute);
+			script = <ScriptInfo> Traits.getTrait(mn)?.holder;
 			release || assert(script, 'Shall find class in loaded ABC');
-			if (!mn.mutable)
-				mn.script = script;
+			
 			return script;
 		}
 
-		return null;
-	}
-
-	private _findDefiningScriptInABC(abc: ABCFile, mn: Multiname, execute: boolean): ScriptInfo {
-		const scripts = abc.scripts;
-		for (let j = 0; j < scripts.length; j++) {
-			const script = scripts[j];
-			const traits = script.traits;
-			if (traits.getTrait(mn)) {
-				// Ensure script is executed.
-				if (execute && script.state === ScriptInfoState.None) {
-					this.executeScript(script);
-				}
-				return script;
-			}
-		}
 		return null;
 	}
 }

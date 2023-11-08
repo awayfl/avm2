@@ -25,7 +25,7 @@ export class Traits {
 	) {
 		for (let i = 0; i < this.traits.length; i++) {
 			const trait = this.traits[i];
-			const mn: Multiname = <Multiname> trait.multiname;
+			const mn: Multiname = trait.multiname;
 			Traits.multinames[mn.namespaces[0].uri + '.' + mn.name] = trait;
 		}
 	}
@@ -43,14 +43,22 @@ export class Traits {
 
 	private static multinames: any = {}
 
+	public static getTrait(mn: Multiname): TraitInfo {
+		const nm = mn.name;
+		let t: TraitInfo;
+		for (const ns of mn.namespaces)
+			if ((t = Traits.multinames[ns.uri + '.' + nm]))
+				return t;
+
+		return null;
+	}
+
 	getTrait(mn: Multiname): TraitInfo {
 		const nm = mn.name;
-		const nss = mn.namespaces;
-		for (const ns of nss) {
-			const t: TraitInfo = Traits.multinames[ns.uri + '.' + nm];
-			if (t && t.holder.traits === this)
+		let t: TraitInfo;
+		for (const ns of mn.namespaces)
+			if ((t = Traits.multinames[ns.uri + '.' + nm]) && t.holder.traits === this)
 				return t;
-		}
 
 		return null;
 	}
