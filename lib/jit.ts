@@ -2126,7 +2126,7 @@ export class Context {
 	}
 
 	call(value: AXCallable, obj: ASObject, pp: any[], scope: Scope = null): any {
-		if (scope && value.methodInfo.trait.multiname.name == 'getDefinitionByName') {
+		if (scope && value.methodInfo?.trait?.multiname.name == 'getDefinitionByName') {
 			return this.getdefinitionbyname(scope, obj, pp);
 		}
 		validateCall(this.sec, value, pp.length);
