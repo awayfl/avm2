@@ -26,7 +26,7 @@ export class Traits {
 		public traits: TraitInfo [],
 		script: boolean = false
 	) {
-		const multinames = script? (this.multinames = Traits.scriptMultinames) : (this.multinames = {});
+		const multinames = script ? (this.multinames = Traits.scriptMultinames) : (this.multinames = {});
 
 		for (let i = 0; i < this.traits.length; i++) {
 			const trait = this.traits[i];
