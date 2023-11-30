@@ -115,7 +115,7 @@ export class AXApplicationDomain {
 		if (mn.script)
 			return mn.script.global;
 
-		const script: ScriptInfo = <ScriptInfo> Traits.getTrait(mn)?.holder || this.findDefiningScript(mn, execute);
+		const script: ScriptInfo = <ScriptInfo> Traits.getScriptTrait(mn)?.holder || this.findDefiningScript(mn, execute);
 
 		if (!mn.mutable)
 			mn.script = script;
@@ -157,7 +157,7 @@ export class AXApplicationDomain {
 		const abc: ABCFile = this.system.sec.findDefiningABC(mn);
 		if (abc) {
 			this.loadABC(abc);
-			script = <ScriptInfo> Traits.getTrait(mn)?.holder;
+			script = <ScriptInfo> Traits.getScriptTrait(mn)?.holder;
 			release || assert(script, 'Shall find class in loaded ABC');
 
 			return script;

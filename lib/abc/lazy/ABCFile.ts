@@ -458,14 +458,14 @@ export class ABCFile {
 		return instanceInfo;
 	}
 
-	private _parseTraits() {
+	private _parseTraits(script: boolean = false) {
 		const s = this._stream;
 		const n = s.readU30();
 		const traits = [];
 		for (let i = 0; i < n; i++) {
 			traits.push(this._parseTrait());
 		}
-		return new Traits(traits);
+		return new Traits(traits, script);
 	}
 
 	private _parseTrait() {
@@ -545,7 +545,7 @@ export class ABCFile {
 
 	private _parseScriptInfo() {
 		const initializer = this._stream.readU30();
-		const traits = this._parseTraits();
+		const traits = this._parseTraits(true);
 		const scriptInfo = new ScriptInfo(this, initializer, traits);
 		traits.attachHolder(scriptInfo);
 		return scriptInfo;

@@ -20,13 +20,18 @@ import { SlotTraitInfo } from './SlotTraitInfo';
  * a type and all its super types is resolved and translated to an instance of RuntimeTraits.
  */
 export class Traits {
+	private multinames: any;
+
 	constructor(
-		public traits: TraitInfo []
+		public traits: TraitInfo [],
+		script: boolean = false
 	) {
+		const multinames = script? (this.multinames = Traits.scriptMultinames) : (this.multinames = {});
+
 		for (let i = 0; i < this.traits.length; i++) {
 			const trait = this.traits[i];
 			const mn: Multiname = trait.multiname;
-			Traits.multinames[mn.namespaces[0].uri + '.' + mn.name] = trait;
+			multinames[mn.namespaces[0].uri + '.' + mn.name] = trait;
 		}
 	}
 
@@ -41,13 +46,13 @@ export class Traits {
 		this.traits.forEach(x => writer.writeLn(x.toString()));
 	}
 
-	private static multinames: any = {}
+	private static scriptMultinames: any = {}
 
-	public static getTrait(mn: Multiname): TraitInfo {
+	public static getScriptTrait(mn: Multiname): TraitInfo {
 		const nm = mn.name;
 		let t: TraitInfo;
 		for (const ns of mn.namespaces)
-			if ((t = Traits.multinames[ns.uri + '.' + nm]))
+			if ((t = Traits.scriptMultinames[ns.uri + '.' + nm]))
 				return t;
 
 		return null;
@@ -57,7 +62,7 @@ export class Traits {
 		const nm = mn.name;
 		let t: TraitInfo;
 		for (const ns of mn.namespaces)
-			if ((t = Traits.multinames[ns.uri + '.' + nm]) && t.holder.traits === this)
+			if ((t = this.multinames[ns.uri + '.' + nm]))
 				return t;
 
 		return null;
