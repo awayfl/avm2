@@ -62,7 +62,7 @@ export class Traits {
 		const nm = mn.name;
 		let t: TraitInfo;
 		for (const ns of mn.namespaces)
-			if ((t = this.multinames[ns.uri + '.' + nm]))
+			if ((t = this.multinames[ns.uri + '.' + nm]) && t.holder.traits === this)
 				return t;
 
 		return null;
