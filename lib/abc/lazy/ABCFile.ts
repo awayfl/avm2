@@ -248,7 +248,9 @@ export class ABCFile {
 					warning('Invalid multiname: bad type parameter count ' + typeParameterCount);
 				}
 				const typeParameter = this._multinames[stream.readU32()];
-				const factory = this._multinames[nameIndex];
+				const o = stream.position;
+				const factory = this.getMultiname(nameIndex);
+				stream.seek(o);
 				return new Multiname(this, i, kind, factory.namespaces, factory.name, typeParameter);
 			}
 			default:
@@ -316,7 +318,7 @@ export class ABCFile {
 		if (i === 0) {
 			return null;
 		}
-		return this._multinames[i];
+		return this._multinames[i] || (this._multinames[i] = this._parseMultiname(i));
 	}
 
 	/**
