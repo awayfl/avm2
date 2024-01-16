@@ -32,7 +32,7 @@ export class TinyConstructor {
 			return null;
 		}
 		return function (context: any) {
-			return function tiny_constryctor() {
+			return function tiny_constructor() {
 				context.savedScope.superConstructor.call(this);
 			};
 		};
