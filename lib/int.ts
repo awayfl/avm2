@@ -143,7 +143,8 @@ export function interpret(methodInfo: MethodInfo, savedScope: Scope, callee: AXF
 		console.warn('[Interpret] Fail reconstruct method metadata:', e);
 	}
 
-	if (AVMStage.forceINT && !Settings.NO_FALL_TO_INT) {
+	//no jit for global scope functions
+	if (savedScope.parent == null || AVMStage.forceINT && !Settings.NO_FALL_TO_INT) {
 		try {
 			const result = _interpret(methodInfo, savedScope, callee);
 			executionWriter && executionWriter.leave('< ' + methodInfo.trait);
