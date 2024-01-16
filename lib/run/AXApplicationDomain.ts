@@ -107,7 +107,7 @@ export class AXApplicationDomain {
 		const global = this.sec.createAXGlobal(this, scriptInfo);
 		scriptInfo.global = global;
 		scriptInfo.state = ScriptInfoState.Executing;
-		interpret(scriptInfo.getInitializer(), global.scope, null).apply(global, []);
+		interpret(scriptInfo.methodInfo, global.scope, null).apply(global, []);
 		scriptInfo.state = ScriptInfoState.Executed;
 	}
 

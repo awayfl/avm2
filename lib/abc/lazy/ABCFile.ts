@@ -315,10 +315,8 @@ export class ABCFile {
 				Errors.CpoolIndexRangeError, i,
 				this._multinames.length);
 		}
-		if (i === 0) {
-			return null;
-		}
-		return this._multinames[i] || (this._multinames[i] = this._parseMultiname(i));
+
+		return (i !== 0)? this._multinames[i] || (this._multinames[i] = this._parseMultiname(i)) : null;
 	}
 
 	/**
@@ -329,10 +327,8 @@ export class ABCFile {
 			this.applicationDomain.sec.throwError('VerifierError', Errors.CpoolIndexRangeError, i,
 				this._namespaces.length);
 		}
-		if (i === 0) {
-			return Namespace.PUBLIC;
-		}
-		return this._namespaces[i];
+
+		return (i !== 0)? this._namespaces[i] : Namespace.PUBLIC;
 	}
 
 	/**
@@ -343,10 +339,8 @@ export class ABCFile {
 			this.applicationDomain.sec.throwError('VerifierError', Errors.CpoolIndexRangeError, i,
 				this._namespaceSets.length);
 		}
-		if (i === 0) {
-			return null;
-		}
-		return this._namespaceSets[i];
+
+		return (i !== 0)? this._namespaceSets[i] : null;
 	}
 
 	private _parseMethodInfos() {
@@ -546,9 +540,9 @@ export class ABCFile {
 	}
 
 	private _parseScriptInfo() {
-		const initializer = this._stream.readU30();
+		const methodInfo = this._methods[this._stream.readU30()];
 		const traits = this._parseTraits(true);
-		const scriptInfo = new ScriptInfo(this, initializer, traits);
+		const scriptInfo = new ScriptInfo(this, methodInfo, traits);
 		traits.attachHolder(scriptInfo);
 		return scriptInfo;
 	}

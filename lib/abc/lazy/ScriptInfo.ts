@@ -9,24 +9,12 @@ import { IndentingWriter } from '@awayfl/swf-loader';
 export class ScriptInfo extends Info {
 	public global: AXGlobal = null;
 	public state: ScriptInfoState = ScriptInfoState.None;
-	private initialiser: MethodInfo;
 	constructor(
-		public abc: ABCFile,
-		public initializer: number,
-		public traits: Traits
+		public readonly abc: ABCFile,
+		public readonly methodInfo: MethodInfo,
+		public readonly traits: Traits
 	) {
 		super(traits);
-	}
-
-	getInitializer(): MethodInfo {
-		if (this.initialiser) {
-			return this.initialiser;
-		}
-
-		this.initialiser = this.abc.getMethodInfo(this.initializer);
-		this.initialiser.scriptInfo = this;
-
-		return this.initialiser;
 	}
 
 	trace(writer: IndentingWriter) {
