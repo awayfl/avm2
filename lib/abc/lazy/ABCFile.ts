@@ -316,7 +316,7 @@ export class ABCFile {
 				this._multinames.length);
 		}
 
-		return (i !== 0)? this._multinames[i] || (this._multinames[i] = this._parseMultiname(i)) : null;
+		return (i !== 0) ? this._multinames[i] || (this._multinames[i] = this._parseMultiname(i)) : null;
 	}
 
 	/**
@@ -328,7 +328,7 @@ export class ABCFile {
 				this._namespaces.length);
 		}
 
-		return (i !== 0)? this._namespaces[i] : Namespace.PUBLIC;
+		return (i !== 0) ? this._namespaces[i] : Namespace.PUBLIC;
 	}
 
 	/**
@@ -340,7 +340,7 @@ export class ABCFile {
 				this._namespaceSets.length);
 		}
 
-		return (i !== 0)? this._namespaceSets[i] : null;
+		return (i !== 0) ? this._namespaceSets[i] : null;
 	}
 
 	private _parseMethodInfos() {
