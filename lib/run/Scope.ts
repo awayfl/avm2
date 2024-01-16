@@ -8,37 +8,28 @@ import { IS_AX_CLASS } from './AXClass';
 import { ASFunction } from '../nat/ASFunction';
 
 export class Scope {
-	parent: Scope;
 	global: Scope;
-	object: AXObject;
-	isWith: boolean;
-	cache: AXObject[];
-	defaultNamespace: Namespace;
+	defaultNamespace: Namespace = null;
 
-	public toString(): string {
-		return '' + this.parent + ' => ' + this.object + ' ' + this.isWith;
-	}
+	private cache: AXObject[] = [];
 
-	static ID = 0;
-	constructor(parent: Scope, object: AXObject, isWith: boolean = false) {
+	private static ID = 0;
+
+	constructor(
+		public readonly parent: Scope,
+		public readonly object: AXObject,
+		public readonly isWith: boolean = false
+	) {
 		Scope.ID++;
 
 		this[IS_AX_CLASS] = true;
-		this.init(parent, object, isWith);
-	}
 
-	init(parent: Scope, object: AXObject, isWith: boolean = false) {
-		this.parent = parent;
-		this.object = object;
 		this.global = parent ? parent.global : this;
-		this.isWith = isWith;
-		this.cache = [];
-		this.defaultNamespace = null;
 
 		object['__scope__'] = this;
 	}
 
-	get superConstructor(): ASFunction | Function {
+	public get superConstructor(): ASFunction | Function {
 		const superCtr = (<any> this.object).superClass;
 
 		if (!superCtr) {
@@ -53,7 +44,7 @@ export class Scope {
 		return r;
 	}
 
-	extend(object: AXObject) {
+	public extend(object: AXObject) {
 		if (object === this.object)
 			return this;
 
@@ -109,7 +100,7 @@ export class Scope {
 		return value;
 	}
 
-	public _findScopeProperty(mn: Multiname, strict: boolean, scopeOnly: boolean): AXObject {
+	private _findScopeProperty(mn: Multiname, strict: boolean, scopeOnly: boolean): AXObject {
 		// Multinames with a `null` name are the any name, '*'. Need to catch those here, because
 		// otherwise we'll get a failing assert in `RuntimeTraits#getTrait` below.
 		if (mn.name === null) {
@@ -159,5 +150,9 @@ export class Scope {
 
 		// Can't find it still, return the global object.
 		return globalObject;
+	}
+
+	public toString(): string {
+		return '' + this.parent + ' => ' + this.object + ' ' + this.isWith;
 	}
 }
