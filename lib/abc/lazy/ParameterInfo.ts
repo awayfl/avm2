@@ -10,7 +10,7 @@ export class ParameterInfo {
        * Don't rely on the name being correct.
        */
 		public name: string | number,
-		public optionalValueKind: CONSTANT,
+		public optionalValueKind: CONSTANT | number,
 		public optionalValueIndex: number
 	) {
 		// ...
