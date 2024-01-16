@@ -69,6 +69,7 @@ import { TraitInfo } from './abc/lazy/TraitInfo';
 import { RuntimeTraitInfo } from './abc/lazy/RuntimeTraitInfo';
 import { axConstructFast, isFastConstructSupport } from './run/axConstruct';
 import { ASRegExp } from './nat/ASRegExp';
+import { AXGlobal } from './run/AXGlobal';
 
 const METHOD_HOOKS: StringMap<{path: string, place: 'begin' | 'return', hook: Function}> = {};
 
@@ -149,7 +150,7 @@ function isFastReturnVoid(
 //@ts-ignore
 self.attach_hook = UNSAFE_attachMethodHook;
 
-function resolveTrait(info: InstanceInfo, name: Multiname): TraitInfo | RuntimeTraitInfo {
+function resolveTrait(info: InstanceInfo, name: Multiname, scope: Scope): TraitInfo | RuntimeTraitInfo {
 	let trait = info.traits.getTrait(name);
 	let superInstance = info;
 
@@ -160,7 +161,7 @@ function resolveTrait(info: InstanceInfo, name: Multiname): TraitInfo | RuntimeT
 			return null;
 		}
 
-		const addDom = <AXApplicationDomain> (<any> superName.value).applicationDomain;
+		const addDom = (<AXGlobal> scope.global.object).applicationDomain;
 		const superClass = addDom.getClass(superName);
 
 		superInstance = superClass.classInfo.instanceInfo;
@@ -201,7 +202,7 @@ export interface ICompilerOptions {
 export function compile(methodInfo: MethodInfo, options: ICompilerOptions = {}): ICompilerProcess {
 	const {
 		optimise = COMPILER_DEFAULT_OPT,
-		//scope: executionScope,
+		scope: executionScope,
 	} = options;
 
 	const state = new CompilerState(methodInfo);
@@ -1003,7 +1004,7 @@ export function compile(methodInfo: MethodInfo, options: ICompilerOptions = {}):
 						// we can check trite for `this` or any types that has trite
 						// @todo move this to fast-call
 						if (Settings.CHEK_TRAIT_GET_CALL && obj === 'this' && instanceInfo) {
-							const trait = resolveTrait(instanceInfo, mn);
+							const trait = resolveTrait(instanceInfo, mn, executionScope);
 
 							if (trait) {
 								// eslint-disable-next-line max-len
@@ -1111,7 +1112,7 @@ export function compile(methodInfo: MethodInfo, options: ICompilerOptions = {}):
 					// we can check trite for `this` or any types that has trite
 					// @todo move this to fast-call
 					if (Settings.CHEK_TRAIT_GET_CALL && obj === 'this' && instanceInfo) {
-						const trait = resolveTrait(instanceInfo, mn);
+						const trait = resolveTrait(instanceInfo, mn, executionScope);
 
 						if (trait) {
 							// eslint-disable-next-line max-len
@@ -1206,7 +1207,7 @@ export function compile(methodInfo: MethodInfo, options: ICompilerOptions = {}):
 						&& z.scope === 1
 						&& instanceInfo
 					) {
-						const trait = resolveTrait(instanceInfo, mn);
+						const trait = resolveTrait(instanceInfo, mn, executionScope);
 
 						if (trait) {
 							// eslint-disable-next-line max-len
@@ -1433,7 +1434,7 @@ export function compile(methodInfo: MethodInfo, options: ICompilerOptions = {}):
 					// we can check trite for `this` or any types that has trite
 					// @todo Move this inside fast-call optimiser
 					if (Settings.CHEK_TRAIT_GET_CALL && stack0 === 'this' && instanceInfo) {
-						const trait = resolveTrait(instanceInfo, mn);
+						const trait = resolveTrait(instanceInfo, mn, executionScope);
 						if (trait) {
 							// eslint-disable-next-line max-len
 							state.emitMain(`/* We sure that this safe get, represented in TRAIT as ${TRAITNames[trait.kind]}, type: ${(<SlotTraitInfo> trait).typeName}  */ `);
@@ -1534,7 +1535,7 @@ export function compile(methodInfo: MethodInfo, options: ICompilerOptions = {}):
 					// we can check trite for `this` or any types that has trite
 					// @todo Move this to fast-set optimisator
 					if (Settings.CHEK_TRAIT_SET && stack1 === 'this' && instanceInfo) {
-						const trait = resolveTrait(instanceInfo, mn);
+						const trait = resolveTrait(instanceInfo, mn, executionScope);
 
 						if (trait && trait) {
 							// eslint-disable-next-line max-len
@@ -1672,7 +1673,7 @@ export function compile(methodInfo: MethodInfo, options: ICompilerOptions = {}):
 						&& z.scope === 1
 						&& instanceInfo
 					) {
-						const trait = resolveTrait(instanceInfo, mn);
+						const trait = resolveTrait(instanceInfo, mn, executionScope);
 						if (trait) {
 							const local = emitInlineLocal(state, 0);
 							// eslint-disable-next-line max-len
@@ -1989,12 +1990,9 @@ export function compile(methodInfo: MethodInfo, options: ICompilerOptions = {}):
 export class Context {
 	public static REG_EXP_CACHE: Record<string, ASRegExp> = {};
 
-	/*jit internal*/ readonly mi: MethodInfo;
-	private readonly savedScope: Scope;
 	private readonly rn: Multiname;
-	private readonly sec: AXSecurityDomain
-	/*jit internal*/ readonly abc: ABCFile
-	private readonly names: Multiname[]
+	private readonly sec: AXSecurityDomain;
+	private readonly abc: ABCFile;
 	/*jit internal*/ readonly jsGlobal: Object = jsGlobal;
 	/*jit internal*/ readonly axCoerceString: Function = axCoerceString;
 	/*jit internal*/ readonly axCheckFilter: Function = axCheckFilter;
@@ -2005,13 +2003,14 @@ export class Context {
 	public readonly AX_CLASS_SYMBOL = IS_AX_CLASS;
 	public static readonly HAS_NEXT_INFO = new HasNext2Info(null,0);
 
-	constructor(mi: MethodInfo, savedScope: Scope, names: Multiname[]) {
-		this.mi = mi;
-		this.savedScope = savedScope;
+	constructor(
+		private readonly mi: MethodInfo,
+		private readonly savedScope: Scope,
+		private readonly names: Multiname[]
+	) {
 		this.rn = new Multiname(mi.abc, 0, null, null, null, null, true);
 		this.abc = mi.abc;
 		this.sec = mi.abc.applicationDomain.sec;
-		this.names = names;
 		this.emptyArray = Object.create(this.sec.AXArray.tPrototype);
 		this.emptyArray.value = [];
 	}
