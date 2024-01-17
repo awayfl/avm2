@@ -437,7 +437,7 @@ export class ABCFile {
 		const multiname = this._multinames[s.readU30()];
 		const superName = this._multinames[s.readU30()];
 		const flags = s.readU8();
-		const protectedNs = (flags & CONSTANT.ClassProtectedNs)? this._namespaces[s.readU30()] : Namespace.PUBLIC;
+		const protectedNs = (flags & CONSTANT.ClassProtectedNs) ? this._namespaces[s.readU30()] : Namespace.PUBLIC;
 		const interfaceCount = s.readU30();
 		const interfaces: Multiname[] = [];
 		for (let i = 0; i < interfaceCount; i++) {

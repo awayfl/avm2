@@ -34,7 +34,7 @@ export class InstanceInfo extends Info {
 	public getClassName(): string {
 		const namespace = this.multiname.namespaces[0];
 
-		return namespace.uri? namespace.uri + '.' + this.multiname.name : this.multiname.name;
+		return namespace.uri ? namespace.uri + '.' + this.multiname.name : this.multiname.name;
 	}
 
 	public getInterfaces(ownerClass: AXClass): Set<AXClass> {
