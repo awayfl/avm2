@@ -140,7 +140,7 @@ export class ASObject implements IMetaobjectProtocol {
 		enumerable = !!enumerable;
 		const instanceInfo = this.axClass.classInfo.instanceInfo;
 		if (instanceInfo.isSealed() && this !== this.axClass.dPrototype) {
-			this.sec.throwError('ReferenceError', Errors.WriteSealedError, nm, instanceInfo.name.name);
+			this.sec.throwError('ReferenceError', Errors.WriteSealedError, nm, instanceInfo.multiname.name);
 		}
 		// Silently ignore trait properties.
 		let descriptor = Object.getOwnPropertyDescriptor(this.axClass.tPrototype, qualifiedName);

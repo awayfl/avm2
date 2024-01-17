@@ -23,7 +23,7 @@ export class SlotTraitInfo extends TraitInfo {
 			if (this.typeName === null) {
 				return undefined;
 			}
-			const value = typeDefaultValues[(<Multiname> this.typeName).getMangledName()];
+			const value = typeDefaultValues[this.typeName.getMangledName()];
 			return value === undefined ? null : value;
 		}
 		return this.abc.getConstant(this.defaultValueKind, this.defaultValueIndex);

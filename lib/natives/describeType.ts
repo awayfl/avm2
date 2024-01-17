@@ -104,7 +104,7 @@ export function describeTypeJSON(sec: AXSecurityDomain, o: any, flags: number): 
 	if (isInt) {
 		description.$Bgname = 'int';
 	} else {
-		description.$Bgname = info.instanceInfo.getName().toFQNString(true);
+		description.$Bgname = info.instanceInfo.multiname.toFQNString(true);
 	}
 	// More special casing for bound methods. See bug 1057750.
 	description.$BgisDynamic = describeClass || !(info.instanceInfo.flags & CONSTANT.ClassSealed);
@@ -343,7 +343,7 @@ function addTraits(cls: AXClass, info: ClassInfo, describingClass: boolean,
 	const isInterface = info.instanceInfo.isInterface();
 	let className;
 	while (cls) {
-		className = cls.classInfo.instanceInfo.getName().toFQNString(true);
+		className = cls.classInfo.instanceInfo.multiname.toFQNString(true);
 		if (includeBases && addBase && !describingClass) {
 			basesVal.push(className);
 		} else {

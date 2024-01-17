@@ -155,7 +155,7 @@ function resolveTrait(info: InstanceInfo, name: Multiname, scope: Scope): TraitI
 	let superInstance = info;
 
 	while (Settings.CHEK_SUPER_TRAITS && !trait && superInstance && superInstance instanceof InstanceInfo) {
-		const superName = superInstance.getSuperName();
+		const superName = superInstance.superName;
 
 		if (!superName) {
 			return null;
@@ -2200,7 +2200,7 @@ export class Context {
 	 * Fast constructor for compile-time knowned external classes, like box2D or nape
 	 */
 	constructExt(ctor: AXClass, args: any[], mn?: Multiname): AXObject {
-		mn = mn || ctor.classInfo.instanceInfo.getName();
+		mn = mn || ctor.classInfo.instanceInfo.multiname;
 
 		return extClassConstructor(mn, args);
 	}
@@ -2229,7 +2229,7 @@ export class Context {
 	 * Basic constructor for axObjects, slower that any others
 	 */
 	construct(obj: AXClass, pp: any[]): AXObject {
-		const mn = obj.classInfo.instanceInfo.getName();
+		const mn = obj.classInfo.instanceInfo.multiname;
 
 		const r = extClassConstructor(mn, pp);
 

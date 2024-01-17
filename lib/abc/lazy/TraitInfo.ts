@@ -17,7 +17,7 @@ export class TraitInfo {
 		this.holder = null;
 	}
 
-	getMetadata(): MetadataInfo [] {
+	public getMetadata(): MetadataInfo [] {
 		if (!this.metadata) {
 			return null;
 		}
@@ -31,40 +31,35 @@ export class TraitInfo {
 		return <MetadataInfo []> this.metadata;
 	}
 
-	toString() {
+	public toString() {
 		return getTRAITName(this.kind) + ' ' + this.multiname;
 	}
 
-	toFlashlogString(): string {
-		return this.multiname.toFlashlogString();
-	}
-
-	isConst(): boolean {
+	public isConst(): boolean {
 		return this.kind === TRAIT.Const;
 	}
 
-	isSlot(): boolean {
+	public isSlot(): boolean {
 		return this.kind === TRAIT.Slot;
 	}
 
-	isMethod(): boolean {
+	public isMethod(): boolean {
 		return this.kind === TRAIT.Method;
 	}
 
-	isGetter(): boolean {
+	public isGetter(): boolean {
 		return this.kind === TRAIT.Getter;
 	}
 
-	isSetter(): boolean {
+	public isSetter(): boolean {
 		return this.kind === TRAIT.Setter;
 	}
 
-	isAccessor(): boolean {
-		return this.kind === TRAIT.Getter ||
-              this.kind === TRAIT.Setter;
+	public isAccessor(): boolean {
+		return this.kind === TRAIT.Getter || this.kind === TRAIT.Setter;
 	}
 
-	isMethodOrAccessor(): boolean {
+	public isMethodOrAccessor(): boolean {
 		return this.isAccessor() || this.kind === TRAIT.Method;
 	}
 }

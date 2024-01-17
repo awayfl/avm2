@@ -212,7 +212,7 @@ export class AXSecurityDomain {
 			return vectorClass;
 		}
 		const typeClassName = type && type.classInfo ?
-			type.classInfo.instanceInfo.getName().getMangledName() :
+			type.classInfo.instanceInfo.multiname.getMangledName() :
 			'$BgObject';
 		switch (typeClassName) {
 			case '$BgNumber':
@@ -312,7 +312,7 @@ export class AXSecurityDomain {
 
 	createClass(classInfo: ClassInfo, superClass: AXClass, scope: Scope): AXClass {
 		const instanceInfo = classInfo.instanceInfo;
-		const className = instanceInfo.getName().toFQNString(false);
+		const className = instanceInfo.multiname.toFQNString(false);
 		const axClass: AXClass = this.nativeClasses[className] ||
 									Object.create(this.AXClass.tPrototype);
 		const classScope = new Scope(scope, axClass);
@@ -371,11 +371,11 @@ export class AXSecurityDomain {
 		tryLinkNativeClass(axClass);
 
 		// Run the static initializer.
-		const initializer = classInfo.getInitializer();
-		const initializerCode = initializer.getBody().code;
+		const methodInfo = classInfo.methodInfo;
+		const methodBodyCode = methodInfo.getBody().code;
 		// ... except if it's the standard class initializer that doesn't really do anything.
-		if (initializerCode[0] !== 208 || initializerCode[1] !== 48 || initializerCode[2] !== 71) {
-			interpret(initializer, classScope, null).apply(axClass, [axClass]);
+		if (methodBodyCode[0] !== 208 || methodBodyCode[1] !== 48 || methodBodyCode[2] !== 71) {
+			interpret(methodInfo, classScope, null).apply(axClass, [axClass]);
 		}
 		return axClass;
 	}
@@ -407,9 +407,8 @@ export class AXSecurityDomain {
 		const superInstanceTraits = (superClass && superClass[IS_AX_CLASS])
 			? superClass.classInfo.instanceInfo.runtimeTraits : null;
 
-		const protectedNs = classInfo.abc.getNamespace(instanceInfo.protectedNs);
 		const instanceTraits = instanceInfo.traits.resolveRuntimeTraits(superInstanceTraits,
-			protectedNs, scope, forceNativeMethods);
+			instanceInfo.protectedNs, scope, forceNativeMethods);
 		instanceInfo.runtimeTraits = instanceTraits;
 		applyTraits(axClass.tPrototype, instanceTraits);
 	}
@@ -431,7 +430,7 @@ export class AXSecurityDomain {
 	}
 
 	createInitializerFunction(classInfo: ClassInfo, scope: Scope): AXCallable {
-		const methodInfo = classInfo.instanceInfo.getInitializer();
+		const methodInfo = classInfo.instanceInfo.methodInfo;
 		const traceMsg = !release && flashlog && methodInfo.trait ? methodInfo.toFlashlogString() : null;
 		let fun: AXCallable = getNativeInitializer(classInfo);
 		if (!fun) {
@@ -454,7 +453,7 @@ export class AXSecurityDomain {
 			}
 			if (!release) {
 				try {
-					const className = classInfo.instanceInfo.getName().toFQNString(false);
+					const className = classInfo.instanceInfo.multiname.toFQNString(false);
 					Object.defineProperty(fun, 'name', { value: className });
 				} catch (e) {
 					// Ignore errors in browsers that don't allow overriding Function#length;
@@ -540,7 +539,7 @@ export class AXSecurityDomain {
 		const dynamicClassPrototype: AXObject = Object.create(this.objectPrototype);
 		const rootClassPrototype: AXObject = Object.create(dynamicClassPrototype);
 		rootClassPrototype.$BgtoString = <any> function axClassToString() {
-			return '[class ' + this.classInfo.instanceInfo.getName().name + ']';
+			return '[class ' + this.classInfo.instanceInfo.multiname.name + ']';
 		};
 
 		const D = defineNonEnumerableProperty;
@@ -553,7 +552,7 @@ export class AXSecurityDomain {
 		D(rootClassPrototype, 'axApply', axDefaultApply);
 		Object.defineProperty(rootClassPrototype, 'name', {
 			get: function () {
-				return this.classInfo.instanceInfo.name;
+				return this.classInfo.instanceInfo.multiname;
 			}
 		});
 

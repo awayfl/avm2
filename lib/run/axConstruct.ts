@@ -133,7 +133,7 @@ export function axConstruct(argArray?: any[]) {
 		classToCheck = classToCheck.superClass;
 	}
 
-	const name = (<Multiname>_this.superClass?.classInfo?.instanceInfo?.name)?.name;
+	const name = _this.superClass?.classInfo?.instanceInfo?.multiname?.name;
 	let appDom: IAwayApplicationDomain;
 
 	if (_this.axApplicationDomain && _this.axApplicationDomain.awayApplicationDomain) {
@@ -142,7 +142,7 @@ export function axConstruct(argArray?: any[]) {
 		appDom = ActiveLoaderContext.loaderContext.applicationDomain;
 	}
 
-	const mn =  (<Multiname>_this.classInfo.instanceInfo.name);
+	const mn =  _this.classInfo.instanceInfo.multiname;
 	const instName = mn.name;
 	const fullName = mn.uri ? mn.uri + '.' + instName : instName;
 
@@ -226,7 +226,7 @@ export function isFastConstructSupport(mn: Multiname, trace: string[]): boolean 
 			return false;
 		}
 
-		mn = classInfo.instanceInfo.getSuperName();
+		mn = classInfo.instanceInfo.superName;
 
 		if (!mn) {
 			return true;

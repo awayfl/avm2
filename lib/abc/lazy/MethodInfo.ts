@@ -135,15 +135,15 @@ export class MethodInfo {
 		const trait = this.trait;
 		let prefix = trait.kind === TRAIT.Getter ? 'get ' :
 			trait.kind === TRAIT.Setter ? 'set ' : '';
-		let name = trait.toFlashlogString();
+		let name = trait.multiname.toFlashlogString();
 		const holder = trait.holder;
 		let holderName;
 		if (holder && holder instanceof InstanceInfo) {
-			holderName = (<InstanceInfo>holder).toFlashlogString();
+			holderName = (<InstanceInfo>holder).multiname.toFlashlogString();
 			prefix = holderName + '/' + prefix;
 		}
 		if (holder && holder instanceof ClassInfo && (<ClassInfo>holder).trait) {
-			holderName = (<ClassInfo>holder).trait.toFlashlogString();
+			holderName = (<ClassInfo>holder).trait.multiname.toFlashlogString();
 			prefix = holderName + '$/' + prefix;
 		}
 		let prefixPos;

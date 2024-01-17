@@ -8,59 +8,36 @@ import { MethodInfo } from './MethodInfo';
 import { Traits } from './Traits';
 import { IndentingWriter } from '@awayfl/swf-loader';
 import { CONSTANT } from './CONSTANT';
+import { Namespace } from './Namespace';
 
 export class InstanceInfo extends Info {
 	public classInfo: ClassInfo = null;
 	public runtimeTraits: RuntimeTraits = null;
 
-	private _interfaces: Set<AXClass>;
+	private _interfaces: Set<AXClass> = null;
 
 	constructor(
-		public abc: ABCFile,
-		public name: Multiname | number,
-		public superName: Multiname | number,
-		public flags: number,
-		public protectedNs: number,
-		public interfaceNameIndices: number [],
-		public initializer: MethodInfo | number,
-		public traits: Traits
+		public readonly abc: ABCFile,
+		public readonly multiname: Multiname,
+		public readonly superName: Multiname,
+		public readonly flags: number,
+		public readonly protectedNs: Namespace,
+		public readonly interfaceNames: Multiname [],
+		public readonly methodInfo: MethodInfo,
+		public readonly traits: Traits
 	) {
 		super(traits);
-		this._interfaces = null;
+		this.methodInfo.instanceInfo = this;
+		this.methodInfo.isConstructor = true;
 	}
 
-	getInitializer(): MethodInfo {
-		if (typeof this.initializer === 'number') {
-			this.initializer = this.abc.getMethodInfo(<number> this.initializer);
-			this.initializer.instanceInfo = this;
-			this.initializer.isConstructor = true;
-		}
-		return <MethodInfo> this.initializer;
+	public getClassName(): string {
+		const namespace = this.multiname.namespaces[0];
+
+		return namespace.uri? namespace.uri + '.' + this.multiname.name : this.multiname.name;
 	}
 
-	getName(): Multiname {
-		if (typeof this.name === 'number') {
-			this.name = this.abc.getMultiname(<number> this.name);
-		}
-		return <Multiname> this.name;
-	}
-
-	getClassName(): string {
-		const name = this.getName();
-		if (name.namespaces[0].uri) {
-			return name.namespaces[0].uri + '.' + name.name;
-		}
-		return name.name;
-	}
-
-	getSuperName(): Multiname {
-		if (typeof this.superName === 'number') {
-			this.superName = this.abc.getMultiname(<number> this.superName);
-		}
-		return <Multiname> this.superName;
-	}
-
-	getInterfaces(ownerClass: AXClass): Set<AXClass> {
+	public getInterfaces(ownerClass: AXClass): Set<AXClass> {
 		if (this._interfaces) {
 			return this._interfaces;
 		}
@@ -72,8 +49,8 @@ export class InstanceInfo extends Info {
 		}
 		const SetCtor: any = Set;
 		const interfaces = this._interfaces = new SetCtor(superClassInterfaces);
-		for (let i = 0; i < this.interfaceNameIndices.length; i++) {
-			const mn = this.abc.getMultiname(this.interfaceNameIndices[i]);
+		for (let i = 0; i < this.interfaceNames.length; i++) {
+			const mn = this.interfaceNames[i];
 			const type = this.abc.applicationDomain.getClass(mn);
 			interfaces.add(type);
 			const implementedInterfaces = type.classInfo.instanceInfo.getInterfaces(type);
@@ -82,30 +59,26 @@ export class InstanceInfo extends Info {
 		return interfaces;
 	}
 
-	toString() {
-		return 'InstanceInfo ' + this.getName().name;
+	public toString() {
+		return 'InstanceInfo ' + this.multiname.name;
 	}
 
-	toFlashlogString(): string {
-		return this.getName().toFlashlogString();
-	}
-
-	trace(writer: IndentingWriter) {
-		writer.enter('InstanceInfo: ' + this.getName());
-		this.superName && writer.writeLn('Super: ' + this.getSuperName());
+	public trace(writer: IndentingWriter) {
+		writer.enter('InstanceInfo: ' + this.multiname);
+		this.superName && writer.writeLn('Super: ' + this.superName);
 		this.traits.trace(writer);
 		writer.outdent();
 	}
 
-	isInterface(): boolean {
+	public isInterface(): boolean {
 		return !!(this.flags & CONSTANT.ClassInterface);
 	}
 
-	isSealed(): boolean {
+	public isSealed(): boolean {
 		return !!(this.flags & CONSTANT.ClassSealed);
 	}
 
-	isFinal(): boolean {
+	public isFinal(): boolean {
 		return !!(this.flags & CONSTANT.ClassFinal);
 	}
 }

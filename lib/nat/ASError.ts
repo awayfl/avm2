@@ -21,7 +21,7 @@ export class ASError extends ASObject {
 	static classInitializer(asClass?: ASClass) {
 		defineNonEnumerableProperty(this, '$Bglength', 1);
 		defineNonEnumerableProperty(this.dPrototype, '$Bgname',
-			this.classInfo.instanceInfo.getName().name);
+			this.classInfo.instanceInfo.multiname.name);
 		if (asClass === ASError) {
 			defineNonEnumerableProperty(this.dPrototype, '$Bgmessage', 'Error');
 			defineNonEnumerableProperty(this.dPrototype, '$BgtoString', ASError.prototype.toString);

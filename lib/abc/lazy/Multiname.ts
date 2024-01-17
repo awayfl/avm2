@@ -333,7 +333,7 @@ export class Multiname {
 		return str;
 	}
 
-	toFlashlogString(): string {
+	public toFlashlogString(): string {
 		const namespaceUri = this.uri;
 		return namespaceUri ? namespaceUri + '::' + this.name : this.name;
 	}

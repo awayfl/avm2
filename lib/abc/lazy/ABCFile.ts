@@ -434,22 +434,19 @@ export class ABCFile {
 
 	private _parseInstanceInfo(): InstanceInfo {
 		const s = this._stream;
-		const name = s.readU30();
-		const superName = s.readU30();
+		const multiname = this._multinames[s.readU30()];
+		const superName = this._multinames[s.readU30()];
 		const flags = s.readU8();
-		let protectedNsIndex = 0;
-		if (flags & CONSTANT.ClassProtectedNs) {
-			protectedNsIndex = s.readU30();
-		}
+		const protectedNs = (flags & CONSTANT.ClassProtectedNs)? this._namespaces[s.readU30()] : Namespace.PUBLIC;
 		const interfaceCount = s.readU30();
-		const interfaces = [];
+		const interfaces: Multiname[] = [];
 		for (let i = 0; i < interfaceCount; i++) {
-			interfaces[i] = s.readU30();
+			interfaces[i] = this._multinames[s.readU30()];
 		}
-		const initializer = s.readU30();
+		const methodInfo = this._methods[s.readU30()];
 		const traits = this._parseTraits();
-		const instanceInfo = new InstanceInfo(this, name, superName, flags, protectedNsIndex,
-			interfaces, initializer, traits);
+		const instanceInfo = new InstanceInfo(this, multiname, superName, flags, protectedNs,
+			interfaces, methodInfo, traits);
 		traits.attachHolder(instanceInfo);
 		return instanceInfo;
 	}
@@ -457,9 +454,9 @@ export class ABCFile {
 	private _parseTraits(script: boolean = false) {
 		const s = this._stream;
 		const n = s.readU30();
-		const traits = [];
+		const traits = new Array(n);
 		for (let i = 0; i < n; i++) {
-			traits.push(this._parseTrait());
+			traits[i] = this._parseTrait();
 		}
 		return new Traits(traits, script);
 	}
@@ -524,9 +521,9 @@ export class ABCFile {
 	}
 
 	private _parseClassInfo(i: number) {
-		const initializer = this._stream.readU30();
+		const methodInfo = this._methods[this._stream.readU30()];
 		const traits = this._parseTraits();
-		const classInfo = new ClassInfo(this, this.instances[i], initializer, traits);
+		const classInfo = new ClassInfo(this, this.instances[i], methodInfo, traits);
 		traits.attachHolder(classInfo);
 		return classInfo;
 	}

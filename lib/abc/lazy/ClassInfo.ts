@@ -12,10 +12,10 @@ export class ClassInfo extends Info {
 	public trait: ClassTraitInfo = null;
 	public runtimeTraits: RuntimeTraits = null;
 	constructor(
-		public abc: ABCFile,
-		public instanceInfo: InstanceInfo,
-		public initializer: MethodInfo | number,
-		public traits: Traits
+		public readonly abc: ABCFile,
+		public readonly instanceInfo: InstanceInfo,
+		public readonly methodInfo: MethodInfo,
+		public readonly traits: Traits
 	) {
 		super(traits);
 	}
@@ -36,16 +36,8 @@ export class ClassInfo extends Info {
 		return null;
 	}
 
-	getInitializer(): MethodInfo {
-		if (typeof this.initializer === 'number') {
-			this.initializer = this.abc.getMethodInfo(<number> this.initializer);
-			this.initializer.classInfo = this;
-		}
-		return <MethodInfo> this.initializer;
-	}
-
 	toString() {
-		return 'ClassInfo ' + this.instanceInfo.getName();
+		return 'ClassInfo ' + this.instanceInfo.multiname;
 	}
 
 	trace(writer: IndentingWriter) {

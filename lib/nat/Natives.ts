@@ -22,7 +22,7 @@ const getQualifiedClassName = function(_: AXSecurityDomain, value: any): string 
 			if (value === null) {
 				return 'null';
 			}
-			return value.classInfo.instanceInfo.name.toFQNString(false);
+			return value.classInfo.instanceInfo.multiname.toFQNString(false);
 		case 'number':
 			return (value | 0) === value ? 'int' : 'Number';
 		case 'string':

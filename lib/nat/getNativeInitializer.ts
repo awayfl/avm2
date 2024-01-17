@@ -4,7 +4,7 @@ import { ASClass } from './ASClass';
 import { builtinNativeClasses , nativeClasses } from './builtinNativeClasses';
 
 export function getNativeInitializer(classInfo: ClassInfo): AXCallable {
-	const methodInfo = classInfo.instanceInfo.getInitializer();
+	const methodInfo = classInfo.instanceInfo.methodInfo;
 	const className = classInfo.instanceInfo.getClassName();
 	const asClass = builtinNativeClasses[className] || nativeClasses[className];
 

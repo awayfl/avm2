@@ -6,6 +6,6 @@ export function AXBasePrototype_$BgtoString() {
 	// we can check for that.
 	const name = this.hasOwnProperty('classInfo') ?
 		'Object' :
-		this.classInfo.instanceInfo.name.name;
+		this.classInfo.instanceInfo.multiname.name;
 	return StringUtilities.concat3('[object ', name, ']');
 }

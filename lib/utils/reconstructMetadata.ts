@@ -49,7 +49,7 @@ export function reconstructMetadata (methodInfo: MethodInfo, id: number): IMetho
 			isMemeber = false;
 		} else if (methodInfo.trait.holder instanceof InstanceInfo) {
 			path = methodInfo.trait.holder.getClassName().replace(/\./g, '/');
-			superClass =  methodInfo.trait.holder.getSuperName()?.
+			superClass =  methodInfo.trait.holder.superName?.
 				toFQNString(false).replace(/\./g, '/');
 		}
 		if (methodInfo.trait instanceof MethodTraitInfo) {
@@ -88,7 +88,7 @@ export function reconstructMetadata (methodInfo: MethodInfo, id: number): IMetho
 	if (methodInfo.instanceInfo) {
 		path = methodInfo.instanceInfo.getClassName().replace(/\./g, '/');
 		methodName = methodInfo.isConstructor ? 'constructor' : funcName;
-		superClass = methodInfo.instanceInfo.getSuperName()?.
+		superClass = methodInfo.instanceInfo.superName?.
 			toFQNString(false).replace(/\./g, '/');
 
 		pathIsDefault = false;

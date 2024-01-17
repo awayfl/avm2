@@ -91,7 +91,7 @@ export class AXApplicationDomain {
 			const abc = this._abcs[i];
 			for (let j = 0; j < abc.instances.length; j++) {
 				const c = abc.classes[j];
-				const mn = c.instanceInfo.getName();
+				const mn = c.instanceInfo.multiname;
 				if (mn.name === argName && mn.namespaces[0].uri == uri) {
 					return c;
 				}
