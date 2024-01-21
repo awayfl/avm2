@@ -7,8 +7,11 @@ import { MethodInfo } from './MethodInfo';
 import { Traits } from './Traits';
 import { MetadataInfo } from './MetadataInfo';
 import { IndentingWriter } from '@awayfl/swf-loader';
+import { AXGlobal } from '../../run/AXGlobal';
+import { IGlobalInfo } from './IGlobalInfo';
 
-export class ClassInfo extends Info {
+export class ClassInfo extends Info implements IGlobalInfo {
+	public global: AXGlobal = null;
 	public trait: ClassTraitInfo = null;
 	public runtimeTraits: RuntimeTraits = null;
 	constructor(

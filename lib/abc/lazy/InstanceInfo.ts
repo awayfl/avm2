@@ -9,8 +9,9 @@ import { Traits } from './Traits';
 import { IndentingWriter } from '@awayfl/swf-loader';
 import { CONSTANT } from './CONSTANT';
 import { Namespace } from './Namespace';
+import { ILocalInfo } from './ILocalInfo';
 
-export class InstanceInfo extends Info {
+export class InstanceInfo extends Info implements ILocalInfo {
 	public classInfo: ClassInfo = null;
 	public runtimeTraits: RuntimeTraits = null;
 

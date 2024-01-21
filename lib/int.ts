@@ -96,7 +96,7 @@ export class ScopeStack {
 
 function popNameInto(stack: any [], mn: Multiname, rn: Multiname) {
 	rn.resolved = {};
-	rn.script = null;
+	rn.globalInfo = null;
 	rn.numeric = false;
 	rn.id = mn.id;
 	rn.kind = mn.kind;

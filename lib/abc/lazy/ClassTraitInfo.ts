@@ -10,7 +10,7 @@ export class ClassTraitInfo extends SlotTraitInfo {
 		kind: TRAIT,
 		multiname: Multiname,
 		slot: number,
-		public classInfo: ClassInfo
+		public readonly classInfo: ClassInfo
 	) {
 		super(abc, kind, multiname, slot, abc.getMultiname(0), 0, -1);
 	}

@@ -1,5 +1,4 @@
 import { TraitInfo } from './TraitInfo';
-import { Info } from './Info';
 import { release } from '@awayfl/swf-loader';
 import { assert } from '@awayjs/graphics';
 import { IndentingWriter } from '@awayfl/swf-loader';
@@ -13,6 +12,7 @@ import { createMethodForTrait } from './createMethodForTrait';
 import { TRAIT } from './TRAIT';
 import { MethodTraitInfo } from './MethodTraitInfo';
 import { SlotTraitInfo } from './SlotTraitInfo';
+import { ILocalInfo } from './ILocalInfo';
 
 /**
  * The Traits class represents the collection of compile-time traits associated with a type.
@@ -20,13 +20,13 @@ import { SlotTraitInfo } from './SlotTraitInfo';
  * a type and all its super types is resolved and translated to an instance of RuntimeTraits.
  */
 export class Traits {
-	private multinames: any;
+	private _multinames: Record<string, TraitInfo>;
 
 	constructor(
-		public traits: TraitInfo [],
-		script: boolean = false
+		public readonly traits: TraitInfo [],
+		global: boolean = false
 	) {
-		const multinames = script ? (this.multinames = Traits.scriptMultinames) : (this.multinames = {});
+		const multinames = global ? (this._multinames = Traits._globalMultinames) : (this._multinames = {});
 
 		for (let i = 0; i < this.traits.length; i++) {
 			const trait = this.traits[i];
@@ -35,7 +35,7 @@ export class Traits {
 		}
 	}
 
-	attachHolder(holder: Info) {
+	attachHolder(holder: ILocalInfo) {
 		for (let i = 0; i < this.traits.length; i++) {
 			release || assert(!this.traits[i].holder);
 			this.traits[i].holder = holder;
@@ -46,13 +46,13 @@ export class Traits {
 		this.traits.forEach(x => writer.writeLn(x.toString()));
 	}
 
-	private static scriptMultinames: any = {}
+	private static _globalMultinames: Record<string, TraitInfo> = {}
 
-	public static getScriptTrait(mn: Multiname): TraitInfo {
+	public static getGlobalTrait(mn: Multiname): TraitInfo {
 		const nm = mn.name;
 		let t: TraitInfo;
 		for (const ns of mn.namespaces)
-			if ((t = Traits.scriptMultinames[ns.uri + '.' + nm]))
+			if ((t = Traits._globalMultinames[ns.uri + '.' + nm]))
 				return t;
 
 		return null;
@@ -62,7 +62,7 @@ export class Traits {
 		const nm = mn.name;
 		let t: TraitInfo;
 		for (const ns of mn.namespaces)
-			if ((t = this.multinames[ns.uri + '.' + nm]) && t.holder.traits === this)
+			if ((t = this._multinames[ns.uri + '.' + nm]) && t.holder.traits === this)
 				return t;
 
 		return null;

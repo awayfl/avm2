@@ -1,17 +1,17 @@
 import { TRAIT, getTRAITName } from './TRAIT';
-import { Info } from './Info';
 import { MetadataInfo } from './MetadataInfo';
 import { ABCFile } from './ABCFile';
 import { Multiname } from './Multiname';
+import { ILocalInfo } from './ILocalInfo';
 
 export class TraitInfo {
-	public holder: Info;
+	public holder: ILocalInfo;
 	public metadata: MetadataInfo [] | Uint32Array;
 
 	constructor(
-		public abc: ABCFile,
-		public kind: TRAIT,
-		public multiname: Multiname
+		public readonly abc: ABCFile,
+		public readonly kind: TRAIT,
+		public readonly multiname: Multiname
 	) {
 		this.metadata = null;
 		this.holder = null;

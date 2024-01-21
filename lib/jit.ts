@@ -2133,7 +2133,7 @@ export class Context {
 	}
 
 	getdefinitionbyname(scope: Scope, _: any, args: any[]): AXClass {
-		const info = (<ScriptInfo>(<any>scope.global.object).scriptInfo);
+		const info = (<AXGlobal> scope.global.object).globalInfo;
 		// pp can be XMList, that required to conversion
 		return info.abc.applicationDomain.getClass(Multiname.FromSimpleName(args[0].toString()));
 	}
@@ -2278,7 +2278,7 @@ export class Context {
 
 	runtimename(mn: Multiname, propName: Multiname & ASClass | string , nsName?: string): Multiname {
 		this.rn.resolved = {};
-		this.rn.script = null;
+		this.rn.globalInfo = null;
 		this.rn.numeric = false;
 		this.rn.id = mn.id;
 		this.rn.kind = mn.kind;

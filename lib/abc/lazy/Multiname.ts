@@ -8,9 +8,9 @@ import { assert } from '@awayjs/graphics';
 import { internPrefixedNamespace } from './internPrefixedNamespace';
 import { axCoerceString } from '../../run/axCoerceString';
 import { isNumeric } from '@awayfl/swf-loader';
-import { ScriptInfo } from './ScriptInfo';
 import { AXObject } from '../../run/AXObject';
 import { Settings } from '../../Settings';
+import { IGlobalInfo } from './IGlobalInfo';
 
 export class Multiname {
 	private static _isWeak = self.WeakRef && Settings.USE_WEAK_REF;
@@ -18,7 +18,7 @@ export class Multiname {
 	public id: number = Multiname._nextID++;
 	private _mangledName: string = null;
 
-	public script: ScriptInfo = null;
+	public globalInfo: IGlobalInfo = null;
 	public numeric: boolean = false;
 	public numericValue: any = 0;
 	public resolved: object = {};

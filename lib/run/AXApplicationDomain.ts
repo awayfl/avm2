@@ -13,6 +13,7 @@ import { AXClass } from './AXClass';
 import { AXObject } from './AXObject';
 import { ClassInfo } from '../abc/lazy/ClassInfo';
 import { Traits } from '../abc/lazy/Traits';
+import { IGlobalInfo } from '../abc/lazy/IGlobalInfo';
 
 /**
  * All code lives within an application domain.
@@ -112,21 +113,19 @@ export class AXApplicationDomain {
 	}
 
 	public findProperty(mn: Multiname, _strict: boolean, execute: boolean): AXGlobal {
-		if (mn.script)
-			return mn.script.global;
+		if (mn.globalInfo)
+			return mn.globalInfo.global;
 
-		const script: ScriptInfo = <ScriptInfo> Traits.getScriptTrait(mn)?.holder || this.findDefiningScript(mn, execute);
+		const globalInfo: IGlobalInfo = <IGlobalInfo> Traits.getGlobalTrait(mn)?.holder || this.findDefiningGlobal(mn, execute);
 
 		if (!mn.mutable)
-			mn.script = script;
+			mn.globalInfo = globalInfo;
 
-		if (script) {
-			if (execute && script.state === ScriptInfoState.None) {
-				this.executeScript(script);
-			}
-			return script.global;
+		if (execute && globalInfo instanceof ScriptInfo && globalInfo.state === ScriptInfoState.None) {
+			this.executeScript(globalInfo);
 		}
-		return null;
+
+		return globalInfo?.global;
 	}
 
 	public getClass(mn: Multiname): AXClass {
@@ -148,19 +147,19 @@ export class AXApplicationDomain {
 			this.sec.throwError('ReferenceError', Errors.DefinitionNotFoundError, mn.name);
 	}
 
-	public findDefiningScript(mn: Multiname, execute: boolean): ScriptInfo {
+	public findDefiningGlobal(mn: Multiname, execute: boolean): IGlobalInfo {
 
 		// Look in parent domain first.
-		let script: ScriptInfo;
+		let globalInfo: IGlobalInfo;
 
 		// Still no luck, so let's ask the security domain to load additional ABCs and try again.
 		const abc: ABCFile = this.system.sec.findDefiningABC(mn);
 		if (abc) {
 			this.loadABC(abc);
-			script = <ScriptInfo> Traits.getScriptTrait(mn)?.holder;
-			release || assert(script, 'Shall find class in loaded ABC');
+			globalInfo = <IGlobalInfo> Traits.getGlobalTrait(mn)?.holder;
+			release || assert(globalInfo, 'Shall find class in loaded ABC');
 
-			return script;
+			return globalInfo;
 		}
 
 		return null;

@@ -75,6 +75,7 @@ import { ByteArrayDataProvider } from '../natives/byteArray';
 import { IS_EXTERNAL_CLASS } from '../ext/external';
 import { nativeClasses } from '../nat/builtinNativeClasses';
 import { ASClass } from '../nat/ASClass';
+import { IGlobalInfo } from '../abc/lazy/IGlobalInfo';
 
 /**
  * Provides security isolation between application domains.
@@ -370,10 +371,17 @@ export class AXSecurityDomain {
 		// Copy over all TS symbols.
 		tryLinkNativeClass(axClass);
 
+		// Create the global for for the class
+		const global: AXGlobal = Object.create(this.AXGlobalPrototype);
+		global.applicationDomain = classInfo.abc.applicationDomain;
+		global.globalInfo = classInfo;
+		classInfo.global = global;
+
 		// Run the static initializer.
 		const methodInfo = classInfo.methodInfo;
 		const methodBodyCode = methodInfo.getBody().code;
 		// ... except if it's the standard class initializer that doesn't really do anything.
+		//208 = GETLOCAL0, 48 = PUSHSCOPE, 71 = RETURNVOID
 		if (methodBodyCode[0] !== 208 || methodBodyCode[1] !== 48 || methodBodyCode[2] !== 71) {
 			interpret(methodInfo, classScope, null).apply(axClass, [axClass]);
 		}
@@ -516,7 +524,7 @@ export class AXSecurityDomain {
 	createAXGlobal(applicationDomain: AXApplicationDomain, scriptInfo: ScriptInfo) {
 		const global: AXGlobal = Object.create(this.AXGlobalPrototype);
 		global.applicationDomain = applicationDomain;
-		global.scriptInfo = scriptInfo;
+		global.globalInfo = scriptInfo;
 
 		const scope = global.scope = new Scope(null, global, false);
 		const objectTraits = this.AXObject.classInfo.instanceInfo.runtimeTraits;
