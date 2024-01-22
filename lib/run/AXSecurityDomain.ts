@@ -429,7 +429,7 @@ export class AXSecurityDomain {
 		fun.receiver = { scope: scope };
 		if (!release) {
 			try {
-				Object.defineProperty(fun.value, 'name', { value: methodInfo.getName() });
+				Object.defineProperty(fun.value, 'name', { value: methodInfo.name });
 			} catch (e) {
 				// Ignore errors in browsers that don't allow overriding Function#length;
 			}

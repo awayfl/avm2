@@ -111,12 +111,12 @@ export class CompilerState {
 	private init() {
 
 		if (this.methodInfo.parentInfo) {
-			this.localTypes[0] = [this.methodInfo.parentInfo.getTypeName()];
+			this.localTypes[0] = [this.methodInfo.parentInfo.typeName];
 		}
 
 		let i = 1;
 		for (const param of this.methodInfo.parameters) {
-			this.localTypes[i] = param.getType() ?  [param.getType()] : [];
+			this.localTypes[i] = param.typeName ?  [param.typeName] : [];
 			i++;
 		}
 	}

@@ -23,7 +23,7 @@ export function createMethodForTrait(
 		const metadata = methodInfo.getNativeMetadata();
 		if (metadata || methodTraitInfo.holder instanceof ScriptInfo) {
 			if (metadata) {
-				method = getNative(metadata.getValueAt(0));
+				method = getNative(metadata.values[0]);
 			} else {
 				const mn = methodTraitInfo.multiname;
 				method = getNative(mn.uri + '.' + mn.name);
@@ -71,7 +71,7 @@ export function createMethodForTrait(
 	method.methodInfo = methodInfo;
 	if (!release) {
 		try {
-			Object.defineProperty(method, 'name', { value: methodInfo.getName() });
+			Object.defineProperty(method, 'name', { value: methodInfo.name });
 		} catch (e) {
 			// Ignore errors in browsers that don't allow overriding Function#length;
 		}

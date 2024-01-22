@@ -33,7 +33,7 @@ export function nextScriptID(): number {
 
 export function reconstructMetadata (methodInfo: MethodInfo, id: number): IMethodReadableMeta {
 	const prefix = ('' + (id)).padLeft('0', 4);
-	const funcName = (methodInfo.getName()).replace(/([^a-z0-9]+)/gi, '_');
+	const funcName = (methodInfo.name).replace(/([^a-z0-9]+)/gi, '_');
 
 	let pathIsDefault = true;
 	let fullPath = `__root__/${prefix}_${funcName || 'unknown'}`;
@@ -110,7 +110,7 @@ export function reconstructMetadata (methodInfo: MethodInfo, id: number): IMetho
 		name: methodName,
 		type: methodType,
 		superClass: superClass,
-		returnType: methodInfo.getTypeName()?.toString() || '*',
+		returnType: methodInfo.typeName?.toString() || '*',
 		isValidName: validateName(methodName),
 		isValidPath: validateName(path.replace('/','_')),
 		kind: methodInfo.trait && TRAITNames[methodInfo.trait.kind]

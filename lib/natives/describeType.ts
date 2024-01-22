@@ -308,7 +308,7 @@ function addTraits(cls: AXClass, info: ClassInfo, describingClass: boolean,
 	let metadataList: any[] = null;
 	// Somewhat absurdly, class metadata is only included when describing instances.
 	if (flags & DescribeTypeFlags.INCLUDE_METADATA && !describingClass) {
-		const metadata: any[]/*MetadataInfo[]*/ = info.trait.getMetadata();
+		const metadata: MetadataInfo[] = info.trait.metadata;
 		if (metadata) {
 			metadataList = describeMetadataList(sec, metadata);
 		}
@@ -418,7 +418,7 @@ function addTraits(cls: AXClass, info: ClassInfo, describingClass: boolean,
 
 			const val = sec.createObject();
 			encounteredKeys[name] = val;
-			const metadata: MetadataInfo[] = t.getMetadata();
+			const metadata: MetadataInfo[] = t.metadata;
 			switch (t.kind) {
 				case TRAIT.Const:
 				case TRAIT.Slot: {
@@ -452,7 +452,7 @@ function addTraits(cls: AXClass, info: ClassInfo, describingClass: boolean,
 					for (let j = 0; j < parameters.length; j++) {
 						const param = parameters[j];
 						const paramVal = sec.createObject();
-						paramVal.$Bgtype = param.type ? param.getType().toFQNString(true) : '*';
+						paramVal.$Bgtype = param.typeName ? param.typeName.toFQNString(true) : '*';
 						paramVal.$Bgoptional = 'value' in param;
 						parametersVal.push(paramVal);
 					}
@@ -471,7 +471,7 @@ function addTraits(cls: AXClass, info: ClassInfo, describingClass: boolean,
 						val.$Bgtype = returnType ? returnType.name.toFQNString(true) : '*';
 						encounteredGetters[name] = val;
 					} else {
-						const paramType = (<MethodTraitInfo>t).methodInfo.parameters[0].getType();
+						const paramType = (<MethodTraitInfo>t).methodInfo.parameters[0].typeName;
 						val.$Bgtype = paramType ? paramType.toFQNString(true) : '*';
 						encounteredSetters[name] = val;
 					}

@@ -11,23 +11,24 @@ export class RuntimeTraitInfo {
 	set: (v: any) => void;
 	slot: number;
 	value: any;
-	typeName: Multiname;
+	public typeName: Multiname = null;
 
-	private _type: AXClass;
+	private _type: AXClass = undefined;
 
-	constructor(public multiname: Multiname, public kind: TRAIT, private abc: ABCFile) {
-		this._type = undefined;
-		this.typeName = null;
-	}
+	constructor(
+		public multiname: Multiname,
+		public kind: TRAIT,
+		private _abc: ABCFile
+	) {}
 
 	getType(): AXClass {
-		if (this._type !== undefined) {
+		if (this._type !== undefined) 
 			return this._type;
-		}
-		if (this.typeName === null) {
+
+		if (this.typeName === null)
 			return this._type = null;
-		}
-		const type = this.abc.applicationDomain.getClass(this.typeName);
+
+		const type = this._abc.applicationDomain.getClass(this.typeName);
 		return this._type = (type && type.axCoerce) ? type : null;
 	}
 }

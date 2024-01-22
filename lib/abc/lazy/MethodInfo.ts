@@ -22,7 +22,6 @@ export class MethodInfo {
 
 	private _body: MethodBodyInfo;
 	private _returnType: AXClass;
-	private _retunTypeName: Multiname;
 
 	public scriptInfo: ScriptInfo = null;
 	public classInfo: ClassInfo = null;
@@ -49,84 +48,50 @@ export class MethodInfo {
 	constructor(
 		public abc: ABCFile,
 		private _index: number,
-		public name: number,
-		public returnTypeNameIndex: number,
-		public parameters: ParameterInfo [],
-		public optionalCount: number,
-		public flags: number
+		public readonly name: string,
+		public readonly typeName: Multiname,
+		public readonly parameters: ParameterInfo [],
+		public readonly optionalCount: number,
+		public readonly flags: number
 	) {
 		this._body = null;
 		this.minArgs = parameters.length - optionalCount;
 	}
 
-	getNativeMetadata(): MetadataInfo {
-		if (!this.trait) {
+	public getNativeMetadata(): MetadataInfo {
+		const metadata = this.trait?.metadata;
+		if (!metadata)
 			return null;
-		}
-		const metadata = this.trait.getMetadata();
-		if (!metadata) {
-			return null;
-		}
-		for (let i = 0; i < metadata.length; i++) {
-			if (metadata[i].getName() === 'native') {
+
+		for (let i = 0; i < metadata.length; i++)
+			if (metadata[i].name === 'native')
 				return metadata[i];
-			}
-		}
+
 		return null;
 	}
 
-	getBody(): MethodBodyInfo {
+	public getBody(): MethodBodyInfo {
 		return this._body || (this._body = this.abc.getMethodBodyInfo(this._index));
 	}
 
-	index(): number {
+	public index(): number {
 		return this._index;
 	}
 
-	getTypeName(): Multiname {
-		if (this._retunTypeName !== undefined) {
-			return this._retunTypeName;
-		}
-		if (this.returnTypeNameIndex === 0) {
-			this._retunTypeName = null;
-		} else {
-			this._retunTypeName = this.abc.getMultiname(this.returnTypeNameIndex);
-		}
-
-		return this._retunTypeName;
-	}
-
 	getType(): AXClass {
-		if (this._returnType !== undefined) {
+		if (this._returnType !== undefined)
 			return this._returnType;
-		}
-		if (this.returnTypeNameIndex === 0) {
-			this._returnType = null;
-		} else {
-			const mn = this.abc.getMultiname(this.returnTypeNameIndex);
-			this._returnType = this.abc.applicationDomain.getClass(mn);
-		}
+
+		this._returnType = this.typeName? this.abc.applicationDomain.getClass(this.typeName) : null;
+
 		return this._returnType;
 	}
 
-	getName(): string {
-		if (typeof this.name === 'number') {
-			return this.abc.getString(this.name) || 'anonymous';
-		}
-		if (this.trait) {
-			return this.trait.multiname.name;
-		}
-		return 'anonymous';
-	}
-
 	toString() {
-		let str = 'anonymous';
-		if (this.name) {
-			str = this.abc.getString(this.name);
-		}
+		let str = this.name;
 		str += ' (' + this.parameters.join(', ') + ')';
-		if (this.returnTypeNameIndex) {
-			str += ': ' + this.abc.getMultiname(this.returnTypeNameIndex).name;
+		if (this.typeName) {
+			str += ': ' + this.typeName.name;
 		}
 		return str;
 	}

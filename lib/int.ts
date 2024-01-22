@@ -222,7 +222,7 @@ class InterpreterFrame {
 			} else {
 				arg = undefined;
 			}
-			const rn = p.getType();
+			const rn = p.typeName;
 			if (rn && !rn.isAnyName()) {
 				let type: AXClass = <AXClass> parentScope.getScopeProperty(rn, true, false);
 				if (!type) {
@@ -525,7 +525,7 @@ function _interpret(methodInfo: MethodInfo, savedScope: Scope, callee: AXFunctio
 					case Bytecode.RETURNVALUE:
 						value = stack.pop();
 						// TODO: ensure proper unwinding of the scope stack.
-						if (methodInfo.returnTypeNameIndex) {
+						if (methodInfo.typeName) {
 							receiver = methodInfo.getType();
 							if (receiver) {
 								value = receiver.axCoerce(value);

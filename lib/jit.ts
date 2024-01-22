@@ -1710,7 +1710,7 @@ export function compile(methodInfo: MethodInfo, options: ICompilerOptions = {}):
 						state.emitMain(`context.executeHook(${emitInlineLocal(state, 0)}, '${meta.classPath + '__return'}')`);
 					}
 
-					const typeName = methodInfo.getTypeName();
+					const typeName = methodInfo.typeName;
 
 					if (!typeName ||
 						Settings.COERCE_RETURN_MODE === COERCE_RETURN_MODE_ENUM.NONE

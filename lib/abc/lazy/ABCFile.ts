@@ -70,7 +70,8 @@ export class ABCFile {
 		this._stream = new AbcStream(_buffer);
 		this._checkMagic();
 
-		this._parseConstantPool();
+		this._parseNumericConstants();
+		this._parseStringConstants();
 		this._parseNamespaces();
 		this._parseNamespaceSets();
 		this._parseMultinames();
@@ -80,11 +81,6 @@ export class ABCFile {
 		this._parseInstanceAndClassInfos();
 		this._parseScriptInfos();
 		this._parseMethodBodyInfos();
-	}
-
-	private _parseConstantPool() {
-		this._parseNumericConstants();
-		this._parseStringConstants();
 	}
 
 	private _parseNumericConstants() {
@@ -136,10 +132,11 @@ export class ABCFile {
 		const s = this._stream;
 		const n = s.readU30();
 		this._namespaces = new Array(n);
+		this._namespaces[0] = Namespace.PUBLIC;
 		for (let i = 1; i < n; i++) {
 			const kind = s.readU8();
 			const uriIndex = s.readU30();
-			let uri = uriIndex ? this.getString(uriIndex) : undefined;
+			let uri = this._strings[uriIndex];
 			let type: NamespaceType;
 			switch (kind) {
 				case CONSTANT.Namespace:
@@ -169,7 +166,7 @@ export class ABCFile {
 				// TODO: deal with API versions here. Those are suffixed to the uri. We used to
 				// just strip them out, but we also had an assert against them occurring at all,
 				// so it might be the case that we don't even need to do anything at all.
-			} else if (uri === undefined) {
+			} else if (uri === null) {
 				// Only private namespaces gets the empty string instead of undefined. A comment
 				// in Tamarin source code indicates this might not be intentional, but oh well.
 				uri = '';
@@ -187,8 +184,7 @@ export class ABCFile {
 			const c = s.readU30(); // Count
 			const nss = this._namespaceSets[i] = new Array(c);
 			for (let j = 0; j < c; j++) {
-				const x = s.readU30();
-				nss[j] = this.getNamespace(x);
+				nss[j] = this._namespaces[s.readU30()];
 			}
 		}
 	}
@@ -259,15 +255,12 @@ export class ABCFile {
 		}
 
 		// A name index of 0 means that it's a runtime name.
-		const name = nameIndex === 0 ? null : this.getString(nameIndex);
-		let namespaces;
-		if (namespaceIsRuntime) {
-			namespaces = null;
-		} else {
-			namespaces = useNamespaceSet ?
-				this._namespaceSets[namespaceIndex] :
-				[this.getNamespace(namespaceIndex)];
-		}
+		const name = nameIndex === 0 ? null : this._strings[nameIndex];
+		const namespaces = namespaceIsRuntime
+			? null
+			: useNamespaceSet
+				? this._namespaceSets[namespaceIndex]
+				: [this._namespaces[namespaceIndex]];
 
 		return new Multiname(this, i, kind, namespaces, name);
 	}
@@ -287,7 +280,7 @@ export class ABCFile {
 	private _checkForDuplicateStrings(): boolean {
 		const a = [];
 		for (let i = 0; i < this._strings.length; i++) {
-			a.push(this.getString(i));
+			a.push(this._strings[i]);
 		}
 		a.sort();
 		for (let i = 0; i < a.length - 1; i++) {
@@ -328,7 +321,7 @@ export class ABCFile {
 				this._namespaces.length);
 		}
 
-		return (i !== 0) ? this._namespaces[i] : Namespace.PUBLIC;
+		return this._namespaces[i];
 	}
 
 	/**
@@ -340,7 +333,7 @@ export class ABCFile {
 				this._namespaceSets.length);
 		}
 
-		return (i !== 0) ? this._namespaceSets[i] : null;
+		return this._namespaceSets[i];
 	}
 
 	private _parseMethodInfos() {
@@ -355,12 +348,12 @@ export class ABCFile {
 	private _parseMethodInfo(j: number) {
 		const s = this._stream;
 		const parameterCount = s.readU30();
-		const returnType = s.readU30();
+		const returnType = this._multinames[s.readU30()];
 		const parameters = new Array<ParameterInfo>(parameterCount);
 		for (let i = 0; i < parameterCount; i++) {
-			parameters[i] = new ParameterInfo(this, s.readU30(), 0, -1, -1);
+			parameters[i] = new ParameterInfo(this, this._multinames[s.readU30()]);
 		}
-		const name = s.readU30();
+		const name = this._strings[s.readU30()] || 'anonymous';
 		const flags = s.readU8();
 		let optionalCount = 0;
 		if (flags & METHOD.HasOptional) {
@@ -375,7 +368,7 @@ export class ABCFile {
 			for (let i = 0; i < parameterCount; i++) {
 				// NOTE: We can't get the parameter name as described in the spec because some SWFs have
 				// invalid parameter names. Tamarin ignores parameter names and so do we.
-				parameters[i].name = s.readU30();
+				parameters[i].name = this._strings[s.readU30()];
 			}
 		}
 		return new MethodInfo(this, j, name, returnType, parameters, optionalCount, flags);
@@ -398,15 +391,15 @@ export class ABCFile {
 		const n = s.readU30();
 		this._metadata = new Array(n);
 		for (let i = 0; i < n; i++) {
-			const name = s.readU30(); // Name
+			const name = this._strings[s.readU30()]; // Name
 			const itemCount = s.readU30(); // Item Count
-			const keys = new Uint32Array(itemCount);
+			const keys = new Array(itemCount);
 			for (let j = 0; j < itemCount; j++) {
-				keys[j] = s.readU30();
+				keys[j] = this._strings[s.readU30()];
 			}
-			const values = new Uint32Array(itemCount);
+			const values = new Array(itemCount);
 			for (let j = 0; j < itemCount; j++) {
-				values[j] = s.readU30();
+				values[j] = this._strings[s.readU30()];
 			}
 			this._metadata[i] = new MetadataInfo(this, name, keys, values);
 		}
@@ -504,9 +497,9 @@ export class ABCFile {
 
 		if (attributes & ATTR.Metadata) {
 			const n = s.readU30();
-			const metadata = new Uint32Array(n);
+			const metadata: MetadataInfo[] = new Array(n);
 			for (let i = 0; i < n; i++) {
-				metadata[i] = s.readU30();
+				metadata[i] = this._metadata[s.readU30()];
 			}
 			trait.metadata = metadata;
 		}
@@ -587,7 +580,7 @@ export class ABCFile {
 			case CONSTANT.Double:
 				return this.doubles[i];
 			case CONSTANT.Utf8:
-				return this.getString(i);
+				return this._strings[i];
 			case CONSTANT.True:
 				return true;
 			case CONSTANT.False:
@@ -598,7 +591,7 @@ export class ABCFile {
 				return undefined;
 			case CONSTANT.Namespace:
 			case CONSTANT.PackageInternalNs:
-				return this.getNamespace(i);
+				return this._namespaces[i];
 			case CONSTANT.QName:
 			case CONSTANT.MultinameA:
 			case CONSTANT.RTQName:
@@ -614,21 +607,6 @@ export class ABCFile {
 			default:
 				release || assert(false, 'Not Implemented Kind ' + kind);
 		}
-	}
-
-	stress() {
-		for (let i = 0; i < this._multinames.length; i++)
-			this._multinames[i];
-
-		for (let i = 0; i < this._namespaceSets.length; i++)
-			this._namespaceSets[i];
-
-		for (let i = 0; i < this._namespaces.length; i++)
-			this.getNamespace(i);
-
-		for (let i = 0; i < this._strings.length; i++)
-			this.getString(i);
-
 	}
 
 	trace(writer: IndentingWriter) {
@@ -652,7 +630,7 @@ export class ABCFile {
 
 		writer.indent();
 		for (let i = 0; i < this._namespaces.length; i++) {
-			writer.writeLn(i + ' ' + this.getNamespace(i));
+			writer.writeLn(i + ' ' + this._namespaces[i]);
 		}
 		writer.outdent();
 
@@ -660,7 +638,7 @@ export class ABCFile {
 
 		writer.indent();
 		for (let i = 0; i < this._strings.length; i++) {
-			writer.writeLn(i + ' ' + this.getString(i));
+			writer.writeLn(i + ' ' + this._strings[i]);
 		}
 		writer.outdent();
 

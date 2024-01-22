@@ -33,7 +33,7 @@ export function emitAnnotation (state: CompilerState): IFunctionAnnotation  {
 			}
 		}
 
-		arg.type = p.getType();
+		arg.type = p.typeName;
 		args[i] = arg;
 	}
 

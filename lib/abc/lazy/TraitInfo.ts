@@ -6,30 +6,13 @@ import { ILocalInfo } from './ILocalInfo';
 
 export class TraitInfo {
 	public holder: ILocalInfo;
-	public metadata: MetadataInfo [] | Uint32Array;
+	public metadata: MetadataInfo [];
 
 	constructor(
 		public readonly abc: ABCFile,
 		public readonly kind: TRAIT,
 		public readonly multiname: Multiname
-	) {
-		this.metadata = null;
-		this.holder = null;
-	}
-
-	public getMetadata(): MetadataInfo [] {
-		if (!this.metadata) {
-			return null;
-		}
-		if (this.metadata instanceof Uint32Array) {
-			const metadata = new Array(this.metadata.length);
-			for (let i = 0; i < this.metadata.length; i++) {
-				metadata[i] = this.abc.getMetadataInfo(<number> this.metadata[i]);
-			}
-			this.metadata = metadata;
-		}
-		return <MetadataInfo []> this.metadata;
-	}
+	) {}
 
 	public toString() {
 		return getTRAITName(this.kind) + ' ' + this.multiname;

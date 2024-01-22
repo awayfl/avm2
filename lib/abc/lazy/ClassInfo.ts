@@ -23,27 +23,23 @@ export class ClassInfo extends Info implements IGlobalInfo {
 		super(traits);
 	}
 
-	getNativeMetadata(): MetadataInfo {
-		if (!this.trait) {
+	public getNativeMetadata(): MetadataInfo {
+		const metadata = this.trait?.metadata;
+		if (!metadata)
 			return null;
-		}
-		const metadata = this.trait.getMetadata();
-		if (!metadata) {
-			return null;
-		}
-		for (let i = 0; i < metadata.length; i++) {
-			if (metadata[i].getName() === 'native') {
+
+		for (let i = 0; i < metadata.length; i++)
+			if (metadata[i].name === 'native')
 				return metadata[i];
-			}
-		}
+
 		return null;
 	}
 
-	toString() {
+	public toString() {
 		return 'ClassInfo ' + this.instanceInfo.multiname;
 	}
 
-	trace(writer: IndentingWriter) {
+	public trace(writer: IndentingWriter) {
 		writer.enter('ClassInfo');
 		this.traits.trace(writer);
 		writer.outdent();
