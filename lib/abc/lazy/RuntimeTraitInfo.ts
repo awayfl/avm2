@@ -22,7 +22,7 @@ export class RuntimeTraitInfo {
 	) {}
 
 	getType(): AXClass {
-		if (this._type !== undefined) 
+		if (this._type !== undefined)
 			return this._type;
 
 		if (this.typeName === null)

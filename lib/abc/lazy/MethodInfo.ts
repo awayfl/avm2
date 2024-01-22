@@ -82,7 +82,7 @@ export class MethodInfo {
 		if (this._returnType !== undefined)
 			return this._returnType;
 
-		this._returnType = this.typeName? this.abc.applicationDomain.getClass(this.typeName) : null;
+		this._returnType = this.typeName ? this.abc.applicationDomain.getClass(this.typeName) : null;
 
 		return this._returnType;
 	}
