@@ -1,5 +1,4 @@
 import { RuntimeTraitInfo } from './RuntimeTraitInfo';
-import { MapObject } from '@awayfl/swf-loader';
 import { Namespace } from './Namespace';
 import { release } from '@awayfl/swf-loader';
 import { assert } from '@awayjs/graphics';
@@ -9,12 +8,15 @@ import { Multiname } from './Multiname';
 export class RuntimeTraits {
 	public slots: RuntimeTraitInfo[] = [];
 
-	private _traits: MapObject<MapObject<RuntimeTraitInfo>>;
+	private _traits: Record<string, Record<string, RuntimeTraitInfo>>;
 	private _nextSlotID: number = 1;
 
-	constructor(public superTraits: RuntimeTraits,
-		public protectedNs: Namespace, public protectedNsMappings: Record <string, RuntimeTraitInfo>) {
-		const traits = this._traits = Object.create(null);
+	constructor(
+		public readonly superTraits: RuntimeTraits,
+		public readonly protectedNs: Namespace,
+		public readonly protectedNsMappings: Record <string, RuntimeTraitInfo>
+	) {
+		const traits = this._traits = {};
 		if (!superTraits) {
 			return;
 		}
@@ -33,7 +35,7 @@ export class RuntimeTraits {
 		const mn = trait.multiname;
 		let mappings = this._traits[mn.name];
 		if (!mappings) {
-			mappings = this._traits[mn.name] = Object.create(null);
+			mappings = this._traits[mn.name] = {};
 		}
 		const nsName = mn.namespaces[0].mangledName;
 		const current = mappings[nsName];
@@ -97,9 +99,9 @@ export class RuntimeTraits {
 
 	public getTraitsList(): RuntimeTraitInfo[] {
 		const list: RuntimeTraitInfo[] = [];
-		const names: MapObject<MapObject<RuntimeTraitInfo>> = this._traits;
+		const names = this._traits;
 		for (const name in names) {
-			const mappings: MapObject<RuntimeTraitInfo> = names[name];
+			const mappings = names[name];
 			for (const nsName in mappings) {
 				list.push(mappings[nsName]);
 			}

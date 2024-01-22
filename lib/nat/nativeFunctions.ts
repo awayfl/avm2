@@ -1,3 +1,1 @@
-import { MapObject, createMap } from '@awayfl/swf-loader';
-
-export const nativeFunctions: MapObject<Function> = createMap<Function>();
+export const nativeFunctions: Record<string, Function> = {};

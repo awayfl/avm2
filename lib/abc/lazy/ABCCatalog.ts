@@ -1,19 +1,17 @@
-import { MapObject, createMap, assert, release } from '@awayfl/swf-loader';
+import { assert, release } from '@awayfl/swf-loader';
 import { AXApplicationDomain } from '../../run/AXApplicationDomain';
 import { ABCFile } from './ABCFile';
 import { Multiname } from './Multiname';
 
 export class ABCCatalog {
-	map: MapObject<MapObject<string>>;
-	abcs: Uint8Array;
-	scripts: MapObject<any>;
-	app: AXApplicationDomain;
+	map: Record<string, Record<string, string>> = {};
+	scripts: Record<string, any> = {};
 
-	constructor(app: AXApplicationDomain, abcs: Uint8Array, index: any) {
-		this.app = app;
-		this.map = createMap<MapObject<string>>();
-		this.abcs = abcs;
-		this.scripts = createMap<string>();
+	constructor(
+		public app: AXApplicationDomain,
+		public abcs: Uint8Array,
+		index: any
+	) {
 		for (let i = 0; i < index.length; i++) {
 			const abc = index[i];
 			this.scripts[abc.name] = abc;
@@ -22,7 +20,7 @@ export class ABCCatalog {
 				const def = abc.defs[j].split(':');
 				let nameMappings = this.map[def[1]];
 				if (!nameMappings) {
-					nameMappings = this.map[def[1]] = Object.create(null);
+					nameMappings = this.map[def[1]] = {};
 				}
 				nameMappings[def[0]] = abc.name;
 			}
