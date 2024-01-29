@@ -16,7 +16,7 @@ export class RuntimeTraits {
 		public readonly protectedNs: Namespace,
 		public readonly protectedNsMappings: Record <string, RuntimeTraitInfo>
 	) {
-		const traits = this._traits = {};
+		const traits = this._traits = Object.create(null);
 		if (!superTraits) {
 			return;
 		}
@@ -35,7 +35,7 @@ export class RuntimeTraits {
 		const mn = trait.multiname;
 		let mappings = this._traits[mn.name];
 		if (!mappings) {
-			mappings = this._traits[mn.name] = {};
+			mappings = this._traits[mn.name] = Object.create(null);
 		}
 		const nsName = mn.namespaces[0].mangledName;
 		const current = mappings[nsName];
