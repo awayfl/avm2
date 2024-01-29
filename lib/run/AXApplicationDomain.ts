@@ -116,7 +116,8 @@ export class AXApplicationDomain {
 		if (mn.globalInfo)
 			return mn.globalInfo.global;
 
-		const globalInfo: IGlobalInfo = <IGlobalInfo> Traits.getGlobalTrait(mn)?.holder || this.findDefiningGlobal(mn, execute);
+		const globalInfo: IGlobalInfo = <IGlobalInfo> Traits.getGlobalTrait(mn)?.holder
+			|| this.findDefiningGlobal(mn, execute);
 
 		if (!mn.mutable)
 			mn.globalInfo = globalInfo;
