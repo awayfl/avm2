@@ -75,7 +75,6 @@ import { ByteArrayDataProvider } from '../natives/byteArray';
 import { IS_EXTERNAL_CLASS } from '../ext/external';
 import { nativeClasses } from '../nat/builtinNativeClasses';
 import { ASClass } from '../nat/ASClass';
-import { IGlobalInfo } from '../abc/lazy/IGlobalInfo';
 
 /**
  * Provides security isolation between application domains.
