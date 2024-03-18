@@ -15,6 +15,7 @@ export { ASMethodClosure } from './lib/nat/ASMethodClosure';
 export { XMLDocument, XMLNode } from './lib/natives/xml-document';
 
 export { ByteArray, ObjectEncoding } from './lib/natives/byteArray';
+export { Int32Vector } from './lib/natives/int32Vector';
 export { Uint32Vector } from './lib/natives/uint32Vector';
 export { Float64Vector } from './lib/natives/float64Vector';
 export { GenericVector } from './lib/natives/GenericVector';
