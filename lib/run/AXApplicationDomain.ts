@@ -119,6 +119,9 @@ export class AXApplicationDomain {
 		const globalInfo: IGlobalInfo = <IGlobalInfo> Traits.getGlobalTrait(mn)?.holder
 			|| this.findDefiningGlobal(mn, execute);
 
+		if (!globalInfo)
+			return;
+
 		if (!mn.mutable)
 			mn.globalInfo = globalInfo;
 
@@ -126,7 +129,7 @@ export class AXApplicationDomain {
 			this.executeScript(globalInfo);
 		}
 
-		return globalInfo?.global;
+		return globalInfo.global || (globalInfo.global = this.sec.createAXGlobal(this, globalInfo));
 	}
 
 	public getClass(mn: Multiname): AXClass {

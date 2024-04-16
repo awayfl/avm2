@@ -75,6 +75,7 @@ import { ByteArrayDataProvider } from '../natives/byteArray';
 import { IS_EXTERNAL_CLASS } from '../ext/external';
 import { nativeClasses } from '../nat/builtinNativeClasses';
 import { ASClass } from '../nat/ASClass';
+import { IGlobalInfo } from '../abc/lazy/IGlobalInfo';
 
 /**
  * Provides security isolation between application domains.
@@ -520,14 +521,14 @@ export class AXSecurityDomain {
 		return isPrimitiveJSValue(v) || this.AXPrimitiveBox.dPrototype.isPrototypeOf(v);
 	}
 
-	createAXGlobal(applicationDomain: AXApplicationDomain, scriptInfo: ScriptInfo) {
+	createAXGlobal(applicationDomain: AXApplicationDomain, globalInfo: IGlobalInfo) {
 		const global: AXGlobal = Object.create(this.AXGlobalPrototype);
 		global.applicationDomain = applicationDomain;
-		global.globalInfo = scriptInfo;
+		global.globalInfo = globalInfo;
 
 		const scope = global.scope = new Scope(null, global, false);
 		const objectTraits = this.AXObject.classInfo.instanceInfo.runtimeTraits;
-		const traits = scriptInfo.traits.resolveRuntimeTraits(objectTraits, null, scope);
+		const traits = globalInfo.traits.resolveRuntimeTraits(objectTraits, null, scope);
 
 		applyTraits(global, traits);
 
