@@ -218,6 +218,9 @@ export function analyze(methodInfo: MethodInfo): IAnalyseResult | IAnalyzeError 
 		let ins: Instruction;
 
 		switch (z) {
+			case Bytecode.NOP:
+				ins = (new Instruction(oldi, z))
+				break;
 			case Bytecode.LABEL:
 				ins = (new Instruction(oldi, z));
 				break;
@@ -925,9 +928,7 @@ export function analyze(methodInfo: MethodInfo): IAnalyseResult | IAnalyzeError 
 				requireScope = true;
 				break;
 			}
-			case Bytecode.NOP:
-				break;
-				
+
 			//http://docs.redtamarin.com/0.4.1T124/avm2/intrinsics/memory/package.html#si32()
 			case Bytecode.SI8:
 			case Bytecode.SI16:

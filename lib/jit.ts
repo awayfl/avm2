@@ -430,6 +430,8 @@ export function compile(methodInfo: MethodInfo, options: ICompilerOptions = {}):
 		} else {
 			let localIndex = 0;
 			switch (z.name) {
+				case Bytecode.NOP:
+					break;
 				case Bytecode.LABEL:
 					break;
 				case Bytecode.DXNSLATE:
@@ -603,10 +605,7 @@ export function compile(methodInfo: MethodInfo, options: ICompilerOptions = {}):
 
 					state.emitMain(`if (${stack0} != ${stack1}) { p = ${param(0)}; continue; };`);
 					break;
-				}
-				case Bytecode.NOP: {
-					break;
-				}
+				}	
 				case Bytecode.IFSTRICTEQ: {
 
 					if (isFastReturnVoid(q, jumps, i, param(0))) {
