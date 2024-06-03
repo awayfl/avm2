@@ -603,7 +603,7 @@ export function compile(methodInfo: MethodInfo, options: ICompilerOptions = {}):
 
 					state.emitMain(`if (${stack0} != ${stack1}) { p = ${param(0)}; continue; };`);
 					break;
-				}
+				}	
 				case Bytecode.IFSTRICTEQ: {
 
 					if (isFastReturnVoid(q, jumps, i, param(0))) {
@@ -1828,6 +1828,9 @@ export function compile(methodInfo: MethodInfo, options: ICompilerOptions = {}):
 					state.emitMain(`if (typeof ${stack0} !== 'string') ${stackF(0)} = ${stack0} + '';`);
 					break;
 				case Bytecode.CONVERT_O:
+					state.emitMain('');
+					break;
+				case Bytecode.NOP:
 					state.emitMain('');
 					break;
 				case Bytecode.CHECKFILTER:

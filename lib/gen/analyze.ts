@@ -218,6 +218,9 @@ export function analyze(methodInfo: MethodInfo): IAnalyseResult | IAnalyzeError 
 		let ins: Instruction;
 
 		switch (z) {
+			case Bytecode.NOP:
+				ins = (new Instruction(oldi, z))
+				break;
 			case Bytecode.LABEL:
 				ins = (new Instruction(oldi, z));
 				break;
