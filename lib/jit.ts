@@ -430,8 +430,6 @@ export function compile(methodInfo: MethodInfo, options: ICompilerOptions = {}):
 		} else {
 			let localIndex = 0;
 			switch (z.name) {
-				case Bytecode.NOP:
-					break;
 				case Bytecode.LABEL:
 					break;
 				case Bytecode.DXNSLATE:
@@ -1830,6 +1828,9 @@ export function compile(methodInfo: MethodInfo, options: ICompilerOptions = {}):
 					state.emitMain(`if (typeof ${stack0} !== 'string') ${stackF(0)} = ${stack0} + '';`);
 					break;
 				case Bytecode.CONVERT_O:
+					state.emitMain('');
+					break;
+				case Bytecode.NOP:
 					state.emitMain('');
 					break;
 				case Bytecode.CHECKFILTER:
