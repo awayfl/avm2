@@ -40,6 +40,7 @@ class AMF3ReferenceTables {
    * Trait names are kept in sync with |traits| and are used to optimize fetching public trait names.
    */
 	traitNames: string [] [] = [];
+	dynamic: boolean [] = [];
 }
 
 export class ClassAliases {
@@ -386,9 +387,6 @@ function readAMF3Value(ba: ByteArray, references: AMF3ReferenceTables) {
 			if ((u29o & 1) === 0) {
 				return references.objects[u29o >> 1];
 			}
-			if ((u29o & 4) !== 0) {
-				throw 'AMF3 Traits-Ext is not supported';
-			}
 			let axClass: AXClass;
 			let traits: ITraits;
 			let isDynamic = true;
@@ -396,6 +394,7 @@ function readAMF3Value(ba: ByteArray, references: AMF3ReferenceTables) {
 			if ((u29o & 2) === 0) {
 				traits = references.traits[u29o >> 2];
 				traitNames = references.traitNames[u29o >> 2];
+				isDynamic = references.dynamic[u29o >> 2];
 			} else {
 				const alias = readUTF8(ba, references);
 				if (alias) {
@@ -408,6 +407,7 @@ function readAMF3Value(ba: ByteArray, references: AMF3ReferenceTables) {
 				}
 				references.traits.push(traits);
 				references.traitNames.push(traitNames);
+				references.dynamic.push(isDynamic);
 			}
 
 			const object = axClass ? axClass.axConstruct([]) : ba.sec.createObject();
@@ -547,7 +547,7 @@ function writeAMF3Value(ba: ByteArray, value: any, references: AMF3ReferenceTabl
 					let traitNames: string [] = null;
 					if (traitsRef < 0) {
 						// Write traits since we haven't done so yet.
-						traitNames = classInfo.instanceInfo.runtimeTraits.getSlotPublicTraitNames();
+						traitNames = classInfo.instanceInfo.runtimeTraits.getPublicTraitNames();
 						references.traits.push(axClass);
 						references.traitNames.push(traitNames);
 						writeU29(ba, (isDynamic ? 0x0B : 0x03) + (traitNames.length << 4));
