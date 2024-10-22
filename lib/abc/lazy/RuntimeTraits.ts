@@ -117,7 +117,7 @@ export class RuntimeTraits {
 		for (const name in names) {
 			const mappings = names[name];
 			for (const nsName in mappings) {
-				trait = mappings[nsName]
+				trait = mappings[nsName];
 				if (trait.multiname.namespace.isPublic() &&
 					(trait.kind == TRAIT.Slot || trait.kind == TRAIT.GetterSetter)) {
 					list.push(trait.multiname.name);
