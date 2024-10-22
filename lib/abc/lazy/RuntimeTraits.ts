@@ -4,6 +4,7 @@ import { release } from '@awayfl/swf-loader';
 import { assert } from '@awayjs/graphics';
 import { NamespaceType } from './NamespaceType';
 import { Multiname } from './Multiname';
+import { TRAIT } from './TRAIT';
 
 export class RuntimeTraits {
 	public slots: RuntimeTraitInfo[] = [];
@@ -109,17 +110,21 @@ export class RuntimeTraits {
 		return list;
 	}
 
-	getSlotPublicTraitNames(): string [] {
-		const slots = this.slots;
-		const names = [];
-		for (let i = 1; i < slots.length; i++) {
-			const slot = slots[i];
-			if (!(<Multiname>slot.multiname).namespace.isPublic()) {
-				continue;
+	public getPublicTraitNames(): string [] {
+		const list: string[] = [];
+		const names = this._traits;
+		let trait: RuntimeTraitInfo;
+		for (const name in names) {
+			const mappings = names[name];
+			for (const nsName in mappings) {
+				trait = mappings[nsName]
+				if (trait.multiname.namespace.isPublic() &&
+					(trait.kind == TRAIT.Slot || trait.kind == TRAIT.GetterSetter)) {
+					list.push(trait.multiname.name);
+				}
 			}
-			names.push((<Multiname>slot.multiname).name);
 		}
-		return names;
+		return list;
 	}
 
 	getSlot(i: number): RuntimeTraitInfo {
