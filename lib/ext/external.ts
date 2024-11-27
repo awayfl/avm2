@@ -23,7 +23,7 @@ export function getExtClassField(name: string, namespace: string = undefined): C
 	if (!lib || !name)
 		return null;
 
-	// fast check, for Box2D
+	// fast check for flattened modules
 	if (!namespace || typeof lib[name] !== 'undefined')
 		return lib[name];
 

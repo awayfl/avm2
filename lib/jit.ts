@@ -208,7 +208,7 @@ export function compile(methodInfo: MethodInfo, options: ICompilerOptions = {}):
 
 	// lex generator
 	const lexGen = new ComplexGenerator([
-		new PhysicsLex({ box2D: false }), // generate static aliases for Physics engine
+		new PhysicsLex(), // generate static aliases for Physics engine
 		new TopLevelLex(), // generate alias for TopLevel props
 		//staticHoistLex // collided with fastCall yet, need fix it
 	]);

@@ -226,7 +226,7 @@ export class ComplexGenerator implements ILexGenerator {
  * Import generator for Box2D and Nape external libs
  */
 export class PhysicsLex extends LexImportsGenerator {
-	constructor(public allows: { box2D?: boolean; nape?: boolean }) {
+	constructor(public allows: { box2D?: boolean; nape?: boolean } = null) {
 		super();
 		this.allows = Object.assign({ box2D: true, nape: true }, allows);
 	}
@@ -250,11 +250,11 @@ export class PhysicsLex extends LexImportsGenerator {
 		}
 
 		// generate static for box2D
-		if (uri.startsWith('Box2D') && this.allows.box2D) {
-			return !!getExtClassField(mn.name);
+		if (uri.startsWith('Box2D') && !this.allows.box2D) {
+			return false;
 		}
 
-		if (!uri.startsWith('nape.') || !this.allows.nape) {
+		if (!uri.startsWith('nape.') && !this.allows.nape) {
 			return false;
 		}
 
@@ -262,7 +262,7 @@ export class PhysicsLex extends LexImportsGenerator {
 			return false;
 		}
 
-		return true;
+		return !!getExtClassField(mn.name);
 	}
 }
 
