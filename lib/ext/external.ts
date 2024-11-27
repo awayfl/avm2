@@ -8,7 +8,7 @@ const LONG_NAMES = /nape./;
 export const extClasses = {
 	_lib: null,
 	set lib(v: any) {
-		v && console.debug('[AVM2] Register external lib:', v);
+		v && console.debug('[AVM2] Register external lib:', {...v});
 		this._lib = v;
 	},
 
