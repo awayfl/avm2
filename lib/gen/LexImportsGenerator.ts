@@ -254,7 +254,7 @@ export class PhysicsLex extends LexImportsGenerator {
 			return false;
 		}
 
-		if (!uri.startsWith('nape.') && !this.allows.nape) {
+		if (uri.startsWith('nape.') && !this.allows.nape) {
 			return false;
 		}
 
