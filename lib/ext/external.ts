@@ -3,7 +3,7 @@ import { Multiname } from '../abc/lazy/Multiname';
 export const IS_EXTERNAL_CLASS = Symbol('External class marker');
 type Ctr = { new (): Object };
 
-const LONG_NAMES = /nape./;
+export const LONG_NAMES = /nape./;
 
 export const extClasses = {
 	_lib: null,
