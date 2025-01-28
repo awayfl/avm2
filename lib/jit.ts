@@ -1408,6 +1408,10 @@ export function compile(methodInfo: MethodInfo, options: ICompilerOptions = {}):
 					const of = stackF(0);
 					const target = stackF(0, false);
 
+					if (lastZ.name === Bytecode.FINDPROPSTRICT
+						&& state.constAliases[target]?.value == mn.namespace.uri.replace(/\./g, '_') + '__' + mn.name) {
+						break;
+					}
 					state.killConstAliasInstruction([target]);
 					state.popAnyAlias(stackF(0, false));
 					state.emitMain(`// ${mn}`);
