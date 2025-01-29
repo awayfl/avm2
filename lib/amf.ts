@@ -382,6 +382,8 @@ function readAMF3Value(ba: ByteArray, references: AMF3ReferenceTables) {
 			release || assert((u29o & 1) === 1);
 			return ba.sec.AXDate.axConstruct([readDouble(ba)]);
 		}
+		case AMF3Marker.XML:
+			return ba.sec.AXXML.axConstruct([readUTF8(ba, references)]);
 		case AMF3Marker.OBJECT: {
 			const u29o = readU29(ba);
 			if ((u29o & 1) === 0) {
@@ -527,6 +529,9 @@ function writeAMF3Value(ba: ByteArray, value: any, references: AMF3ReferenceTabl
 					break;
 				writeU29(ba, 1);
 				writeDouble(ba, value.valueOf());
+			} else if (ba.sec.AXXML.axIsType(value)) {
+				ba.writeByte(AMF3Marker.XML);
+				writeUTF8(ba, value.toString(), references);
 			} else {
 				const object = <ASObject>value;
 
