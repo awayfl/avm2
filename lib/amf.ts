@@ -639,7 +639,7 @@ function writeAMF3Value(ba: ByteArray, value: any, references: AMF3ReferenceTabl
 				for (let i = 0; i < vector.length; i++) {
 					writeAMF3Value(ba, vector.axGetPublicProperty(i), references);
 				}
-		
+
 			} else {
 				const object = <ASObject>value;
 
