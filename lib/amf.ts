@@ -31,6 +31,10 @@ import { ITraits } from './run/ITraits';
 import { AXClass } from './run/AXClass';
 import { AXBasePrototype } from './run/initializeAXBasePrototype';
 import { forEachPublicProperty } from './run/forEachPublicProperty';
+import { Float64Vector } from './natives/float64Vector';
+import { Uint32Vector } from './natives/uint32Vector';
+import { GenericVector } from './natives/GenericVector';
+import { Int32Vector } from './natives/int32Vector';
 
 class AMF3ReferenceTables {
 	strings: any [] = [];
@@ -448,6 +452,64 @@ function readAMF3Value(ba: ByteArray, references: AMF3ReferenceTables) {
 			}
 			return array;
 		}
+		case AMF3Marker.VECTOR_INT: {
+			const u29o = readU29(ba);
+			if ((u29o & 1) === 0) {
+				return references.objects[u29o >> 1];
+			}
+			const length = u29o >> 1;
+			const fixed = ba.readUnsignedInt();
+			const vector: Int32Vector = ba.sec.Int32Vector.axClass.axConstruct([length, fixed]);
+			references.objects.push(vector);
+			for (let i = 0; i < length; i++) {
+				vector.axSetPublicProperty(i, readU29(ba));
+			}
+			return vector;
+		}
+		case AMF3Marker.VECTOR_UINT: {
+			const u29o = readU29(ba);
+			if ((u29o & 1) === 0) {
+				return references.objects[u29o >> 1];
+			}
+			const length = u29o >> 1;
+			const fixed = ba.readUnsignedInt();
+			const vector: Uint32Vector = ba.sec.Uint32Vector.axClass.axConstruct([length, fixed]);
+			references.objects.push(vector);
+			for (let i = 0; i < length; i++) {
+				vector.axSetPublicProperty(i, readU29(ba));
+			}
+			return vector;
+		}
+		case AMF3Marker.VECTOR_DOUBLE: {
+			const u29o = readU29(ba);
+			if ((u29o & 1) === 0) {
+				return references.objects[u29o >> 1];
+			}
+			const length = u29o >> 1;
+			const fixed = ba.readUnsignedInt();
+			const vector: Float64Vector = ba.sec.Float64Vector.axClass.axConstruct([length, fixed]);
+			references.objects.push(vector);
+			for (let i = 0; i < length; i++) {
+				vector.axSetPublicProperty(i, readDouble(ba));
+			}
+			return vector;
+		}
+		case AMF3Marker.VECTOR_OBJECT: {
+			const u29o = readU29(ba);
+			if ((u29o & 1) === 0) {
+				return references.objects[u29o >> 1];
+			}
+
+			const length = u29o >> 1;
+			const fixed = ba.readUnsignedInt();
+			const type = ba.sec.classAliases.getClassByAlias(readUTF8(ba, references));
+			const vector: GenericVector = <any> ba.sec.getVectorClass(type).axConstruct([length, fixed]);
+			references.objects.push(vector);
+			for (let i = 0; i < length; i++) {
+				vector.axSetPublicProperty(i, readAMF3Value(ba, references));
+			}
+			return vector;
+		}
 		default:
 			throw 'AMF3 Unknown marker ' + marker;
 	}
@@ -532,10 +594,56 @@ function writeAMF3Value(ba: ByteArray, value: any, references: AMF3ReferenceTabl
 			} else if (ba.sec.AXXML.axIsType(value)) {
 				ba.writeByte(AMF3Marker.XML);
 				writeUTF8(ba, value.toString(), references);
+			} else if (ba.sec.Int32Vector.axIsType(value)) {
+				const vector = <Float64Vector>value;
+				ba.writeByte(AMF3Marker.VECTOR_INT);
+				if (tryWriteAndStartTrackingReference(ba, vector, references)) {
+					break;
+				}
+				writeU29(ba, (vector.length << 1) | 1);
+				ba.writeUnsignedInt(+vector.fixed);
+				for (let i = 0; i < vector.length; i++) {
+					writeU29(ba, vector.axGetPublicProperty(i));
+				}
+			} else if (ba.sec.Uint32Vector.axIsType(value)) {
+				const vector = <Uint32Vector>value;
+				ba.writeByte(AMF3Marker.VECTOR_UINT);
+				if (tryWriteAndStartTrackingReference(ba, vector, references)) {
+					break;
+				}
+				writeU29(ba, (vector.length << 1) | 1);
+				ba.writeUnsignedInt(+vector.fixed);
+				for (let i = 0; i < vector.length; i++) {
+					writeU29(ba, vector.axGetPublicProperty(i));
+				}
+			} else if (ba.sec.Float64Vector.axIsType(value)) {
+				const vector = <Float64Vector>value;
+				ba.writeByte(AMF3Marker.VECTOR_DOUBLE);
+				if (tryWriteAndStartTrackingReference(ba, vector, references)) {
+					break;
+				}
+				writeU29(ba, (vector.length << 1) | 1);
+				ba.writeUnsignedInt(+vector.fixed);
+				for (let i = 0; i < vector.length; i++) {
+					writeDouble(ba, vector.axGetPublicProperty(i));
+				}
+			} else if (ba.sec.ObjectVector.axIsType(value)) {
+				const vector = <GenericVector>value;
+				ba.writeByte(AMF3Marker.VECTOR_OBJECT);
+				if (tryWriteAndStartTrackingReference(ba, vector, references)) {
+					break;
+				}
+				writeU29(ba, (vector.length << 1) | 1);
+				ba.writeUnsignedInt(+vector.fixed);
+				writeUTF8(ba, ba.sec.classAliases.getAliasByClass(value.axClass.type) || '*', references);
+				for (let i = 0; i < vector.length; i++) {
+					writeAMF3Value(ba, vector.axGetPublicProperty(i), references);
+				}
+		
 			} else {
 				const object = <ASObject>value;
 
-				// TODO Vector, Dictionary, ByteArray and XML support
+				// TODO Dictionary, ByteArray
 				ba.writeByte(AMF3Marker.OBJECT);
 				if (tryWriteAndStartTrackingReference(ba, object, references)) {
 					break;
