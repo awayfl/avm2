@@ -53,6 +53,8 @@ export class ABCFile {
 
 	private _multinames: Multiname [];
 
+	private _deferredMultinames: number[][] = [];
+
 	private _metadata: MetadataInfo [];
 
 	private _methods: MethodInfo [];
@@ -197,10 +199,18 @@ export class ABCFile {
 		for (let i = 1; i < n; i++) {
 			this._multinames[i] = this._parseMultiname(i);
 		}
+		const o = s.position;
+		while (this._deferredMultinames.length) {
+			const [i, o] = this._deferredMultinames.shift();
+			s.seek(o);
+			this._multinames[i] = this._parseMultiname(i);
+		}
+		s.seek(o);
 	}
 
 	private _parseMultiname(i: number): Multiname {
 		const stream = this._stream;
+		const o = stream.position;
 
 		let namespaceIsRuntime = false;
 		let namespaceIndex;
@@ -244,9 +254,12 @@ export class ABCFile {
 					warning('Invalid multiname: bad type parameter count ' + typeParameterCount);
 				}
 				const typeParameter = this._multinames[stream.readU32()];
-				const o = stream.position;
-				const factory = this.getMultiname(nameIndex);
-				stream.seek(o);
+				const factory = this._multinames[nameIndex];
+
+				if (typeParameter == null || factory == null) {
+					this._deferredMultinames.push([i, o]);
+					return;
+				}
 				return new Multiname(this, i, kind, factory.namespaces, factory.name, typeParameter);
 			}
 			default:
@@ -418,11 +431,9 @@ export class ABCFile {
 			instances[i] = this._parseInstanceInfo();
 		}
 		this._parseClassInfos(n);
-		const o = s.position;
 		for (let i = 0; i < n; i++) {
 			instances[i].classInfo = this.classes[i];
 		}
-		s.seek(o);
 	}
 
 	private _parseInstanceInfo(): InstanceInfo {
