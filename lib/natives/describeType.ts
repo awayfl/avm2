@@ -260,7 +260,7 @@ function describeMetadataXML(x: ASXML, metadata_: ASArray): void {
 	}
 }
 
-function describeMetadataList(sec: AXSecurityDomain, list: any[]/*MetadataInfo[]*/) {
+function describeMetadataList(sec: AXSecurityDomain, list: MetadataInfo[]) {
 	if (!list) {
 		return null;
 	}
@@ -268,7 +268,7 @@ function describeMetadataList(sec: AXSecurityDomain, list: any[]/*MetadataInfo[]
 
 	for (let i = 0; i < list.length; i++) {
 		const metadata = list[i];
-		const key = metadata.getName();
+		const key = metadata.name;
 		// Filter out the [native] metadata nodes. These are implementation details Flash doesn't
 		// expose, so we don't, either.
 		if (key === 'native') {
@@ -279,15 +279,15 @@ function describeMetadataList(sec: AXSecurityDomain, list: any[]/*MetadataInfo[]
 	return result;
 }
 
-function describeMetadata(sec: AXSecurityDomain, metadata: any/*MetadataInfo*/) {
+function describeMetadata(sec: AXSecurityDomain, metadata: MetadataInfo) {
 	const result = sec.createObject();
 	result.$Bgname = metadata.name;
 	const values = [];
 	result.$Bgvalue = sec.createArray(values);
 	for (let i = 0; i < metadata.keys.length; i++) {
 		const val = sec.createObject();
-		val.$Bgvalue = metadata.getValueAt(i);
-		val.$Bgkey = metadata.getKeyAt(i);
+		val.$Bgvalue = metadata.values[i];
+		val.$Bgkey = metadata.keys[i];
 		values.push(val);
 	}
 	return result;
