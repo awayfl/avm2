@@ -441,7 +441,7 @@ function addTraits(cls: AXClass, info: ClassInfo, describingClass: boolean,
 						continue;
 					}
 					const returnType = (<MethodTraitInfo>t).methodInfo.getType();
-					val.$BgreturnType = returnType ? returnType.name.toFQNString(true) : '*';
+					val.$BgreturnType = returnType ? returnType.classInfo.instanceInfo.multiname.toFQNString(true) : '*';
 					val.$Bgmetadata = flags & DescribeTypeFlags.INCLUDE_METADATA ?
 						describeMetadataList(sec, metadata) :
 						null;
@@ -468,7 +468,7 @@ function addTraits(cls: AXClass, info: ClassInfo, describingClass: boolean,
 					val.$Bgname = name;
 					if (t.kind === TRAIT.Getter) {
 						const returnType = (<MethodTraitInfo>t).methodInfo.getType();
-						val.$Bgtype = returnType ? returnType.name.toFQNString(true) : '*';
+						val.$Bgtype = returnType ? returnType.classInfo.instanceInfo.multiname.toFQNString(true) : '*';
 						encounteredGetters[name] = val;
 					} else {
 						const paramType = (<MethodTraitInfo>t).methodInfo.parameters[0].typeName;
