@@ -260,7 +260,7 @@ export class ASObject implements IMetaobjectProtocol {
 
 		const value = this[name];
 
-		if (typeof value === 'function')
+		if (typeof value === 'function' && !value.__isClosure)
 			return this.axGetMethod(name);
 
 		//80pro: workaround:

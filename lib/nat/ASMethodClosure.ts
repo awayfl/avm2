@@ -25,6 +25,7 @@ export class ASMethodClosure extends ASFunction {
 
 		Object.setPrototypeOf(closure,this.sec.AXMethodClosure.tPrototype);
 
+		closure.__isClosure = true;
 		closure.receiver = <any>receiver;
 		closure.value = method;
 		closure.methodInfo = method.methodInfo;
