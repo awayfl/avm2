@@ -20,7 +20,6 @@ import { ClassInfo } from '../abc/lazy/ClassInfo';
 import { RuntimeTraits } from '../abc/lazy/RuntimeTraits';
 import { MethodInfo } from '../abc/lazy/MethodInfo';
 import { ExceptionInfo } from '../abc/lazy/ExceptionInfo';
-import { ScriptInfo } from '../abc/lazy/ScriptInfo';
 import { runtimeWriter } from './writers';
 import { formatErrorMessage, Errors } from '../errors';
 import { transformJSValueToAS } from '../nat/transformJSValueToAS';
@@ -372,9 +371,7 @@ export class AXSecurityDomain {
 		tryLinkNativeClass(axClass);
 
 		// Create the global for for the class
-		const global: AXGlobal = Object.create(this.AXGlobalPrototype);
-		global.applicationDomain = classInfo.abc.applicationDomain;
-		global.globalInfo = classInfo;
+		const global: AXGlobal = this.createAXGlobal(classInfo.abc.applicationDomain, classInfo);
 		classInfo.global = global;
 
 		// Run the static initializer.
