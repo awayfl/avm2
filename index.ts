@@ -2,6 +2,7 @@ console.debug("AwayFL - AVM2 - 0.2.229");
 
 // export {AVMAwayStage} from "./lib/AVMAwayStage";
 export { ASObject } from './lib/nat/ASObject';
+export { ASFunction } from './lib/nat/ASFunction';
 export { ASClass } from './lib/nat/ASClass';
 export { ASArray } from './lib/nat/ASArray';
 export { ASError } from './lib/nat/ASError';
