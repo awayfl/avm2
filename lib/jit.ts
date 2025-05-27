@@ -1026,7 +1026,10 @@ export function compile(methodInfo: MethodInfo, options: ICompilerOptions = {}):
 						if (fast) {
 							state.emitMain(`if (!${emitIsAXOrPrimitive(obj)}) {`);
 							// fast instruction already binded
-							state.emitMain(`   ${targetStack} = ${emitAccess(obj, mn.name)}(${pp.join(', ')});`);
+							if (obj.split('__')[1] == mn.name)
+								state.emitMain(`   ${targetStack} = ${pp.join(', ')};`);
+							else
+								state.emitMain(`   ${targetStack} = ${emitAccess(obj, mn.name)}(${pp.join(', ')});`);
 							state.emitBeginMain('} else {');
 						}
 
