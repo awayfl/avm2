@@ -502,6 +502,11 @@ export class GenericVector extends BaseVector {
 		return this._fixed;
 	}
 
+	get value(): any[]
+	{
+		return this._buffer;
+	}
+
 	_checkFixed() {
 		if (this._fixed) {
 			this.sec.throwError('RangeError', Errors.VectorFixedError);

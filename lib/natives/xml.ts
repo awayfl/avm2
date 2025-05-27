@@ -3200,6 +3200,11 @@ export class ASXMLList extends ASObject implements XMLType {
 		return result;
 	}
 
+	get value(): ASXML[]
+	{
+		return this._children;
+	}
+
 	_children: ASXML [];
 	_targetObject: any; // ASXML|ASXMLList
 	_targetProperty: Multiname;
