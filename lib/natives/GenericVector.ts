@@ -502,8 +502,7 @@ export class GenericVector extends BaseVector {
 		return this._fixed;
 	}
 
-	get value(): any[]
-	{
+	get value(): any[] {
 		return this._buffer;
 	}
 

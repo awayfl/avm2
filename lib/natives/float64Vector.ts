@@ -107,8 +107,7 @@ export class Float64Vector extends BaseVector {
 	private _length: number;
 	private _offset: number;
 
-	get value(): Float64Array
-	{
+	get value(): Float64Array {
 		return this._buffer;
 	}
 

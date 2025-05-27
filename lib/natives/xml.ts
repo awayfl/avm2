@@ -3200,8 +3200,7 @@ export class ASXMLList extends ASObject implements XMLType {
 		return result;
 	}
 
-	get value(): ASXML[]
-	{
+	get value(): ASXML[] {
 		return this._children;
 	}
 
