@@ -60,6 +60,10 @@ export class Dictionary extends ASObject {
 		return 'Dictionary';
 	}
 
+	get value(): Record< string | number, any> {
+		return this.primitiveMap;
+	}
+
 	public axGetProperty(mn: Multiname): any {
 		if (<any> this === this.axClass.dPrototype) {
 			return super.axGetProperty(mn);
