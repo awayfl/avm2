@@ -1959,7 +1959,7 @@ export function compile(methodInfo: MethodInfo, options: ICompilerOptions = {}):
 */\n\n`;
 
 	const w =
-		scriptHeader +
+		//scriptHeader +
 		genHeader.join('\n') +
 		state.headerBlock.join('\n') + '\n' +
 		genBody.join('\n') + '\n' +
