@@ -1,4 +1,4 @@
-import { MovieClip, FrameScriptManager, DisplayObject, Sprite, DisplayObjectContainer, Timeline } from '@awayjs/scene';
+import { MovieClip, FrameScriptManager, DisplayObject, Sprite, DisplayObjectContainer, Timeline, IMovieClipAdapter, IDisplayObjectAdapter } from '@awayjs/scene';
 import { AssetBase } from '@awayjs/core';
 import { AXClass, IS_AX_CLASS } from './AXClass';
 import { Multiname } from '../abc/lazy/Multiname';
@@ -159,6 +159,13 @@ export function axConstruct(argArray?: any[]) {
 		object.adaptee = adaptee;
 
 		adaptee.reset();
+
+		(<IMovieClipAdapter>object).executeConstructor = () => {
+			//adaptee.timeline.resetScripts();
+			(<any>object).axInitializer();
+			(<any>object).constructorHasRun = true;
+
+		};
 		FrameScriptManager.execute_as3_constructors_recursiv(adaptee);
 	}
 
@@ -188,8 +195,10 @@ export function axConstruct(argArray?: any[]) {
 	object[IS_AX_CLASS] = true;
 
 	// eslint-disable-next-line prefer-spread
-	object.axInitializer.apply(object,argArray);
-	object.constructorHasRun = true;
+	if (!timeline) {
+		object.axInitializer.apply(object,argArray);
+		object.constructorHasRun = true;
+	}
 
 	if (object.adaptee)
 		OrphanManager.addOrphan(object.adaptee);
