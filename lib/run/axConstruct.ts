@@ -161,9 +161,8 @@ export function axConstruct(argArray?: any[]) {
 		adaptee.reset();
 
 		(<IMovieClipAdapter>object).executeConstructor = () => {
-			//adaptee.timeline.resetScripts();
-			(<any>object).axInitializer();
-			(<any>object).constructorHasRun = true;
+			object.axInitializer.apply(object,argArray);
+			object.constructorHasRun = true;
 
 		};
 		FrameScriptManager.execute_as3_constructors_recursiv(adaptee);
