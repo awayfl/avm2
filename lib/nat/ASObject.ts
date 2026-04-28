@@ -468,7 +468,7 @@ export class ASObject implements IMetaobjectProtocol {
 	}
 
 	axGetNumericProperty(nm: number): any {
-		return this.axGetPublicProperty(nm);
+		return this[nm];
 	}
 
 	axEnumerableKeys: any[];

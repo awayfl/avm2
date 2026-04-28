@@ -3200,10 +3200,6 @@ export class ASXMLList extends ASObject implements XMLType {
 		return result;
 	}
 
-	get value(): ASXML[] {
-		return this._children;
-	}
-
 	_children: ASXML [];
 	_targetObject: any; // ASXML|ASXMLList
 	_targetProperty: Multiname;
@@ -3771,7 +3767,7 @@ export class ASXMLList extends ASObject implements XMLType {
 		return xl;
 	}
 
-	axGetProperty(mn: Multiname): any {
+	public axGetProperty(mn: Multiname): any {
 		if (this === this.axClass.dPrototype) {
 			const value = this[this.axResolveMultiname(mn)];
 			release || checkValue(value);
@@ -3780,7 +3776,11 @@ export class ASXMLList extends ASObject implements XMLType {
 		return this.getProperty(coerceE4XMultiname(mn, this.sec));
 	}
 
-	axGetPublicProperty(nm: any): any {
+	public axGetNumericProperty(nm: number): any {
+		return this._children[nm];
+	}
+
+	public axGetPublicProperty(nm: any): any {
 		if (this === this.axClass.dPrototype) {
 			const value = this[Multiname.getPublicMangledName(nm)];
 			release || checkValue(value);

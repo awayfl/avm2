@@ -105,10 +105,6 @@ export class Int32Vector extends BaseVector {
 	private _length: number;
 	private _offset: number;
 
-	get value(): Int32Array {
-		return this._buffer;
-	}
-
 	constructor (length: number = 0, fixed: boolean = false) {
 		super();
 		length = length >>> 0;

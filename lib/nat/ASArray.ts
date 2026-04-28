@@ -515,6 +515,10 @@ export class ASArray extends ASObject {
 		return delete this['$Bg' + name];
 	}
 
+	axGetNumericProperty(nm: number) {
+		return this.value[nm];
+	}
+
 	axGetPublicProperty(nm: any): any {
 		if (typeof nm === 'number' || isNumeric(nm = axCoerceName(nm))) {
 			return this.value[nm];

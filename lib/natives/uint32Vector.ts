@@ -107,10 +107,6 @@ export class Uint32Vector extends BaseVector {
 	private _length: number;
 	private _offset: number;
 
-	get value(): Uint32Array {
-		return this._buffer;
-	}
-
 	constructor (length: number = 0, fixed: boolean = false) {
 		super();
 		length = length >>> 0;

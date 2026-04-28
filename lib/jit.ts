@@ -1513,7 +1513,7 @@ export function compile(methodInfo: MethodInfo, options: ICompilerOptions = {}):
 					}
 
 					state.emitMain('if (typeof simple === "number") {');
-					state.emitMain(`    ${target} = b_obj.value[simple];`);
+					state.emitMain(`    ${target} = b_obj.axGetNumericProperty(simple);`);
 
 					state.emitBeginMain('} else {');
 

@@ -60,10 +60,6 @@ export class Dictionary extends ASObject {
 		return 'Dictionary';
 	}
 
-	get value(): Record< string | number, any> {
-		return this.primitiveMap;
-	}
-
 	public axGetProperty(mn: Multiname): any {
 		if (<any> this === this.axClass.dPrototype) {
 			return super.axGetProperty(mn);
@@ -144,7 +140,11 @@ export class Dictionary extends ASObject {
 		return true;
 	}
 
-	axGetPublicProperty(nm: any): any {
+	public axGetNumericProperty(nm: number): any {
+		return this.primitiveMap[nm];
+	}
+
+	public axGetPublicProperty(nm: any): any {
 		if (<any> this === this.axClass.dPrototype) {
 			return super.axGetPublicProperty(nm);
 		}
