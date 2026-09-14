@@ -963,25 +963,7 @@ export function analyze(methodInfo: MethodInfo): IAnalyseResult | IAnalyzeError 
 
 	let minStack = propagateStack(0, 0, q);
 
-	if (requireScope) {
-		propagateScope(0, 0, q);
-	} else {
-
-		const scopeIndexes = [];
-		for (let i = 0; i < q.length; i++) {
-			if (q[i].name === Bytecode.PUSHSCOPE) {
-				scopeIndexes.push(i);
-			}
-		}
-
-		for (const i of scopeIndexes) {
-			// we remove 3 commands, because push scope shift stack before
-			const comment = new Instruction(0, Bytecode.LABEL);
-			comment.comment = 'IR: PUSHSCOPE removed, reason: unused';
-
-			q.splice(i - 1, 2, comment);
-		}
-	}
+	propagateScope(0, 0, q);
 
 	const jumps: number[] = [0];
 
