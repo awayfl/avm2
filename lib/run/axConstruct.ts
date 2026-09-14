@@ -210,6 +210,7 @@ export function axConstruct(argArray?: any[]) {
 }
 
 const NEED_SLOW_CONSTRUCTOR: Record<string, boolean> = {
+	'String': true,
 	'MovieClip': true,
 	'DisplayObject': true,
 	'Sprite': true,
