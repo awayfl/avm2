@@ -65,6 +65,7 @@ import { InstanceInfo } from './abc/lazy/InstanceInfo';
 import { SlotTraitInfo } from './abc/lazy/SlotTraitInfo';
 import { TraitInfo } from './abc/lazy/TraitInfo';
 import { RuntimeTraitInfo } from './abc/lazy/RuntimeTraitInfo';
+import { NamespaceType } from './abc/lazy/NamespaceType';
 import { axConstructFast, isFastConstructSupport } from './run/axConstruct';
 import { ASRegExp } from './nat/ASRegExp';
 import { AXGlobal } from './run/AXGlobal';
@@ -969,6 +970,8 @@ export function compile(methodInfo: MethodInfo, options: ICompilerOptions = {}):
 					const mn = abc.getMultiname(param(1));
 					const pp = [];
 					const obj = stackF(param(0));
+					const isPrivate = mn.namespaces.length === 1 &&
+						mn.namespaces[0].type === NamespaceType.Private;
 
 					for (let j: number = 1; j <= param(0); j++) {
 						pp.push(stackF(param(0) - j));
@@ -985,7 +988,7 @@ export function compile(methodInfo: MethodInfo, options: ICompilerOptions = {}):
 						state.emitMain(`${targetStack} = context.getdefinitionbyname(${scope}, ${obj}, [${pp.join(', ')}]);`);
 					} else {
 						let d: ICallEntry;
-						if (USE_OPT(fastCall) && (d = fastCall.sureThatFast(`${obj}`, mn.getMangledName()))) {
+						if (!isPrivate && USE_OPT(fastCall) && (d = fastCall.sureThatFast(`${obj}`, mn.getMangledName()))) {
 							const n = d.isMangled ? Multiname.getPublicMangledName(mn.name) : mn.name;
 							fastCall.kill(`${obj}`);
 
@@ -1010,7 +1013,7 @@ export function compile(methodInfo: MethodInfo, options: ICompilerOptions = {}):
 
 								if (trait.kind === TRAIT.Method) {
 									// eslint-disable-next-line max-len
-									state.emitMain(`${targetStack} = ${emitAccess(obj, mn.getMangledName())}(${pp.join(', ')});`);
+									state.emitMain(`${targetStack} = ${emitAccess(obj, trait.multiname.getMangledName())}(${pp.join(', ')});`);
 								} else {
 									// when is method, we should wrap caller, because JS miss `this`
 									// when method is used as outside object
@@ -1022,7 +1025,7 @@ export function compile(methodInfo: MethodInfo, options: ICompilerOptions = {}):
 							}
 						}
 
-						const fast = needFastCheck() && (obj !== 'this' || !Settings.NO_CHECK_FASTCALL_FOR_THIS);
+						const fast = !isPrivate && needFastCheck() && (obj !== 'this' || !Settings.NO_CHECK_FASTCALL_FOR_THIS);
 						if (fast) {
 							state.emitMain(`if (!${emitIsAXOrPrimitive(obj)}) {`);
 							// fast instruction already binded
@@ -1036,30 +1039,35 @@ export function compile(methodInfo: MethodInfo, options: ICompilerOptions = {}):
 						state.emitMain(`// ${mn}`);
 						state.emitBeginMain(); // {
 
-						const box = !Settings.NO_CHECK_BOXED_THIS || obj !== 'this';
-						if (box) {
-							state.emitMain(`let t = ${obj};`);
-							const accessor = emitAccess('t', '$Bg' + mn.name);
-							// eslint-disable-next-line max-len
-							state.emitMain(`const m = ${accessor} || (t = sec.box(${obj}), ${accessor});`);
+						if (isPrivate) {
+							state.emitMain(
+								`${targetStack} = ${obj}.axCallProperty(${getname(param(1))}, [${pp.join(', ')}], false);`
+							);
 						} else {
-							state.emitMain(`const m = ${emitAccess(obj, '$Bg' + mn.name)};`);
+
+							const box = !Settings.NO_CHECK_BOXED_THIS || obj !== 'this';
+							if (box) {
+								state.emitMain(`let t = ${obj};`);
+								const accessor = emitAccess('t', '$Bg' + mn.name);
+								// eslint-disable-next-line max-len
+								state.emitMain(`const m = ${accessor} || (t = sec.box(${obj}), ${accessor});`);
+							} else {
+								state.emitMain(`const m = ${emitAccess(obj, '$Bg' + mn.name)};`);
+							}
+
+							state.emitMain('if( typeof m === "function" ) { ');
+							// eslint-disable-next-line max-len
+							state.emitMain(`    ${targetStack} = ${emitAccess(box ? 't' : obj, '$Bg' + mn.name)} (${pp.join(', ')});`);
+							state.emitMain('} else { ');
+							// eslint-disable-next-line max-len
+							state.emitMain(`    ${targetStack} = ${obj}.axCallProperty(${getname(param(1))}, [${pp.join(', ')}], false);`);
+							state.emitMain('}');
 						}
-
-						state.emitMain('if( typeof m === "function" ) { ');
-						// eslint-disable-next-line max-len
-						state.emitMain(`    ${targetStack} = ${emitAccess(box ? 't' : obj, '$Bg' + mn.name)} (${pp.join(', ')});`);
-						state.emitMain('} else { ');
-						// eslint-disable-next-line max-len
-						state.emitMain(`    ${targetStack} = ${obj}.axCallProperty(${getname(param(1))}, [${pp.join(', ')}], false);`);
-						state.emitMain('}');
-
 						state.emitEndMain(); // }
-
+						
 						if (fast) {
 							state.emitEndMain(); // }
 						}
-
 					}
 					break;
 				}
@@ -1078,16 +1086,28 @@ export function compile(methodInfo: MethodInfo, options: ICompilerOptions = {}):
 
 					state.emitMain(`temp = sec.box(${targetStack});`);
 
-					const accessor = emitAccess('temp', '$Bg' + mn.name);
+					
+					const isPrivate = mn.namespaces.length === 1 &&
+					mn.namespaces[0].type === NamespaceType.Private;
 
-					// eslint-disable-next-line max-len
-					state.emitMain(`${targetStack} = (typeof ${accessor} === 'function')? ${accessor}(${pp.join(', ')}) : temp.axCallProperty(${getname(param(1))}, [${pp.join(', ')}], true);`);
+					if (isPrivate) {
+						state.emitMain(
+							`${targetStack} = temp.axCallProperty(${getname(param(1))}, [${pp.join(', ')}], true);`
+						);
+					} else {
+						const accessor = emitAccess('temp', '$Bg' + mn.name);
+						// eslint-disable-next-line max-len
+						state.emitMain(`${targetStack} = (typeof ${accessor} === 'function')? ${accessor}(${pp.join(', ')}) : temp.axCallProperty(${getname(param(1))}, [${pp.join(', ')}], true);`);
+					}
+					
 				}
 					break;
 				case Bytecode.CALLPROPVOID: {
 					const mn = abc.getMultiname(param(1));
 					const pp = [];
 					const obj = stackF(param(0));
+					const isPrivate = mn.namespaces.length === 1 &&
+					mn.namespaces[0].type === NamespaceType.Private;
 
 					for (let j = 1; j <= param(0); j++) {
 						pp.push(stackF(param(0) - j));
@@ -1097,7 +1117,7 @@ export function compile(methodInfo: MethodInfo, options: ICompilerOptions = {}):
 					state.killConstAliasInstruction([stackF(param(0), false)]);
 
 					{
-						if (USE_OPT(fastCall) && fastCall.sureThatFast(obj)) {
+						if (!isPrivate && USE_OPT(fastCall) && fastCall.sureThatFast(obj)) {
 							const n = fastCall.sureThatFast(obj).isMangled
 								? Multiname.getPublicMangledName(mn.name)
 								: mn.name;
@@ -1121,7 +1141,7 @@ export function compile(methodInfo: MethodInfo, options: ICompilerOptions = {}):
 
 							if (trait.kind === TRAIT.Method) {
 								// eslint-disable-next-line max-len
-								state.emitMain(`${emitAccess(obj, mn.getMangledName())}(${pp.join(', ')});`);
+								state.emitMain(`${emitAccess(obj, trait.multiname.getMangledName())}(${pp.join(', ')});`);
 							} else {
 								// when is method, we should wrap caller, because JS miss `this`
 								// when method is used as outside object
@@ -1133,7 +1153,7 @@ export function compile(methodInfo: MethodInfo, options: ICompilerOptions = {}):
 						}
 					}
 
-					const fast = needFastCheck() && (obj !== 'this' || !Settings.NO_CHECK_FASTCALL_FOR_THIS);
+					const fast = !isPrivate && needFastCheck() && (obj !== 'this' || !Settings.NO_CHECK_FASTCALL_FOR_THIS);
 					if (fast) {
 						state.emitMain(`if (!${emitIsAXOrPrimitive(obj)}) {`);
 						state.emitMain(`    ${emitAccess(obj, mn.name)}(${pp.join(', ')});`);
@@ -1143,16 +1163,22 @@ export function compile(methodInfo: MethodInfo, options: ICompilerOptions = {}):
 
 					state.emitMain(`// ${mn}`);
 					state.emitBeginMain(); // {
-					state.emitMain(`let t = ${obj};`);
+					
 
-					const accessor = emitAccess('t', '$Bg' + mn.name);
+					if (isPrivate) {
+						state.emitMain(`${obj}.axCallProperty(${getname(param(1))}, [${pp.join(', ')}], false);`);
+					} else {
+						state.emitMain(`let t = ${obj};`);
 
-					state.emitMain(`const m = ${accessor} || (t = sec.box(${obj}), ${accessor});`);
-					state.emitMain('if( typeof m === "function" ) { ');
-					state.emitMain(`    m.call(t${pp.length ? ', ' : ''}${pp.join(', ')});`);
-					state.emitMain('} else { ');
-					state.emitMain(`   ${obj}.axCallProperty(${getname(param(1))}, [${pp.join(', ')}], false);`);
-					state.emitMain('}');
+						const accessor = emitAccess('t', '$Bg' + mn.name);
+
+						state.emitMain(`const m = ${accessor} || (t = sec.box(${obj}), ${accessor});`);
+						state.emitMain('if( typeof m === "function" ) { ');
+						state.emitMain(`    m.call(t${pp.length ? ', ' : ''}${pp.join(', ')});`);
+						state.emitMain('} else { ');
+						state.emitMain(`   ${obj}.axCallProperty(${getname(param(1))}, [${pp.join(', ')}], false);`);
+						state.emitMain('}');
+					}
 					state.emitEndMain(); // }
 
 					if (fast) {
@@ -1369,6 +1395,8 @@ export function compile(methodInfo: MethodInfo, options: ICompilerOptions = {}):
 					const pp = [];
 					const targetStack = stackF(param(0), false);
 					const of = stackF(param(0));
+					const mn = abc.getMultiname(param(1));
+					const isPrivate = mn.namespaces.length === 1 && mn.namespaces[0].type === NamespaceType.Private;
 
 					// order is important, we should check constant assigment to stack/local
 					// before pop alias for this stack/local,
@@ -1378,7 +1406,7 @@ export function compile(methodInfo: MethodInfo, options: ICompilerOptions = {}):
 
 					state.setStackAlias(param(0), {
 						kind: VAR_KIND.LOOKUP,
-						type: abc.getMultiname(param(1)),
+						type: mn,
 						scope: -1000,
 					});
 
@@ -1390,8 +1418,8 @@ export function compile(methodInfo: MethodInfo, options: ICompilerOptions = {}):
 					let supportFast = false;
 					const trace = [];
 
-					if (Settings.CHECK_FAST_CONSTRUCTOR) {
-						supportFast = isFastConstructSupport(abc.getMultiname(param(1)), trace);
+					if (!isPrivate && Settings.CHECK_FAST_CONSTRUCTOR) {
+						supportFast = isFastConstructSupport(mn, trace);
 					}
 
 					if (supportFast) {
@@ -1408,6 +1436,7 @@ export function compile(methodInfo: MethodInfo, options: ICompilerOptions = {}):
 					break;
 				case Bytecode.GETPROPERTY: {
 					const mn = abc.getMultiname(param(0));
+					const isPrivate = mn.namespaces.length === 1 && mn.namespaces[0].type === NamespaceType.Private;
 					const of = stackF(0);
 					const target = stackF(0, false);
 
@@ -1421,7 +1450,7 @@ export function compile(methodInfo: MethodInfo, options: ICompilerOptions = {}):
 
 					{
 						let d: ICallEntry;
-						if (USE_OPT(fastCall) && (d = fastCall.sureThatFast(of, mn.name))) {
+						if (!isPrivate && USE_OPT(fastCall) && (d = fastCall.sureThatFast(of, mn.name))) {
 							const n = d.isMangled ? Multiname.getPublicMangledName(mn.name) : mn.name;
 							fastCall.kill(of);
 
@@ -1451,7 +1480,7 @@ export function compile(methodInfo: MethodInfo, options: ICompilerOptions = {}):
 								trait.kind === TRAIT.GetterSetter ||
 								trait.kind === TRAIT.Getter
 							) {
-								state.emitMain(`${target} = ${emitAccess(stack0, mn.getMangledName())};`);
+								state.emitMain(`${target} = ${emitAccess(stack0, trait.multiname.getMangledName())};`);
 
 								state.setStackAlias(0, {
 									kind: VAR_KIND.VAR,
@@ -1464,6 +1493,18 @@ export function compile(methodInfo: MethodInfo, options: ICompilerOptions = {}):
 
 					state.setStackAlias(0);
 
+					const box = !Settings.NO_CHECK_BOXED_THIS || stack0 !== 'this';
+					
+					if (isPrivate) {
+						if (box) {
+							state.emitMain(`temp = ${stack0}[AX_CLASS_SYMBOL] ? ${stack0} : sec.box(${stack0});`);
+						}
+
+						state.emitMain(`${target} = ${box ? 'temp' : stack0}.axGetProperty(${getname(param(0))});`);
+
+						break;
+					}
+
 					const fast = needFastCheck() && (stack0 !== 'this' || !Settings.NO_CHECK_FASTCALL_FOR_THIS);
 					if (fast) {
 						state.emitMain(`if (!${emitIsAX(stack0)}) {`);
@@ -1471,7 +1512,6 @@ export function compile(methodInfo: MethodInfo, options: ICompilerOptions = {}):
 						state.emitBeginMain('} else {');
 					}
 
-					const box = !Settings.NO_CHECK_BOXED_THIS || stack0 !== 'this';
 					if (box) {
 						state.emitMain(`temp = ${stack0}[AX_CLASS_SYMBOL] ? ${stack0} : sec.box(${stack0});`);
 					}
@@ -1533,6 +1573,7 @@ export function compile(methodInfo: MethodInfo, options: ICompilerOptions = {}):
 				}
 				case Bytecode.SETPROPERTY: {
 					const mn = abc.getMultiname(param(0));
+					const isPrivate = mn.namespaces.length === 1 && mn.namespaces[0].type === NamespaceType.Private;
 					state.killConstAliasInstruction([stackF(0, false), stackF(1, false)]);
 
 					state.emitMain(`// ${mn}`);
@@ -1554,13 +1595,13 @@ export function compile(methodInfo: MethodInfo, options: ICompilerOptions = {}):
 							) {
 								//debugger;
 								// eslint-disable-next-line max-len
-								state.emitMain(`${emitAccess(stack1, mn.getMangledName())} = ${emitPrimitiveCoerce(state, 0, (<any> trait).typeName, true)};`);
+								state.emitMain(`${emitAccess(stack1, trait.multiname.getMangledName())} = ${emitPrimitiveCoerce(state, 0, (<any> trait).typeName, true)};`);
 								break;
 							}
 						}
 					}
 
-					const fast = needFastCheck() && (stack1 !== 'this' || !Settings.NO_CHECK_FASTCALL_FOR_THIS);
+					const fast = !isPrivate && needFastCheck() && (stack1 !== 'this' || !Settings.NO_CHECK_FASTCALL_FOR_THIS);
 					if (fast) {
 						state.emitMain(`if (!${emitIsAX(stack1)}){`);
 						state.emitMain(`    ${emitAccess(stack1, mn.name)} = ${stack0};`);
@@ -1692,7 +1733,7 @@ export function compile(methodInfo: MethodInfo, options: ICompilerOptions = {}):
 								trait.kind === TRAIT.Getter
 							) {
 								state.emitMain(
-									`${target} = ${emitAccess(local, mn.getMangledName())};`
+									`${target} = ${emitAccess(local, trait.multiname.getMangledName())};`
 								);
 								break;
 							}

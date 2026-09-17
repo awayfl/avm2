@@ -277,7 +277,11 @@ export class Multiname {
 
 	private _mangleName() {
 		release || assert(!this._mangledName);
-		const mangledName = '$Bg' + axCoerceString(this.name);
+		const ns = this.namespaces.length === 1 ? this.namespaces[0] : null;
+		const prefix = ns && ns.type === NamespaceType.Private
+			? '$' + ns.mangledName
+			: '$Bg';
+		const mangledName = prefix + axCoerceString(this.name);
 		if (!this.isRuntime()) {
 			this._mangledName = mangledName;
 		}
