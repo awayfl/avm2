@@ -1064,7 +1064,7 @@ export function compile(methodInfo: MethodInfo, options: ICompilerOptions = {}):
 							state.emitMain('}');
 						}
 						state.emitEndMain(); // }
-						
+
 						if (fast) {
 							state.emitEndMain(); // }
 						}
@@ -1086,7 +1086,6 @@ export function compile(methodInfo: MethodInfo, options: ICompilerOptions = {}):
 
 					state.emitMain(`temp = sec.box(${targetStack});`);
 
-					
 					const isPrivate = mn.namespaces.length === 1 &&
 					mn.namespaces[0].type === NamespaceType.Private;
 
@@ -1099,7 +1098,7 @@ export function compile(methodInfo: MethodInfo, options: ICompilerOptions = {}):
 						// eslint-disable-next-line max-len
 						state.emitMain(`${targetStack} = (typeof ${accessor} === 'function')? ${accessor}(${pp.join(', ')}) : temp.axCallProperty(${getname(param(1))}, [${pp.join(', ')}], true);`);
 					}
-					
+
 				}
 					break;
 				case Bytecode.CALLPROPVOID: {
@@ -1163,7 +1162,6 @@ export function compile(methodInfo: MethodInfo, options: ICompilerOptions = {}):
 
 					state.emitMain(`// ${mn}`);
 					state.emitBeginMain(); // {
-					
 
 					if (isPrivate) {
 						state.emitMain(`${obj}.axCallProperty(${getname(param(1))}, [${pp.join(', ')}], false);`);
@@ -1494,7 +1492,7 @@ export function compile(methodInfo: MethodInfo, options: ICompilerOptions = {}):
 					state.setStackAlias(0);
 
 					const box = !Settings.NO_CHECK_BOXED_THIS || stack0 !== 'this';
-					
+
 					if (isPrivate) {
 						if (box) {
 							state.emitMain(`temp = ${stack0}[AX_CLASS_SYMBOL] ? ${stack0} : sec.box(${stack0});`);
