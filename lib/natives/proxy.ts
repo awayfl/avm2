@@ -91,6 +91,17 @@ export class ASProxy extends ASObject {
 		this.sec.throwError('flash.errors.IllegalOperationError', Errors.ProxyNextValueError);
 	}
 
+	/**
+	 * Resolve a flash_proxy trap override. Subclass overrides should shadow the base
+	 * trap at `proxyPrefix + name`, but the override trait can end up mangled into the
+	 * public namespace (`$Bg` + name) instead, in which case the base thrower would
+	 * win the lookup and dynamic property access on the proxy dies with error #2088-96.
+	 * Prefer a public-mangled override when one exists.
+	 */
+	private _proxyTrap(name: string): Function {
+		return (<any> this)['$Bg' + name] || (<any> this)[proxyPrefix + name];
+	}
+
 	public axGetProperty(mn: Multiname) {
 		let value: any;
 		const trait = typeof mn.name === 'string' ? this.traits.getTrait(mn.namespaces, mn.name) : null;
@@ -101,17 +112,17 @@ export class ASProxy extends ASObject {
 				return this.axGetMethod(name);
 			}
 		} else {
-			value = this[proxyPrefix + 'getProperty'](this.sec.AXQName.FromMultiname(mn));
+			value = this._proxyTrap('getProperty').call(this, this.sec.AXQName.FromMultiname(mn));
 		}
 		return value;
 	}
 
 	public axGetNumericProperty(name: number): any {
-		return this[proxyPrefix + 'getProperty']((+name) + '');
+		return this._proxyTrap('getProperty').call(this, (+name) + '');
 	}
 
 	public axSetNumericProperty(name: number, value: any) {
-		this[proxyPrefix + 'setProperty']((+name) + '', value);
+		this._proxyTrap('setProperty').call(this, (+name) + '', value);
 	}
 
 	public axSetProperty(mn: Multiname, value: any, bc: Bytecode) {
@@ -120,7 +131,7 @@ export class ASProxy extends ASObject {
 			super.axSetProperty(mn, value, bc);
 			return;
 		}
-		this[proxyPrefix + 'setProperty'](this.sec.AXQName.FromMultiname(mn), value);
+		this._proxyTrap('setProperty').call(this, this.sec.AXQName.FromMultiname(mn), value);
 	}
 
 	public axCallProperty(mn: Multiname, args: any[], isLex: boolean): any {
@@ -129,7 +140,7 @@ export class ASProxy extends ASObject {
 			return super.axCallProperty(mn, args, isLex);
 		}
 		const callArgs = [this.sec.AXQName.FromMultiname(mn)].concat(args);
-		return this[proxyPrefix + 'callProperty'](...callArgs);
+		return this._proxyTrap('callProperty').apply(this, callArgs);
 	}
 
 	public axHasProperty(mn: Multiname): any {
@@ -141,7 +152,7 @@ export class ASProxy extends ASObject {
 		if (this.axHasPropertyInternal(rn)) {
 			return true;
 		}
-		return this[proxyPrefix + 'hasProperty'](nm);
+		return this._proxyTrap('hasProperty').call(this, nm);
 	}
 
 	public axHasOwnProperty(mn: Multiname): any {
@@ -149,7 +160,7 @@ export class ASProxy extends ASObject {
 		if (trait) {
 			return true;
 		}
-		return this[proxyPrefix + 'hasProperty'](this.sec.AXQName.FromMultiname(mn));
+		return this._proxyTrap('hasProperty').call(this, this.sec.AXQName.FromMultiname(mn));
 	}
 
 	public axDeleteProperty(mn: Multiname): any {
@@ -157,19 +168,19 @@ export class ASProxy extends ASObject {
 		if (trait) {
 			return delete this[trait.multiname.getMangledName()];
 		}
-		return this[proxyPrefix + 'deleteProperty'](this.sec.AXQName.FromMultiname(mn));
+		return this._proxyTrap('deleteProperty').call(this, this.sec.AXQName.FromMultiname(mn));
 	}
 
 	public axNextName(index: number): any {
-		return this[proxyPrefix + 'nextName'](index);
+		return this._proxyTrap('nextName').call(this, index);
 	}
 
 	public axNextValue(index: number): any {
-		return this[proxyPrefix + 'nextValue'](index);
+		return this._proxyTrap('nextValue').call(this, index);
 	}
 
 	public axNextNameIndex(index: number): number {
-		return this[proxyPrefix + 'nextNameIndex'](index);
+		return this._proxyTrap('nextNameIndex').call(this, index);
 	}
 }
 
