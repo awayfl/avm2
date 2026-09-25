@@ -83,9 +83,13 @@ export function emitAnnotation (state: CompilerState): IFunctionAnnotation  {
 	}
 
 	if (methodInfo.needsArguments()) {
-		// eslint-disable-next-line max-len
-		js0.push(`${state.indent}let ${emitInlineLocal(state, params.length + 1)} = context.sec.createArrayUnsafe(Array.from(arguments));`);
-		paramsShift += 1;
+		const argumentsLocal = emitInlineLocal(state, params.length + 1);
++		js0.push(`${state.indent}let ${argumentsLocal} = Object.create(context.sec.argumentsPrototype);`);
++		js0.push(`${state.indent}${argumentsLocal}.value = Array.from(arguments);`);
++		js0.push(`${state.indent}${argumentsLocal}.callee = context.callee;`);
++		js0.push(`${state.indent}${argumentsLocal}.receiver = this;`);
++		js0.push(`${state.indent}${argumentsLocal}.methodInfo = context.mi;`);
+ 		paramsShift += 1;
 	}
 
 	return {

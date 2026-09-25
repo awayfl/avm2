@@ -2053,7 +2053,8 @@ export class Context {
 	constructor(
 		private readonly mi: MethodInfo,
 		private readonly savedScope: Scope,
-		private readonly names: Multiname[]
+		private readonly names: Multiname[],
+		private readonly callee?: AXFunction
 	) {
 		this.rn = new Multiname(mi.abc, 0, null, null, null, null, true);
 		this.abc = mi.abc;

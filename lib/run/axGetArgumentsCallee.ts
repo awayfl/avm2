@@ -17,7 +17,7 @@ export function axGetArgumentsCallee(): AXFunction {
 		return null;
 	}
 	release || assert(this.methodInfo.trait);
-	const mn = this.methodInfo.trait.name;
+	const mn = this.methodInfo.trait.multiname;
 	const methodClosure = this.receiver.axGetProperty(mn);
 	release || assert(this.sec.AXMethodClosure.tPrototype === Object.getPrototypeOf(methodClosure));
 	return methodClosure;

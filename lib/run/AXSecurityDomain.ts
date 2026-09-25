@@ -420,8 +420,8 @@ export class AXSecurityDomain {
 
 	createFunction(methodInfo: MethodInfo, scope: Scope, hasDynamicScope: boolean): AXFunction {
 		//const traceMsg = !release && flashlog && methodInfo.trait ? methodInfo.toFlashlogString() : null;
-		// eslint-disable-next-line no-var
-		var fun = this.boxFunction(interpret(methodInfo, scope, fun));
+		const fun = this.boxFunction(null);
+		fun.value = interpret(methodInfo, scope, fun);
 		//fun.methodInfo = methodInfo;
 		fun.receiver = { scope: scope };
 		if (!release) {

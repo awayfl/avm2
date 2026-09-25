@@ -174,7 +174,7 @@ export function interpret(methodInfo: MethodInfo, savedScope: Scope, callee: AXF
 
 	if (methodInfo.state === COMPILATION_STATE.COMPILLED) {
 		methodInfo.useCount++;
-		return methodInfo.compiled(new Context(methodInfo, savedScope, methodInfo.names));
+		return methodInfo.compiled(new Context(methodInfo, savedScope, methodInfo.names, callee));
 	}
 
 	if (Settings.NO_FALL_TO_INT) {
