@@ -84,11 +84,11 @@ export function emitAnnotation (state: CompilerState): IFunctionAnnotation  {
 
 	if (methodInfo.needsArguments()) {
 		const argumentsLocal = emitInlineLocal(state, params.length + 1);
-+		js0.push(`${state.indent}let ${argumentsLocal} = Object.create(context.sec.argumentsPrototype);`);
-+		js0.push(`${state.indent}${argumentsLocal}.value = Array.from(arguments);`);
-+		js0.push(`${state.indent}${argumentsLocal}.callee = context.callee;`);
-+		js0.push(`${state.indent}${argumentsLocal}.receiver = this;`);
-+		js0.push(`${state.indent}${argumentsLocal}.methodInfo = context.mi;`);
+		+js0.push(`${state.indent}let ${argumentsLocal} = Object.create(context.sec.argumentsPrototype);`);
+		+js0.push(`${state.indent}${argumentsLocal}.value = Array.from(arguments);`);
+		+js0.push(`${state.indent}${argumentsLocal}.callee = context.callee;`);
+		+js0.push(`${state.indent}${argumentsLocal}.receiver = this;`);
+		+js0.push(`${state.indent}${argumentsLocal}.methodInfo = context.mi;`);
  		paramsShift += 1;
 	}
 
