@@ -69,6 +69,7 @@ import { NamespaceType } from './abc/lazy/NamespaceType';
 import { axConstructFast, isFastConstructSupport } from './run/axConstruct';
 import { ASRegExp } from './nat/ASRegExp';
 import { AXGlobal } from './run/AXGlobal';
+import { Errors } from './errors';
 
 const METHOD_HOOKS: StringMap<{path: string, place: 'begin' | 'return', hook: Function}> = {};
 
@@ -2203,10 +2204,11 @@ export class Context {
 	setproperty(mn: Multiname, value: any, obj: AXClass | null) {
 
 		if (obj == void 0) {
-
-			throw this.sec.createError('Error',
-				// eslint-disable-next-line max-len
-				`[AVM2] Unexpected property assignment: ${typeof obj}[${JSON.stringify(mn?.name)}] = ${value?.toString()}`
+			throw this.sec.createError(
+				'TypeError',
+				obj === null
+					? Errors.ConvertNullToObjectError
+					: Errors.ConvertUndefinedToObjectError
 			);
 		}
 
