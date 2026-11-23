@@ -398,7 +398,8 @@ function readAMF3Value(ba: ByteArray, references: AMF3ReferenceTables) {
 			let isDynamic = true;
 			let traitNames;
 			if ((u29o & 2) === 0) {
-				traits = references.traits[u29o >> 2];
+				// traits sent by reference: reuse the class resolved when they were first read
+				traits = axClass = <AXClass> references.traits[u29o >> 2];
 				traitNames = references.traitNames[u29o >> 2];
 				isDynamic = references.dynamic[u29o >> 2];
 			} else {
